@@ -1041,79 +1041,79 @@ int main() {
         function displayResults(data) {
     let resultHTML = '';
 
-    // 计算统计数据（仅保留通过用例，移除得分相关）
+    // 计算统计数据（仅保留通过用例）
     const totalCases = data.results.length;
     const passedCases = data.results.filter(result =>
         result.result.status === 'Accepted').length;
 
-    // 1. 统计卡片：移除得分卡片，仅保留2个核心卡片，极致压缩间距
+    // 统计卡片：进一步压缩所有间距参数
     resultHTML += `
-        <div style="display: flex; gap: 0.5px; margin: 0.5px 0; line-height: 1.0;">
-            <div style="flex: 1; background: #f8f9fa; padding: 1px 0.5px; border-radius: 4px; text-align: center; line-height: 1.0;">
-                <div style="color: #6c757d; margin: 0 0 0.3px; font-size: inherit;">通过用例</div>
+        <div style="display: flex; gap: 0.3px; margin: 0.3px 0; line-height: 1.0;">
+            <div style="flex: 1; background: #f8f9fa; padding: 0.5px 0.3px; border-radius: 4px; text-align: center; line-height: 1.0;">
+                <div style="color: #6c757d; margin: 0 0 0.2px; font-size: inherit;">通过用例</div>
                 <div style="font-weight: bold; color: #28a745; margin: 0; font-size: inherit;">${passedCases}/${totalCases}</div>
             </div>
-            <div style="flex: 1; background: #f8f9fa; padding: 1px 0.5px; border-radius: 4px; text-align: center; line-height: 1.0;">
-                <div style="color: #6c757d; margin: 0 0 0.3px; font-size: inherit;">总体结果</div>
+            <div style="flex: 1; background: #f8f9fa; padding: 0.5px 0.3px; border-radius: 4px; text-align: center; line-height: 1.0;">
+                <div style="color: #6c757d; margin: 0 0 0.2px; font-size: inherit;">总体结果</div>
                 <div style="font-weight: bold; color: ${data.overall_result === 'Accepted' ? '#28a745' : '#dc3545'}; margin: 0; font-size: inherit;">${data.overall_result}</div>
             </div>
         </div>
     `;
 
-    // 2. 测试用例详情：进一步压缩标题与统计卡片的间距
+    // 测试用例详情：标题与统计卡片间距再压缩
     if (data.results && data.results.length > 0) {
-        resultHTML += `<div style="font-weight: bold; margin: 0.5px 0; line-height: 1.0; font-size: inherit;">测试用例详情:</div>`;
+        resultHTML += `<div style="font-weight: bold; margin: 0.3px 0; line-height: 1.0; font-size: inherit;">测试用例详情:</div>`;
 
         data.results.forEach((testCase, index) => {
             const result = testCase.result;
             const statusColor = result.status === 'Accepted' ? '#28a745' : '#dc3545';
             const bgColor = result.status === 'Accepted' ? '#f8fff8' : '#fff8f8';
 
-            // 3. 单个用例容器：最小化内外边距，仅保留极窄间距
+            // 单个用例容器：最小化边距至临界值
             resultHTML += `
-                <div style="margin: 0.5px 0; padding: 0.5px; border-left: 3px solid ${statusColor}; background-color: ${bgColor}; border-radius: 3px; line-height: 1.0;">
-                    <!-- 用例标题栏：消除所有多余间距 -->
+                <div style="margin: 0.3px 0; padding: 0.3px; border-left: 3px solid ${statusColor}; background-color: ${bgColor}; border-radius: 3px; line-height: 1.0;">
+                    <!-- 用例标题栏：消除所有冗余间距 -->
                     <div style="display: flex; justify-content: space-between; align-items: center; margin: 0; line-height: 1.0;">
                         <div style="line-height: 1.0;">
                             <strong style="font-size: inherit;">测试用例 ${testCase.test_case}:</strong>
-                            <span style="color: ${statusColor}; margin-left: 1px; font-size: inherit;">${result.status}</span>
+                            <span style="color: ${statusColor}; margin-left: 0.5px; font-size: inherit;">${result.status}</span>
                         </div>
-                        <div style="display: flex; gap: 0.5px; line-height: 1.0;">
-                            ${testCase.is_sample ? `<span style="padding: 0 0.5px; border-radius: 2px; background: #3498db; color: white; font-size: inherit;">样例</span>` : ''}
+                        <div style="display: flex; gap: 0.3px; line-height: 1.0;">
+                            ${testCase.is_sample ? `<span style="padding: 0 0.3px; border-radius: 2px; background: #3498db; color: white; font-size: inherit;">样例</span>` : ''}
                         </div>
                     </div>
             `;
 
-            // 4. 输入输出：完全消除内边距，文字紧密排列
+            // 输入输出：文字与背景间距压缩至最小
             resultHTML += `
                 <div style="margin: 0; line-height: 1.0;">
-                    <div style="margin: 0; line-height: 1.0;"><strong style="font-size: inherit;">输入:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.5px; border-radius: 2px; font-size: inherit;">${testCase.input_data || '无'}</span></div>
-                    <div style="margin: 0; line-height: 1.0;"><strong style="font-size: inherit;">期望输出:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.5px; border-radius: 2px; font-size: inherit;">${testCase.expected_output || '无'}</span></div>
-                    <div style="margin: 0; line-height: 1.0;"><strong style="font-size: inherit;">实际输出:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.5px; border-radius: 2px; font-size: inherit;">${testCase.user_output || '无输出'}</span></div>
+                    <div style="margin: 0; line-height: 1.0;"><strong style="font-size: inherit;">输入:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.3px; border-radius: 2px; font-size: inherit;">${testCase.input_data || '无'}</span></div>
+                    <div style="margin: 0; line-height: 1.0;"><strong style="font-size: inherit;">期望输出:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.3px; border-radius: 2px; font-size: inherit;">${testCase.expected_output || '无'}</span></div>
+                    <div style="margin: 0; line-height: 1.0;"><strong style="font-size: inherit;">实际输出:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.3px; border-radius: 2px; font-size: inherit;">${testCase.user_output || '无输出'}</span></div>
                 </div>
             `;
 
-            // 5. 执行信息：仅保留0.3px底部间距，避免空白
+            // 执行信息：间距压缩至接近0
             let execInfo = [];
             if (result.time) execInfo.push(`执行时间: ${result.time}秒`);
             if (result.memory) execInfo.push(`内存使用: ${result.memory}KB`);
 
             if (execInfo.length > 0) {
-                resultHTML += `<div style="margin: 0.3px 0; color: #6c757d; line-height: 1.0; font-size: inherit;">${execInfo.join(' | ')}</div>`;
+                resultHTML += `<div style="margin: 0.2px 0; color: #6c757d; line-height: 1.0; font-size: inherit;">${execInfo.join(' | ')}</div>`;
             }
 
-            // 6. 编译/错误信息：无任何边距，与内容无缝衔接
+            // 编译/错误信息：完全消除额外间距
             if (result.compile_output) {
                 resultHTML += `<div style="margin: 0; line-height: 1.0; font-size: inherit;">
                     <strong style="font-size: inherit;">编译信息:</strong>
-                    <span style="font-family: 'Courier New', monospace; background: #fff3cd; padding: 0 0.5px; border-radius: 2px; font-size: inherit;">${result.compile_output}</span>
+                    <span style="font-family: 'Courier New', monospace; background: #fff3cd; padding: 0 0.3px; border-radius: 2px; font-size: inherit;">${result.compile_output}</span>
                 </div>`;
             }
 
             if (result.stderr) {
                 resultHTML += `<div style="margin: 0; line-height: 1.0; font-size: inherit;">
                     <strong style="font-size: inherit;">错误信息:</strong>
-                    <span style="font-family: 'Courier New', monospace; background: #f8d7da; padding: 0 0.5px; border-radius: 2px; font-size: inherit;">${result.stderr}</span>
+                    <span style="font-family: 'Courier New', monospace; background: #f8d7da; padding: 0 0.3px; border-radius: 2px; font-size: inherit;">${result.stderr}</span>
                 </div>`;
             }
 
@@ -1121,12 +1121,12 @@ int main() {
         });
     }
 
-    // 7. 整体容器：进一步缩减内边距，消除外部多余空间
+    // 整体容器：最终压缩外层空间
     const resultContent = document.getElementById('result-content');
     resultContent.innerHTML = resultHTML;
     resultContent.style.maxHeight = 'none';
     resultContent.style.overflowY = 'visible';
-    resultContent.style.padding = '3px'; // 比之前再缩减2px，最大化压缩整体空间
+    resultContent.style.padding = '2px'; // 外层内边距压缩至最小合理值
 }
 
         // 表单提交事件
