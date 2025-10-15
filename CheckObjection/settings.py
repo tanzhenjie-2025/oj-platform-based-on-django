@@ -132,6 +132,20 @@ USE_I18N = False
 
 USE_TZ = False
 
+# Celery配置
+CELERY_BROKER_URL = 'amqp://admin:123456@192.168.231.100:5672//'  # RabbitMQ地址
+CELERY_RESULT_BACKEND = 'redis://:MONKEY20041218@192.168.231.100:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Shanghai'
+# 在 Celery 配置部分添加以下内容
+CELERY_WORKER_POOL = 'solo'  # Windows 推荐单进程模式，避免 prefork 问题
+CELERY_WORKER_CONCURRENCY = 1  # solo 模式下并发数设为 1（单进程）
+
+# Judge0配置
+JUDGE0_BASE_URL = "http://192.168.231.100:2358"
+JUDGE0_TIMEOUT = 30
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
@@ -177,8 +191,12 @@ SIMPLEUI_LOGIN_PARTICLES = True
 ASGI_APPLICATION="CheckObjection.asgi.application"
 # ASGI_APPLICATION = 'CheckObjection.asgi.application'
 
-CHANNEL_LAYERS={
-"default": {
-"BACKEND":"channels.layers.InMemoryChannelLayer",}
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("192.168.231.100", 6379)],  # Redis地址
+            "password": "MONKEY20041218",  # 对应Redis密码
+        },
+    },
 }
-

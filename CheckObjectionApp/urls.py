@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter, SimpleRouter
 from CheckObjectionApp import views
-from CheckObjectionApp.views import JudgeCodeView
+from CheckObjectionApp.views import JudgeCodeView, TaskStatusView
 
 app_name = 'CheckObjectionApp'
 
@@ -17,6 +17,7 @@ urlpatterns = [
 # path('detail/proxy-submit-code', views.quick_judge_example, name='proxy_submit_code'),
 path('detail/proxy-submit-code/', JudgeCodeView.as_view(), name='proxy_submit_code'),
 path('api/', include(router.urls)),
+path('task-status/<str:task_id>/', TaskStatusView.as_view(), name='task_status'),
 
     path("index", views.index, name="CheckObjectionApp_index"),
     path("base",views.base,name="CheckObjectionApp_base"),

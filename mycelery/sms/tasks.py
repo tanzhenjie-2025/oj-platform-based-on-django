@@ -21,26 +21,28 @@ def send_sms2(mobile):
     return "send_sms2 OK"
 
 
-from celery import shared_task
-import time
 import json
+import time
 import requests
-# from .models import TestCase
+from celery import shared_task
 from django.core.cache import cache
-from django.conf import settings
+from CheckObjectionApp.models import TestCase
+from CheckObjectionApp.utils.judge0_service import Judge0Service
 
 
 @shared_task(bind=True, max_retries=3)
-def judge_submission_task(self, submission_data):
+def submit_code_task(self, submission_data):
     """
-    异步判题任务
+    异步提交代码到Judge0进行判题
     """
     try:
-        source_code = submission_data['source_code']
-        language_id = submission_data['language_id']
-        topic_id = submission_data['topic_id']
+        source_code = submission_data.get('source_code', '')
+        language_id = submission_data.get('language_id', 71)
+        topic_id = submission_data.get('topic_id', '')
+        user_name = submission_data.get('user_name', '')
+        submission_id = submission_data.get('submission_id', '')
 
-        # 获取测试用例
+        # 根据题目ID获取测试用例（使用缓存）
         test_cases = get_test_cases_by_topic_with_cache(topic_id)
 
         judge_service = Judge0Service()
@@ -55,16 +57,7 @@ def judge_submission_task(self, submission_data):
                 expected_output=test_case["expected_output"]
             )
 
-            # 更新任务状态
-            self.update_state(
-                state='PROGRESS',
-                meta={
-                    'current': i + 1,
-                    'total': len(test_cases),
-                    'status': f'正在评测测试用例 {i + 1}/{len(test_cases)}'
-                }
-            )
-
+            # 构建详细的测试结果
             detailed_result = {
                 "test_case": i + 1,
                 "input_data": test_case["stdin"],
@@ -79,27 +72,84 @@ def judge_submission_task(self, submission_data):
         # 计算总体结果
         overall_result = calculate_overall_result(results)
 
+        # 返回结果
         return {
-            'status': 'SUCCESS',
-            'overall_result': overall_result,
-            'results': results,
-            'user_name': submission_data.get('user_name', ''),
-            'topic_id': topic_id,
-            'notes': submission_data.get('notes', ''),
-            'source_code': source_code,
-            'language_id': language_id
+            "success": True,
+            "overall_result": overall_result,
+            "results": results,
+            "user_name": user_name,
+            "topic_id": topic_id,
+            "submission_id": submission_id,
+            "source_code": source_code,
+            "language_id": language_id
         }
 
     except Exception as e:
-        # 重试逻辑
-        self.retry(countdown=2 ** self.request.retries, exc=e)
+        # 如果发生异常，重试
+        raise self.retry(countdown=2 ** self.request.retries, exc=e)
+
+
+@shared_task
+def process_test_run(submission_data):
+    """
+    处理测试运行（快速返回，不保存结果）
+    """
+    try:
+        source_code = submission_data.get('source_code', '')
+        language_id = submission_data.get('language_id', 71)
+        topic_id = submission_data.get('topic_id', '')
+
+        # 只获取样例测试用例
+        test_cases = get_sample_test_cases(topic_id)
+
+        judge_service = Judge0Service()
+        results = []
+
+        # 对每个样例测试用例进行判题
+        for i, test_case in enumerate(test_cases):
+            result = judge_service.submit_code(
+                source_code=source_code,
+                language_id=language_id,
+                stdin=test_case["stdin"],
+                expected_output=test_case["expected_output"]
+            )
+
+            detailed_result = {
+                "test_case": i + 1,
+                "input_data": test_case["stdin"],
+                "expected_output": test_case["expected_output"],
+                "user_output": result.get("stdout", ""),
+                "result": result,
+                "is_sample": test_case.get("is_sample", False),
+                "score": test_case.get("score", 0)
+            }
+            results.append(detailed_result)
+
+        overall_result = calculate_overall_result(results)
+
+        return {
+            "success": True,
+            "overall_result": overall_result,
+            "results": results,
+            "is_test_run": True
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"测试运行失败: {str(e)}",
+            "is_test_run": True
+        }
 
 
 def get_test_cases_by_topic_with_cache(topic_id):
     """
     根据题目ID从Redis缓存或数据库获取测试用例
     """
+    from django.conf import settings
     cache_key = f"test_cases_topic_{topic_id}"
+
+    # 尝试从缓存获取测试用例
     cached_test_cases = cache.get(cache_key)
 
     if cached_test_cases is not None:
@@ -113,6 +163,36 @@ def get_test_cases_by_topic_with_cache(topic_id):
         cache.set(cache_key, test_cases, timeout=getattr(settings, 'CACHE_TTL', 900))
 
     return test_cases
+
+
+def get_sample_test_cases(topic_id):
+    """
+    获取样例测试用例
+    """
+    try:
+        test_cases = TestCase.objects.filter(
+            titleSlug_id=topic_id,
+            is_sample=True
+        ).order_by('order')
+
+        formatted_test_cases = []
+        for test_case in test_cases:
+            formatted_test_cases.append({
+                "stdin": test_case.input_data,
+                "expected_output": test_case.expected_output,
+                "is_sample": test_case.is_sample,
+                "score": test_case.score
+            })
+
+        return formatted_test_cases
+
+    except Exception as e:
+        return [{
+            "stdin": "",
+            "expected_output": "",
+            "is_sample": True,
+            "score": 0
+        }]
 
 
 def get_test_cases_from_db(topic_id):
@@ -136,7 +216,6 @@ def get_test_cases_from_db(topic_id):
         return formatted_test_cases
 
     except Exception as e:
-        print(f"获取测试用例时出错: {str(e)}")
         return [{
             "stdin": "",
             "expected_output": "",
@@ -152,6 +231,7 @@ def calculate_overall_result(results):
     if not results:
         return "No Test Cases"
 
+    # 检查所有测试用例是否都通过
     all_passed = all(
         result["result"].get("status") == "Accepted"
         for result in results
@@ -160,6 +240,7 @@ def calculate_overall_result(results):
     if all_passed:
         return "Accepted"
     else:
+        # 返回第一个失败的结果状态
         for result in results:
             if result["result"].get("status") != "Accepted":
                 return result["result"].get("status", "Wrong Answer")

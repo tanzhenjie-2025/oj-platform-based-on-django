@@ -344,76 +344,70 @@ def CheckObjection_filter(request):
     return render(request, 'CheckObjection/CheckObjection_Index.html', context={"topics": topics})
 
 # 以下为判题模块
-import requests
+import json
+import uuid
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-import json
-from django.views import View
 from django.utils.decorators import method_decorator
+from django.views import View
 from .models import TestCase, topic
-from .utils.judge0_service import Judge0Service
-
-# 添加Redis缓存导入
-from django.core.cache import cache
-from django.conf import settings
+from mycelery.sms.tasks import submit_code_task, process_test_run
 
 
 @method_decorator(csrf_exempt, name='dispatch')
 class JudgeCodeView(View):
     def post(self, request):
         """
-        判题接口 - 接收前端提交的代码并进行判题
+        判题接口 - 使用Celery异步处理
         """
         try:
-            import json
             data = json.loads(request.body)
 
             source_code = data.get('source_code', '')
-            language_id = data.get('language_id', 71)  # 默认Python
+            language_id = data.get('language_id', 71)
             topic_id = data.get('topic_id', '')
             user_name = data.get('user_name', '')
             notes = data.get('notes', '')
+            is_test = data.get('is_test', False)
 
-            # 根据题目ID获取对应的测试用例（使用缓存）
-            test_cases = self._get_test_cases_by_topic_with_cache(topic_id)
+            # 生成唯一的提交ID
+            submission_id = str(uuid.uuid4())
 
-            judge_service = Judge0Service()
-            results = []
+            submission_data = {
+                'source_code': source_code,
+                'language_id': language_id,
+                'topic_id': topic_id,
+                'user_name': user_name,
+                'notes': notes,
+                'submission_id': submission_id,
+                'is_test': is_test
+            }
 
-            # 对每个测试用例进行判题
-            for i, test_case in enumerate(test_cases):
-                result = judge_service.submit_code(
-                    source_code=source_code,
-                    language_id=language_id,
-                    stdin=test_case["stdin"],
-                    expected_output=test_case["expected_output"]
-                )
+            if is_test:
+                # 测试运行 - 同步处理以便快速返回
+                result = process_test_run.delay(submission_data)
+                try:
+                    # 等待任务完成，设置超时时间
+                    task_result = result.get(timeout=30)
+                    return JsonResponse(task_result)
+                except Exception as e:
+                    return JsonResponse({
+                        "success": False,
+                        "error": f"测试运行超时或失败: {str(e)}",
+                        "is_test_run": True
+                    })
+            else:
+                # 正式提交 - 异步处理
+                task = submit_code_task.delay(submission_data)
 
-                # 构建详细的测试结果，包含输入、期望输出和实际输出
-                detailed_result = {
-                    "test_case": i + 1,
-                    "input_data": test_case["stdin"],  # 测试用例输入
-                    "expected_output": test_case["expected_output"],  # 期望输出
-                    "user_output": result.get("stdout", ""),  # 用户代码的实际输出
-                    "result": result,
-                    "is_sample": test_case.get("is_sample", False),  # 是否是样例测试
-                    "score": test_case.get("score", 0)  # 该测试用例分值
-                }
-                results.append(detailed_result)
-
-            # 计算总体结果
-            overall_result = self._calculate_overall_result(results)
-
-            return JsonResponse({
-                "success": True,
-                "overall_result": overall_result,
-                "results": results,
-                "user_name": user_name,
-                "topic_id": topic_id,
-                "notes": notes,
-                "source_code": source_code,  # 返回提交的代码用于参考
-                "language_id": language_id
-            })
+                # 立即返回任务ID，前端可以轮询结果
+                return JsonResponse({
+                    "success": True,
+                    "message": "代码已提交，正在处理中...",
+                    "task_id": task.id,
+                    "submission_id": submission_id,
+                    "status": "PENDING"
+                })
 
         except Exception as e:
             return JsonResponse({
@@ -421,90 +415,31 @@ class JudgeCodeView(View):
                 "error": f"处理请求时出错: {str(e)}"
             })
 
-    def _get_test_cases_by_topic_with_cache(self, topic_id):
-        """
-        根据题目ID从Redis缓存或数据库获取测试用例
-        """
-        cache_key = f"test_cases_topic_{topic_id}"
 
-        # 尝试从缓存获取测试用例
-        cached_test_cases = cache.get(cache_key)
+@method_decorator(csrf_exempt, name='dispatch')
+class TaskStatusView(View):
+    """
+    查询任务状态的接口
+    """
 
-        if cached_test_cases is not None:
-            print(f"从缓存获取测试用例 topic_id: {topic_id}")
-            return cached_test_cases
+    def get(self, request, task_id):
+        from celery.result import AsyncResult
+        from mycelery.sms.tasks import submit_code_task
 
-        print(f"缓存未命中，从数据库获取测试用例 topic_id: {topic_id}")
+        task_result = AsyncResult(task_id, app=submit_code_task.app)
 
-        # 缓存未命中，从数据库获取
-        test_cases = self._get_test_cases_from_db(topic_id)
+        response_data = {
+            'task_id': task_id,
+            'status': task_result.status,
+        }
 
-        # 将结果存入缓存，设置过期时间
-        if test_cases:
-            cache.set(cache_key, test_cases, timeout=getattr(settings, 'CACHE_TTL', 900))
-            print(f"测试用例已缓存 topic_id: {topic_id}")
+        if task_result.ready():
+            if task_result.successful():
+                response_data['result'] = task_result.result
+            else:
+                response_data['error'] = str(task_result.result)
 
-        return test_cases
-
-    def _get_test_cases_from_db(self, topic_id):
-        """
-        从数据库获取测试用例（原始数据库查询方法）
-        """
-        try:
-            # 从数据库获取该题目的所有测试用例，按order字段排序
-            test_cases = TestCase.objects.filter(
-                titleSlug_id=topic_id
-            ).order_by('order')
-
-            # 将数据库记录转换为需要的格式
-            formatted_test_cases = []
-            for test_case in test_cases:
-                formatted_test_cases.append({
-                    "stdin": test_case.input_data,
-                    "expected_output": test_case.expected_output,
-                    "is_sample": test_case.is_sample,
-                    "score": test_case.score
-                })
-
-            return formatted_test_cases
-
-        except Exception as e:
-            # 如果出现异常，返回空列表或默认测试用例
-            print(f"获取测试用例时出错: {str(e)}")
-            return [{
-                "stdin": "",
-                "expected_output": "",
-                "is_sample": False,
-                "score": 0
-            }]
-
-    def _get_test_cases_by_topic(self, topic_id):
-        """
-        保持向后兼容的原有方法（现在调用带缓存的方法）
-        """
-        return self._get_test_cases_by_topic_with_cache(topic_id)
-
-    def _calculate_overall_result(self, results):
-        """
-        计算总体判题结果
-        """
-        if not results:
-            return "No Test Cases"
-
-        # 检查所有测试用例是否都通过
-        all_passed = all(
-            result["result"].get("status") == "Accepted"
-            for result in results
-        )
-
-        if all_passed:
-            return "Accepted"
-        else:
-            # 返回第一个失败的结果状态
-            for result in results:
-                if result["result"].get("status") != "Accepted":
-                    return result["result"].get("status", "Wrong Answer")
-            return "Wrong Answer"
+        return JsonResponse(response_data)
 
 # 以下是增加测试用例的代码
 from rest_framework import viewsets, status
