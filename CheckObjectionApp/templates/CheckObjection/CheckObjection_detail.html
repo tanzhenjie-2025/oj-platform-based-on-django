@@ -1,0 +1,1193 @@
+{% extends 'CheckObjection/CheckObjectionApp_base.html' %}
+{% load static %}
+
+{% block head %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css">
+    <!-- 引入 Monaco Editor CSS -->
+    <link rel="stylesheet" data-name="vs/editor/editor.main"
+          href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --bg-light: #ffffff;
+            --border: #dee2e6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fb;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* 导航栏样式 */
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo i {
+            margin-right: 10px;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+        }
+
+        .nav-links li {
+            margin-left: 25px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.3s;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--success);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 15px;
+            font-weight: bold;
+            color: white;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            display: flex;
+            margin-top: 30px;
+            gap: 30px;
+        }
+
+        /* 题目信息区域 */
+        .problem-info {
+            flex: 0 0 350px;
+            background-color: var(--bg-light);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            height: fit-content;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .problem-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .problem-title {
+            font-size: 1.5rem;
+            color: var(--secondary);
+            margin-bottom: 10px;
+        }
+
+        .problem-meta {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .tag-difficulty {
+            background-color: #e0f7fa;
+            color: #006064;
+        }
+
+        .tag-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .problem-description {
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .problem-constraints {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .problem-constraints h4 {
+            margin-bottom: 10px;
+            color: var(--secondary);
+        }
+
+        .constraint-list {
+            list-style-type: none;
+        }
+
+        .constraint-list li {
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .constraint-list li i {
+            color: var(--primary);
+            margin-right: 8px;
+            margin-top: 4px;
+        }
+
+        /* 代码提交区域 */
+        .submission-area {
+            flex: 1;
+            background-color: var(--bg-light);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .submission-header {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .submission-title {
+            font-size: 1.5rem;
+            color: var(--secondary);
+        }
+
+        .language-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .language-selector select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-light);
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .code-editor-container {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 500px;
+        }
+
+        .editor-header {
+            background-color: #f8f9fa;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .editor-action-btn {
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .editor-action-btn:hover {
+            color: var(--primary);
+        }
+
+        /* Monaco Editor 容器 */
+        #monaco-editor {
+            flex: 1;
+            min-height: 400px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border);
+            color: var(--gray);
+        }
+
+        .btn-outline:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* 执行结果区域 */
+        .result-area {
+            margin-top: 30px;
+            background-color: var(--bg-light);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .result-header {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            color: var(--secondary);
+        }
+
+        .result-content {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .status-success {
+            color: #28a745;
+        }
+
+        .status-error {
+            color: #dc3545;
+        }
+
+        .status-warning {
+            color: #ffc107;
+        }
+
+        .test-case-result {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-left: 4px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .test-case-success {
+            border-left-color: #28a745;
+            background-color: #f8fff8;
+        }
+
+        .test-case-error {
+            border-left-color: #dc3545;
+            background-color: #fff8f8;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 992px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .problem-info {
+                flex: 0 0 auto;
+                max-height: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .nav-links {
+                margin-top: 15px;
+                justify-content: center;
+            }
+
+            .nav-links li {
+                margin: 0 10px;
+            }
+
+            .user-section {
+                margin-top: 15px;
+            }
+
+            .submission-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+{% endblock head %}
+
+{% block main %}
+    <!-- 主内容区域 -->
+    <div class="container">
+        <div class="main-content">
+            <!-- 题目信息区域 -->
+            <div class="problem-info">
+                <div class="problem-header">
+                    <h2 class="problem-title">{{ topic_content.title }}</h2>
+                    <div class="problem-meta">
+                        <span class="tag tag-difficulty">
+                            {% if topic_content.level == 0 %}
+                                <i class="fas fa-star"></i> 简单
+                            {% elif topic_content.level == 1 %}
+                                <i class="fas fa-star-half-alt"></i> 中等
+                            {% else %}
+                                <i class="fas fa-star"></i> 困难
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="problem-description">
+                    <p>{{ topic_content.content }}</p>
+                </div>
+
+                <div class="problem-constraints">
+                    <h4>示例</h4>
+                    <div class="constraint-list">
+                        {{ topic_content.example|safe }}
+                    </div>
+                </div>
+
+                {% if topic_content.constraints %}
+                    <div class="problem-constraints">
+                        <h4>约束条件</h4>
+                        <div class="constraint-list">
+                            {{ topic_content.constraints|safe }}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- 代码提交区域 -->
+            <div class="submission-area">
+                <div class="submission-header">
+                    <h2 class="submission-title">提交解答</h2>
+                    <div class="language-selector">
+                        <label for="language-select">编程语言:</label>
+                        <select id="language-select" name="language_id">
+                            <option value="71" selected>Python</option>
+                            <option value="63">JavaScript</option>
+                            <option value="62">Java</option>
+                            <option value="54">C++</option>
+                            <option value="50">C</option>
+                        </select>
+                    </div>
+                </div>
+
+                <form id="submission-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="topic_id" value="{{ topic_content.id }}">
+                    <input type="hidden" name="user_name" value="{{ user.username }}">
+                    <input type="hidden" id="language_id" name="language_id" value="71">
+
+                    <div class="form-group">
+                        <label for="code">代码编辑器 <small>(支持代码提示和自动补全)</small></label>
+                        <div class="code-editor-container">
+                            <div class="editor-header">
+                                <span id="current-language">Python</span>
+                                <div class="editor-actions">
+                                    <button type="button" class="editor-action-btn" onclick="formatCode()"
+                                            title="格式化代码">
+                                        <i class="fas fa-indent"></i> 格式化
+                                    </button>
+                                    <button type="button" class="editor-action-btn" onclick="resetCode()"
+                                            title="重置代码">
+                                        <i class="fas fa-redo"></i> 重置
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Monaco Editor 容器 -->
+                            <div id="monaco-editor"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">备注（可选）</label>
+                        <input name="notes" type="text" id="notes" placeholder="添加关于你解决方案的备注...">
+                    </div>
+
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <p>代码执行中，请稍候...</p>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" onclick="runTest()">
+                            <i class="fas fa-play"></i> 测试运行
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> 提交执行
+                        </button>
+                    </div>
+                </form>
+
+                <!-- 执行结果区域 -->
+                <div class="result-area" id="result-area" style="display: none;">
+                    <div class="result-header">
+                        <h2 class="result-title">执行结果</h2>
+                        <button type="button" class="btn btn-outline" onclick="clearResults()"
+                                style="padding: 8px 12px;">
+                            <i class="fas fa-times"></i> 清除结果
+                        </button>
+                    </div>
+                    <div class="result-content" id="result-content">
+                        <!-- 结果将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入 Monaco Editor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+
+    <script>
+        // Monaco Editor 实例和全局变量
+        let editor = null;
+        let currentLanguageId = 71; // Python
+        let currentLanguage = 'python';
+
+        // 默认代码模板
+        const codeTemplates = {
+            71: `# {{ topic_content.title }}
+# 请在此编写你的解决方案
+
+def solution():
+    # 你的代码在这里
+    pass
+
+# 如果需要测试，可以取消下面的注释
+if __name__ == "__main__":
+    result = solution()
+    print(result)`,
+
+            63: `// {{ topic_content.title }}
+// 请在此编写你的解决方案
+
+function solution() {
+    // 你的代码在这里
+}
+
+// 测试代码
+// console.log(solution());`,
+
+            62: `// {{ topic_content.title }}
+// 请在此编写你的解决方案
+
+public class Solution {
+    public static void main(String[] args) {
+        // 你的代码在这里
+    }
+}`,
+
+            54: `// {{ topic_content.title }}
+// 请在此编写你的解决方案
+
+#include <iostream>
+using namespace std;
+
+int main() {
+    // 你的代码在这里
+    return 0;
+}`,
+
+            50: `// {{ topic_content.title }}
+// 请在此编写你的解决方案
+
+#include <stdio.h>
+
+int main() {
+    // 你的代码在这里
+    return 0;
+}`
+        };
+
+        // 初始化 Monaco Editor
+        require.config({
+            paths: {
+                'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs'
+            }
+        });
+
+        require(['vs/editor/editor.main'], function () {
+            // 初始化编辑器
+            editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+                value: codeTemplates[71].replace('{{ topic_content.title }}', '{{ topic_content.title|escapejs }}'),
+                language: 'python',
+                theme: 'vs',
+                fontSize: 14,
+                automaticLayout: true,
+                minimap: {enabled: true},
+                scrollBeyondLastLine: false,
+                wordWrap: 'on',
+                lineNumbers: 'on',
+                roundedSelection: false,
+                scrollBeyondLastLine: false,
+                readOnly: false,
+                cursorStyle: 'line',
+                formatOnType: true,
+                formatOnPaste: true,
+                suggestOnTriggerCharacters: true,
+                quickSuggestions: true
+            });
+
+            // 设置代码补全
+            setupCodeCompletion();
+
+            // 监听编辑器变化，自动调整高度
+            window.addEventListener('resize', function () {
+                if (editor) {
+                    editor.layout();
+                }
+            });
+        });
+
+        // 设置代码自动完成
+        function setupCodeCompletion() {
+            // Python 代码提示
+            monaco.languages.registerCompletionItemProvider('python', {
+                provideCompletionItems: function (model, position) {
+                    const suggestions = getPythonSuggestions();
+                    return {suggestions: suggestions};
+                }
+            });
+
+            // JavaScript 代码提示
+            monaco.languages.registerCompletionItemProvider('javascript', {
+                provideCompletionItems: function (model, position) {
+                    const suggestions = getJavaScriptSuggestions();
+                    return {suggestions: suggestions};
+                }
+            });
+
+            // Java 代码提示
+            monaco.languages.registerCompletionItemProvider('java', {
+                provideCompletionItems: function (model, position) {
+                    const suggestions = getJavaSuggestions();
+                    return {suggestions: suggestions};
+                }
+            });
+
+            // C++ 代码提示
+            monaco.languages.registerCompletionItemProvider('cpp', {
+                provideCompletionItems: function (model, position) {
+                    const suggestions = getCppSuggestions();
+                    return {suggestions: suggestions};
+                }
+            });
+
+            // C 代码提示
+            monaco.languages.registerCompletionItemProvider('c', {
+                provideCompletionItems: function (model, position) {
+                    const suggestions = getCSuggestions();
+                    return {suggestions: suggestions};
+                }
+            });
+        }
+
+        // Python 代码提示配置
+        function getPythonSuggestions() {
+            return [
+                {
+                    label: 'print',
+                    kind: monaco.languages.CompletionItemKind.Function,
+                    documentation: '输出函数',
+                    insertText: 'print(${1:value})',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                },
+                {
+                    label: 'def',
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    documentation: '定义函数',
+                    insertText: 'def ${1:function_name}(${2:parameters}):\n\t${3:pass}',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                },
+                {
+                    label: 'for',
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    documentation: 'for 循环',
+                    insertText: 'for ${1:item} in ${2:iterable}:\n\t${3:pass}',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                },
+                {
+                    label: 'if',
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    documentation: 'if 条件语句',
+                    insertText: 'if ${1:condition}:\n\t${2:pass}',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                },
+                {
+                    label: 'while',
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    documentation: 'while 循环',
+                    insertText: 'while ${1:condition}:\n\t${2:pass}',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                },
+                {
+                    label: 'import',
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    documentation: '导入模块',
+                    insertText: 'import ${1:module}'
+                },
+                {
+                    label: 'from',
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    documentation: '从模块导入',
+                    insertText: 'from ${1:module} import ${2:function}'
+                }
+            ];
+        }
+
+        // JavaScript 代码提示配置
+        function getJavaScriptSuggestions() {
+            return [
+                {
+                    label: 'function',
+                    kind: monaco.languages.CompletionItemKind.Function,
+                    documentation: '定义函数',
+                    insertText: 'function ${1:functionName}(${2:parameters}) {\n\t${3:}\n}',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                },
+                {
+                    label: 'console.log',
+                    kind: monaco.languages.CompletionItemKind.Method,
+                    documentation: '输出到控制台',
+                    insertText: 'console.log(${1:value});'
+                },
+                {
+                    label: 'for',
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    documentation: 'for 循环',
+                    insertText: 'for (let ${1:i} = 0; $1 < ${2:length}; $1++) {\n\t${3:}\n}',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                },
+                {
+                    label: 'if',
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    documentation: 'if 条件语句',
+                    insertText: 'if (${1:condition}) {\n\t${2:}\n}',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                }
+            ];
+        }
+
+        // Java 代码提示配置
+        function getJavaSuggestions() {
+            return [
+                {
+                    label: 'main',
+                    kind: monaco.languages.CompletionItemKind.Function,
+                    documentation: '主方法',
+                    insertText: 'public static void main(String[] args) {\n\t${1:}\n}',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                },
+                {
+                    label: 'System.out.println',
+                    kind: monaco.languages.CompletionItemKind.Method,
+                    documentation: '输出语句',
+                    insertText: 'System.out.println(${1:value});'
+                },
+                {
+                    label: 'class',
+                    kind: monaco.languages.CompletionItemKind.Class,
+                    documentation: '定义类',
+                    insertText: 'class ${1:ClassName} {\n\t${2:}\n}',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                },
+                {
+                    label: 'for',
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    documentation: 'for 循环',
+                    insertText: 'for (int ${1:i} = 0; $1 < ${2:count}; $1++) {\n\t${3:}\n}',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                }
+            ];
+        }
+
+        // C++ 代码提示配置
+        function getCppSuggestions() {
+            return [
+                {
+                    label: 'include',
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    documentation: '包含头文件',
+                    insertText: '#include <${1:iostream}>'
+                },
+                {
+                    label: 'main',
+                    kind: monaco.languages.CompletionItemKind.Function,
+                    documentation: '主函数',
+                    insertText: 'int main() {\n\t${1:// 代码}\n\treturn 0;\n}',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                },
+                {
+                    label: 'cout',
+                    kind: monaco.languages.CompletionItemKind.Variable,
+                    documentation: '输出',
+                    insertText: 'std::cout << ${1:value} << std::endl;'
+                },
+                {
+                    label: 'for',
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    documentation: 'for 循环',
+                    insertText: 'for (int ${1:i} = 0; $1 < ${2:count}; $1++) {\n\t${3:}\n}',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                }
+            ];
+        }
+
+        // C 代码提示配置
+        function getCSuggestions() {
+            return [
+                {
+                    label: 'include',
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    documentation: '包含头文件',
+                    insertText: '#include <${1:stdio.h}>'
+                },
+                {
+                    label: 'main',
+                    kind: monaco.languages.CompletionItemKind.Function,
+                    documentation: '主函数',
+                    insertText: 'int main() {\n\t${1:// 代码}\n\treturn 0;\n}',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                },
+                {
+                    label: 'printf',
+                    kind: monaco.languages.CompletionItemKind.Function,
+                    documentation: '格式化输出',
+                    insertText: 'printf("${1:format}", ${2:args});'
+                },
+                {
+                    label: 'for',
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    documentation: 'for 循环',
+                    insertText: 'for (int ${1:i} = 0; $1 < ${2:count}; $1++) {\n\t${3:}\n}',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                }
+            ];
+        }
+
+        // 语言选择事件
+        document.getElementById('language-select').addEventListener('change', function (e) {
+            changeLanguage(parseInt(e.target.value));
+        });
+
+        // 切换编程语言
+        function changeLanguage(languageId) {
+            currentLanguageId = languageId;
+            document.getElementById('language_id').value = languageId;
+
+            // 更新 Monaco Editor 语言
+            const languageMap = {
+                71: 'python',
+                63: 'javascript',
+                62: 'java',
+                54: 'cpp',
+                50: 'c'
+            };
+
+            currentLanguage = languageMap[languageId] || 'python';
+            const model = editor.getModel();
+            monaco.editor.setModelLanguage(model, currentLanguage);
+
+            // 更新语言显示
+            const languageNames = {
+                71: 'Python',
+                63: 'JavaScript',
+                62: 'Java',
+                54: 'C++',
+                50: 'C'
+            };
+            document.getElementById('current-language').textContent = languageNames[languageId] || 'Unknown';
+
+            // 设置默认代码模板
+            setDefaultCode(languageId);
+        }
+
+        // 设置默认代码模板
+        function setDefaultCode(languageId) {
+            const template = codeTemplates[languageId] || codeTemplates[71];
+            editor.setValue(template.replace('{{ topic_content.title }}', '{{ topic_content.title|escapejs }}'));
+        }
+
+        // 格式化代码
+        function formatCode() {
+            if (editor) {
+                editor.getAction('editor.action.formatDocument').run();
+            }
+        }
+
+        // 重置代码
+        function resetCode() {
+            if (confirm('确定要重置代码吗？所有未保存的更改将会丢失。')) {
+                setDefaultCode(currentLanguageId);
+            }
+        }
+
+        // 清除结果
+        function clearResults() {
+            document.getElementById('result-area').style.display = 'none';
+            document.getElementById('result-content').innerHTML = '';
+        }
+
+        // 测试运行
+        function runTest() {
+            const code = editor.getValue();
+            const loading = document.getElementById('loading');
+            const resultArea = document.getElementById('result-area');
+            const resultContent = document.getElementById('result-content');
+
+            // 显示加载动画
+            loading.style.display = 'block';
+            resultArea.style.display = 'none';
+
+            // 发送测试请求
+            fetch('proxy-submit-code/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    source_code: code,
+                    language_id: currentLanguageId,
+                    topic_id: document.querySelector('input[name="topic_id"]').value,
+                    user_name: document.querySelector('input[name="user_name"]').value,
+                    notes: '测试运行',
+                    is_test: true  // 标记为测试运行
+                })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 隐藏加载动画
+                    loading.style.display = 'none';
+                    resultArea.style.display = 'block';
+
+                    if (data.success) {
+                        displayResults(data);
+                    } else {
+                        resultContent.innerHTML = `<p class="status-error">提交失败: ${data.error}</p>`;
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    resultArea.style.display = 'block';
+                    resultContent.innerHTML = `<p class="status-error">请求失败: ${error.message}</p>`;
+                    console.error('Error:', error);
+                });
+        }
+
+        // 显示执行结果
+        function displayResults(data) {
+    let resultHTML = '';
+
+    // 计算统计数据（仅保留通过用例，移除得分相关）
+    const totalCases = data.results.length;
+    const passedCases = data.results.filter(result =>
+        result.result.status === 'Accepted').length;
+
+    // 1. 统计卡片：移除得分卡片，仅保留2个核心卡片，极致压缩间距
+    resultHTML += `
+        <div style="display: flex; gap: 0.5px; margin: 0.5px 0; line-height: 1.0;">
+            <div style="flex: 1; background: #f8f9fa; padding: 1px 0.5px; border-radius: 4px; text-align: center; line-height: 1.0;">
+                <div style="color: #6c757d; margin: 0 0 0.3px; font-size: inherit;">通过用例</div>
+                <div style="font-weight: bold; color: #28a745; margin: 0; font-size: inherit;">${passedCases}/${totalCases}</div>
+            </div>
+            <div style="flex: 1; background: #f8f9fa; padding: 1px 0.5px; border-radius: 4px; text-align: center; line-height: 1.0;">
+                <div style="color: #6c757d; margin: 0 0 0.3px; font-size: inherit;">总体结果</div>
+                <div style="font-weight: bold; color: ${data.overall_result === 'Accepted' ? '#28a745' : '#dc3545'}; margin: 0; font-size: inherit;">${data.overall_result}</div>
+            </div>
+        </div>
+    `;
+
+    // 2. 测试用例详情：进一步压缩标题与统计卡片的间距
+    if (data.results && data.results.length > 0) {
+        resultHTML += `<div style="font-weight: bold; margin: 0.5px 0; line-height: 1.0; font-size: inherit;">测试用例详情:</div>`;
+
+        data.results.forEach((testCase, index) => {
+            const result = testCase.result;
+            const statusColor = result.status === 'Accepted' ? '#28a745' : '#dc3545';
+            const bgColor = result.status === 'Accepted' ? '#f8fff8' : '#fff8f8';
+
+            // 3. 单个用例容器：最小化内外边距，仅保留极窄间距
+            resultHTML += `
+                <div style="margin: 0.5px 0; padding: 0.5px; border-left: 3px solid ${statusColor}; background-color: ${bgColor}; border-radius: 3px; line-height: 1.0;">
+                    <!-- 用例标题栏：消除所有多余间距 -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 0; line-height: 1.0;">
+                        <div style="line-height: 1.0;">
+                            <strong style="font-size: inherit;">测试用例 ${testCase.test_case}:</strong>
+                            <span style="color: ${statusColor}; margin-left: 1px; font-size: inherit;">${result.status}</span>
+                        </div>
+                        <div style="display: flex; gap: 0.5px; line-height: 1.0;">
+                            ${testCase.is_sample ? `<span style="padding: 0 0.5px; border-radius: 2px; background: #3498db; color: white; font-size: inherit;">样例</span>` : ''}
+                        </div>
+                    </div>
+            `;
+
+            // 4. 输入输出：完全消除内边距，文字紧密排列
+            resultHTML += `
+                <div style="margin: 0; line-height: 1.0;">
+                    <div style="margin: 0; line-height: 1.0;"><strong style="font-size: inherit;">输入:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.5px; border-radius: 2px; font-size: inherit;">${testCase.input_data || '无'}</span></div>
+                    <div style="margin: 0; line-height: 1.0;"><strong style="font-size: inherit;">期望输出:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.5px; border-radius: 2px; font-size: inherit;">${testCase.expected_output || '无'}</span></div>
+                    <div style="margin: 0; line-height: 1.0;"><strong style="font-size: inherit;">实际输出:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.5px; border-radius: 2px; font-size: inherit;">${testCase.user_output || '无输出'}</span></div>
+                </div>
+            `;
+
+            // 5. 执行信息：仅保留0.3px底部间距，避免空白
+            let execInfo = [];
+            if (result.time) execInfo.push(`执行时间: ${result.time}秒`);
+            if (result.memory) execInfo.push(`内存使用: ${result.memory}KB`);
+
+            if (execInfo.length > 0) {
+                resultHTML += `<div style="margin: 0.3px 0; color: #6c757d; line-height: 1.0; font-size: inherit;">${execInfo.join(' | ')}</div>`;
+            }
+
+            // 6. 编译/错误信息：无任何边距，与内容无缝衔接
+            if (result.compile_output) {
+                resultHTML += `<div style="margin: 0; line-height: 1.0; font-size: inherit;">
+                    <strong style="font-size: inherit;">编译信息:</strong>
+                    <span style="font-family: 'Courier New', monospace; background: #fff3cd; padding: 0 0.5px; border-radius: 2px; font-size: inherit;">${result.compile_output}</span>
+                </div>`;
+            }
+
+            if (result.stderr) {
+                resultHTML += `<div style="margin: 0; line-height: 1.0; font-size: inherit;">
+                    <strong style="font-size: inherit;">错误信息:</strong>
+                    <span style="font-family: 'Courier New', monospace; background: #f8d7da; padding: 0 0.5px; border-radius: 2px; font-size: inherit;">${result.stderr}</span>
+                </div>`;
+            }
+
+            resultHTML += `</div>`;
+        });
+    }
+
+    // 7. 整体容器：进一步缩减内边距，消除外部多余空间
+    const resultContent = document.getElementById('result-content');
+    resultContent.innerHTML = resultHTML;
+    resultContent.style.maxHeight = 'none';
+    resultContent.style.overflowY = 'visible';
+    resultContent.style.padding = '3px'; // 比之前再缩减2px，最大化压缩整体空间
+}
+
+        // 表单提交事件
+        document.getElementById('submission-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const code = editor.getValue();
+            const loading = document.getElementById('loading');
+            const resultArea = document.getElementById('result-area');
+            const resultContent = document.getElementById('result-content');
+
+            // 显示加载动画
+            loading.style.display = 'block';
+            resultArea.style.display = 'none';
+
+            // 发送提交请求
+            fetch('proxy-submit-code/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    source_code: code,
+                    language_id: document.querySelector('input[name="language_id"]').value,
+                    topic_id: document.querySelector('input[name="topic_id"]').value,
+                    user_name: document.querySelector('input[name="user_name"]').value,
+                    notes: document.querySelector('input[name="notes"]').value
+                })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 隐藏加载动画
+                    loading.style.display = 'none';
+                    resultArea.style.display = 'block';
+
+                    if (data.success) {
+                        displayResults(data);
+                    } else {
+                        resultContent.innerHTML = `<p class="status-error">提交失败: ${data.error}</p>`;
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    resultArea.style.display = 'block';
+                    resultContent.innerHTML = `<p class="status-error">请求失败: ${error.message}</p>`;
+                    console.error('Error:', error);
+                });
+        });
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            // 确保 Monaco Editor 已加载
+            if (typeof require !== 'undefined') {
+                // Monaco 已经在加载中
+            }
+        });
+    </script>
+{% endblock main %}

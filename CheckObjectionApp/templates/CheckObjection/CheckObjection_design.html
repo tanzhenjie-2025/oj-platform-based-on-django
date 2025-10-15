@@ -1,0 +1,279 @@
+{% extends 'CheckObjection/CheckObjectionApp_base.html' %}
+{% block head %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --bg-light: #ffffff;
+            --border: #dee2e6;
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .page-title {
+            font-size: 2.2rem;
+            color: var(--secondary);
+            margin-bottom: 10px;
+        }
+
+        .page-subtitle {
+            color: var(--gray);
+            font-size: 1.1rem;
+        }
+
+        /* 表单区域 */
+        .form-container {
+            background-color: var(--bg-light);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .form-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: var(--secondary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title i {
+            margin-right: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group .help-text {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-top: 5px;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+    }
+
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        /* 示例部分 */
+        .examples-container {
+            margin-top: 20px;
+        }
+
+        .example {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .example-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .example-title {
+            font-weight: 500;
+        }
+
+        .remove-example {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .add-example {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        /* 表单操作按钮 */
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+{% endblock %}
+{% block main %}
+    <!-- 主内容区域 -->
+
+    <div class="container">
+        <div class="main-content">
+            <div class="page-header">
+                <h1 class="page-title">发布新题目</h1>
+                <p class="page-subtitle">创建新的算法题目，供社区成员解答</p>
+            </div>
+
+            {#            <form action="{% url 'bootstrapApp:pub_comment' %}" method="POST">#}
+            {#            {% csrf_token %}#}
+            {#            <input type="hidden" name="blog_id" value="{{ blog.id }}">#}
+            {#            <div class="mt-2">#}
+            {#                <input type="text" class="form-control" placeholder="请输入评论" name="content">#}
+            {#            </div>#}
+            {#            <div class="text-end mt-2">#}
+            {#                <button type="submit" class="btn btn-primary">评论</button>#}
+            {#            </div>#}
+            {#        </form>#}
+
+            <form action="{% url 'CheckObjectionApp:CheckObjectionApp_design' %}" method="POST" id="problem-form">
+                {% csrf_token %}
+                <!-- 基本信息部分 -->
+                <div class="form-container">
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-info-circle"></i> 基本信息
+                        </h2>
+                        <div class="form-group">
+                            <label for="title">题目名称</label>
+                            <input type="text" name="title" id="title" placeholder="输入题目名称" required>
+                        </div>
+                    </div>
+                    <!-- 题目描述部分 -->
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-file-alt"></i> 题目描述
+                        </h2>
+                        <div class="form-group">
+                            <label for="description">题目描述</label>
+                            <textarea name="content" id="description" placeholder="详细描述题目要求和背景..."
+                                      required></textarea>
+                        </div>
+                    </div>
+                    {# 难度设置#}
+                    <div class="form-group">
+                        <label for="level">题目难度</label>
+                        <select name="level" id="level" class="form-control" required>
+                            <option value="">选择难度级别</option>
+                            <option value="0">简单</option>
+                            <option value="1">中等</option>
+                            <option value="2">困难</option>
+                        </select>
+                        <div class="help-text">选择题目的难度级别</div>
+                    </div>
+                    <!-- 示例部分 -->
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-list-ol"></i> 示例
+                        </h2>
+
+                        <div class="examples-container" id="examples-container">
+                            <div class="example">
+                                <div class="example-header">
+                                    <span class="example-title">示例 1</span>
+                                    <button type="button" class="remove-example">×</button>
+                                </div>
+                                <div class="form-group">
+                                    <textarea name="example"
+                                              placeholder="输入示例内容，格式如：1 2, 输出3，因为 1 + 2 = 3所以返回 3">输入示例内容，格式如：1 2, 输出3，因为 1 + 2 = 3所以返回 3</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+                </div>
+
+                <!-- 表单操作按钮 -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> 发布题目
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+
+{% endblock %}
