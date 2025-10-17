@@ -187,6 +187,12 @@
             border-color: rgba(255, 255, 255, 0.5);
         }
 
+        /* 头像链接样式 - 新增 */
+        .avatar-link {
+            text-decoration: none; /* 确保没有下划线 */
+            display: inline-block; /* 确保链接能包裹头像 */
+        }
+
         /* 通用按钮样式 */
         .btn {
             padding: 10px 20px;
@@ -365,9 +371,10 @@
                 <li><a href="{% url 'CheckObjectionApp:CheckObjectionApp_index' %}" class="nav-link ">首页</a></li>
                 <li><a href="{% url 'CheckObjectionApp:CheckObjectionApp_index' %}" class="nav-link ">每日考核</a></li>
                 {% if user.is_staff %}
-                    <li><a href="{% url 'CheckObjectionApp:CheckObjectionApp_show' %}" class="nav-link">查看答案</a>
+                    <li><a href="{% url 'CheckObjectionApp:CheckObjectionApp_show' %}" class="nav-link">查看全部提交</a>
                     </li>
                 {% endif %}
+                <li><a href="{% url 'CheckObjectionApp:my_submission_list' %}" class="nav-link">我的提交</a></li>
                 {% if user.is_authenticated %}
                     <li><a href="{% url 'CheckObjectionApp:CheckObjectionApp_logout' %}" class="nav-link">退出登录</a>
                     </li>
@@ -382,11 +389,12 @@
                     <span class="notification-badge">3</span>
                 </div>
                 {% if user.is_authenticated %}
-                    <div class="user-avatar" title="{{ user.username }}">
-                     <li><a href="{% url 'CheckObjectionApp:CheckObjectionApp_changeName' %}" class="nav-link">{{ user.username|first|upper }}</a>
-                    </li>
-
-                    </div>
+                    <!-- 修改头像链接部分 -->
+                    <a href="{% url 'CheckObjectionApp:CheckObjectionApp_changeName' %}" class="avatar-link">
+                        <div class="user-avatar" title="{{ user.username }}">
+                            {{ user.username|first|upper }}
+                        </div>
+                    </a>
                 {% else %}
                     <div class="user-avatar" title="未登录">
                         <i class="fas fa-user"></i>
@@ -411,25 +419,19 @@
                 <ul>
                     <li><a href="https://mp.weixin.qq.com/s/0Wk9qSRJHOC0zhwZgCf1_A?scene=1&click_id=4">实验室简介</a>
                     </li>
-                    {#                        <li><a href="https://mp.weixin.qq.com/s/0Wk9qSRJHOC0zhwZgCf1_A?scene=1&click_id=4">团队成员</a></li>#}
-                    {#                        <li><a href="https://mp.weixin.qq.com/s/0Wk9qSRJHOC0zhwZgCf1_A?scene=1&click_id=4">联系方式</a></li>#}
                 </ul>
             </div>
             <div class="footer-column">
                 <h3>资源链接</h3>
                 <ul>
                     <li><a href="https://www.yuque.com/u48406293/oxs7oq/ht1pok2pvo0dy9en?singleDoc=">入门学习资料</a></li>
-                    {#                        <li><a href="#">算法教程</a></li>#}
-                    {#                        <li><a href="#">常见问题</a></li>#}
                 </ul>
             </div>
             <div class="footer-column">
                 <h3>关注我们</h3>
                 <ul>
-                    {#                        <li><a href="#"><i class="fab fa-github"></i> GitHub</a></li>#}
                     <li><a href="https://mp.weixin.qq.com/s/JQb5uboQcRuCUlYOwrs70w"><i class="fab fa-weixin"></i> 微信公众号</a>
                     </li>
-                    {#                        <li><a href="#"><i class="fab fa-qq"></i> QQ群</a></li>#}
                 </ul>
             </div>
         </div>

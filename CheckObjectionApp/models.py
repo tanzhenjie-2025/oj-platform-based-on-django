@@ -65,5 +65,24 @@ class TestCase(models.Model):
         ordering = ['order', 'id']
 
 
+from django.db import models
+import uuid
 
+
+class Submission(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user_name = models.CharField(max_length=100)
+    topic_id = models.CharField(max_length=100)
+    source_code = models.TextField()
+    language_id = models.IntegerField(default=71)
+    status = models.CharField(max_length=20)
+    overall_result = models.CharField(max_length=50, blank=True, null=True)
+    results = models.JSONField(blank=True, null=True)  # 存储所有测试用例的结果
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'submissions'
+        ordering = ['-created_at']
 

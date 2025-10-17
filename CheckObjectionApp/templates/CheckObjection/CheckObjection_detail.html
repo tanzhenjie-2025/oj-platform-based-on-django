@@ -597,7 +597,8 @@
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-paper-plane"></i> 提交执行
                         </button>
-                        <button type="button" class="btn btn-success" id="check-result-btn" style="display: none;" onclick="checkResult()">
+                        <button type="button" class="btn btn-success" id="check-result-btn" style="display: none;"
+                                onclick="checkResult()">
                             <i class="fas fa-search"></i> 查看结果
                         </button>
                     </div>
@@ -1071,96 +1072,96 @@ int main() {
         }
 
         // 显示执行结果
-        function displayResults(data) {
-            let resultHTML = '';
+       function displayResults(data) {
+    let resultHTML = '';
 
-            // 计算统计数据（仅保留通过用例）
-            const totalCases = data.results.length;
-            const passedCases = data.results.filter(result =>
-                result.result.status === 'Accepted').length;
+    // 计算统计数据（仅保留通过用例）
+    const totalCases = data.results.length;
+    const passedCases = data.results.filter(result =>
+        result.result.status === 'Accepted').length;
 
-            // 统计卡片：进一步压缩所有间距参数
+    // 统计卡片：重点压缩垂直方向（上下）间距，消除冗余高度
+    resultHTML += `
+        <div style="display: flex; gap: 0.05px; margin: 0.05px 0; line-height: 0.95;">
+            <div style="flex: 1; background: #f8f9fa; padding: 0.1px 0; border-radius: 2px; text-align: center; line-height: 0.95;">
+                <div style="color: #6c757d; margin: 0; font-size: inherit;">通过用例</div>
+                <div style="font-weight: bold; color: #28a745; margin: 0; font-size: inherit;">${passedCases}/${totalCases}</div>
+            </div>
+            <div style="flex: 1; background: #f8f9fa; padding: 0.1px 0; border-radius: 2px; text-align: center; line-height: 0.95;">
+                <div style="color: #6c757d; margin: 0; font-size: inherit;">总体结果</div>
+                <div style="font-weight: bold; color: ${data.overall_result === 'Accepted' ? '#28a745' : '#dc3545'}; margin: 0; font-size: inherit;">${data.overall_result}</div>
+            </div>
+        </div>
+    `;
+
+    // 测试用例详情：压缩标题上下间距，与统计卡片紧凑衔接
+    if (data.results && data.results.length > 0) {
+        resultHTML += `<div style="font-weight: bold; margin: 0.05px 0; line-height: 0.95; font-size: inherit;">测试用例详情:</div>`;
+
+        data.results.forEach((testCase, index) => {
+            const result = testCase.result;
+            const statusColor = result.status === 'Accepted' ? '#28a745' : '#dc3545';
+            const bgColor = result.status === 'Accepted' ? '#f8fff8' : '#fff8f8';
+
+            // 单个用例容器：极致压缩上下内边距和外边距，减小垂直高度
             resultHTML += `
-                <div style="display: flex; gap: 0.3px; margin: 0.3px 0; line-height: 1.0;">
-                    <div style="flex: 1; background: #f8f9fa; padding: 0.5px 0.3px; border-radius: 4px; text-align: center; line-height: 1.0;">
-                        <div style="color: #6c757d; margin: 0 0 0.2px; font-size: inherit;">通过用例</div>
-                        <div style="font-weight: bold; color: #28a745; margin: 0; font-size: inherit;">${passedCases}/${totalCases}</div>
+                <div style="margin: 0.05px 0; padding: 0.05px 0; border-left: 1.5px solid ${statusColor}; background-color: ${bgColor}; border-radius: 2px; line-height: 0.95;">
+                    <!-- 用例标题栏：无垂直间隙 -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 0; line-height: 0.95;">
+                        <div style="line-height: 0.95;">
+                            <strong style="font-size: inherit;">测试用例 ${testCase.test_case}:</strong>
+                            <span style="color: ${statusColor}; margin-left: 0.1px; font-size: inherit;">${result.status}</span>
+                        </div>
+                        <div style="display: flex; gap: 0.05px; line-height: 0.95;">
+                            ${testCase.is_sample ? `<span style="padding: 0 0.05px; border-radius: 1px; background: #3498db; color: white; font-size: inherit;">样例</span>` : ''}
+                        </div>
                     </div>
-                    <div style="flex: 1; background: #f8f9fa; padding: 0.5px 0.3px; border-radius: 4px; text-align: center; line-height: 1.0;">
-                        <div style="color: #6c757d; margin: 0 0 0.2px; font-size: inherit;">总体结果</div>
-                        <div style="font-weight: bold; color: ${data.overall_result === 'Accepted' ? '#28a745' : '#dc3545'}; margin: 0; font-size: inherit;">${data.overall_result}</div>
-                    </div>
+            `;
+
+            // 输入输出：完全消除垂直间隙，仅靠行高控制上下距离
+            resultHTML += `
+                <div style="margin: 0; line-height: 0.95;">
+                    <div style="margin: 0; line-height: 0.95;"><strong style="font-size: inherit;">输入:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.05px; border-radius: 1px; font-size: inherit;">${testCase.input_data || '无'}</span></div>
+                    <div style="margin: 0; line-height: 0.95;"><strong style="font-size: inherit;">期望输出:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.05px; border-radius: 1px; font-size: inherit;">${testCase.expected_output || '无'}</span></div>
+                    <div style="margin: 0; line-height: 0.95;"><strong style="font-size: inherit;">实际输出:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.05px; border-radius: 1px; font-size: inherit;">${testCase.user_output || '无输出'}</span></div>
                 </div>
             `;
 
-            // 测试用例详情：标题与统计卡片间距再压缩
-            if (data.results && data.results.length > 0) {
-                resultHTML += `<div style="font-weight: bold; margin: 0.3px 0; line-height: 1.0; font-size: inherit;">测试用例详情:</div>`;
+            // 执行信息：垂直间距压缩至接近0
+            let execInfo = [];
+            if (result.time) execInfo.push(`执行时间:${result.time}秒`);
+            if (result.memory) execInfo.push(`内存使用:${result.memory}KB`);
 
-                data.results.forEach((testCase, index) => {
-                    const result = testCase.result;
-                    const statusColor = result.status === 'Accepted' ? '#28a745' : '#dc3545';
-                    const bgColor = result.status === 'Accepted' ? '#f8fff8' : '#fff8f8';
-
-                    // 单个用例容器：最小化边距至临界值
-                    resultHTML += `
-                        <div style="margin: 0.3px 0; padding: 0.3px; border-left: 3px solid ${statusColor}; background-color: ${bgColor}; border-radius: 3px; line-height: 1.0;">
-                            <!-- 用例标题栏：消除所有冗余间距 -->
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin: 0; line-height: 1.0;">
-                                <div style="line-height: 1.0;">
-                                    <strong style="font-size: inherit;">测试用例 ${testCase.test_case}:</strong>
-                                    <span style="color: ${statusColor}; margin-left: 0.5px; font-size: inherit;">${result.status}</span>
-                                </div>
-                                <div style="display: flex; gap: 0.3px; line-height: 1.0;">
-                                    ${testCase.is_sample ? `<span style="padding: 0 0.3px; border-radius: 2px; background: #3498db; color: white; font-size: inherit;">样例</span>` : ''}
-                                </div>
-                            </div>
-                    `;
-
-                    // 输入输出：文字与背景间距压缩至最小
-                    resultHTML += `
-                        <div style="margin: 0; line-height: 1.0;">
-                            <div style="margin: 0; line-height: 1.0;"><strong style="font-size: inherit;">输入:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.3px; border-radius: 2px; font-size: inherit;">${testCase.input_data || '无'}</span></div>
-                            <div style="margin: 0; line-height: 1.0;"><strong style="font-size: inherit;">期望输出:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.3px; border-radius: 2px; font-size: inherit;">${testCase.expected_output || '无'}</span></div>
-                            <div style="margin: 0; line-height: 1.0;"><strong style="font-size: inherit;">实际输出:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.3px; border-radius: 2px; font-size: inherit;">${testCase.user_output || '无输出'}</span></div>
-                        </div>
-                    `;
-
-                    // 执行信息：间距压缩至接近0
-                    let execInfo = [];
-                    if (result.time) execInfo.push(`执行时间: ${result.time}秒`);
-                    if (result.memory) execInfo.push(`内存使用: ${result.memory}KB`);
-
-                    if (execInfo.length > 0) {
-                        resultHTML += `<div style="margin: 0.2px 0; color: #6c757d; line-height: 1.0; font-size: inherit;">${execInfo.join(' | ')}</div>`;
-                    }
-
-                    // 编译/错误信息：完全消除额外间距
-                    if (result.compile_output) {
-                        resultHTML += `<div style="margin: 0; line-height: 1.0; font-size: inherit;">
-                            <strong style="font-size: inherit;">编译信息:</strong>
-                            <span style="font-family: 'Courier New', monospace; background: #fff3cd; padding: 0 0.3px; border-radius: 2px; font-size: inherit;">${result.compile_output}</span>
-                        </div>`;
-                    }
-
-                    if (result.stderr) {
-                        resultHTML += `<div style="margin: 0; line-height: 1.0; font-size: inherit;">
-                            <strong style="font-size: inherit;">错误信息:</strong>
-                            <span style="font-family: 'Courier New', monospace; background: #f8d7da; padding: 0 0.3px; border-radius: 2px; font-size: inherit;">${result.stderr}</span>
-                        </div>`;
-                    }
-
-                    resultHTML += `</div>`;
-                });
+            if (execInfo.length > 0) {
+                resultHTML += `<div style="margin: 0.02px 0; color: #6c757d; line-height: 0.95; font-size: inherit;">${execInfo.join('|')}</div>`;
             }
 
-            // 整体容器：最终压缩外层空间
-            const resultContent = document.getElementById('result-content');
-            resultContent.innerHTML = resultHTML;
-            resultContent.style.maxHeight = 'none';
-            resultContent.style.overflowY = 'visible';
-            resultContent.style.padding = '2px'; // 外层内边距压缩至最小合理值
-        }
+            // 编译/错误信息：无垂直冗余空间
+            if (result.compile_output) {
+                resultHTML += `<div style="margin: 0; line-height: 0.95; font-size: inherit;">
+                    <strong style="font-size: inherit;">编译信息:</strong>
+                    <span style="font-family: 'Courier New', monospace; background: #fff3cd; padding: 0 0.05px; border-radius: 1px; font-size: inherit;">${result.compile_output}</span>
+                </div>`;
+            }
+
+            if (result.stderr) {
+                resultHTML += `<div style="margin: 0; line-height: 0.95; font-size: inherit;">
+                    <strong style="font-size: inherit;">错误信息:</strong>
+                    <span style="font-family: 'Courier New', monospace; background: #f8d7da; padding: 0 0.05px; border-radius: 1px; font-size: inherit;">${result.stderr}</span>
+                </div>`;
+            }
+
+            resultHTML += `</div>`;
+        });
+    }
+
+    // 整体容器：进一步压缩上下内边距，减小整体垂直占用
+    const resultContent = document.getElementById('result-content');
+    resultContent.innerHTML = resultHTML;
+    resultContent.style.maxHeight = 'none';
+    resultContent.style.overflowY = 'visible';
+    resultContent.style.padding = '0.3px 0'; // 上下padding再减，左右保持0
+}
 
         // 表单提交事件
         document.getElementById('submission-form').addEventListener('submit', function (e) {
@@ -1191,39 +1192,39 @@ int main() {
                     notes: document.querySelector('input[name="notes"]').value
                 })
             })
-            .then(response => response.json())
-            .then(data => {
-                // 隐藏加载动画
-                loading.style.display = 'none';
+                .then(response => response.json())
+                .then(data => {
+                    // 隐藏加载动画
+                    loading.style.display = 'none';
 
-                if (data.task_id) {
-                    // 保存任务ID
-                    currentTaskId = data.task_id;
+                    if (data.task_id) {
+                        // 保存任务ID
+                        currentTaskId = data.task_id;
 
-                    // 显示提交成功消息
-                    document.getElementById('success-message').style.display = 'block';
+                        // 显示提交成功消息
+                        document.getElementById('success-message').style.display = 'block';
 
-                    // 显示查看结果按钮
-                    document.getElementById('check-result-btn').style.display = 'flex';
+                        // 显示查看结果按钮
+                        document.getElementById('check-result-btn').style.display = 'flex';
 
-                    // 隐藏结果区域（如果有之前的结果）
-                    resultArea.style.display = 'none';
-                } else {
-                    // 同步处理（测试运行）
-                    resultArea.style.display = 'block';
-                    if (data.success) {
-                        displayResults(data);
+                        // 隐藏结果区域（如果有之前的结果）
+                        resultArea.style.display = 'none';
                     } else {
-                        resultContent.innerHTML = `<p class="status-error">提交失败: ${data.error}</p>`;
+                        // 同步处理（测试运行）
+                        resultArea.style.display = 'block';
+                        if (data.success) {
+                            displayResults(data);
+                        } else {
+                            resultContent.innerHTML = `<p class="status-error">提交失败: ${data.error}</p>`;
+                        }
                     }
-                }
-            })
-            .catch(error => {
-                loading.style.display = 'none';
-                resultArea.style.display = 'block';
-                resultContent.innerHTML = `<p class="status-error">请求失败: ${error.message}</p>`;
-                console.error('Error:', error);
-            });
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    resultArea.style.display = 'block';
+                    resultContent.innerHTML = `<p class="status-error">请求失败: ${error.message}</p>`;
+                    console.error('Error:', error);
+                });
         });
 
         // 查看结果按钮点击事件
@@ -1248,66 +1249,66 @@ int main() {
 
         // 轮询任务状态
         // 轮询任务状态
-function pollTaskStatus(taskId, loading, resultArea, resultContent) {
-    const maxAttempts = 60; // 最大尝试次数（30秒）
-    let attempts = 0;
-    {#http://localhost:8000/CheckObjectionApp/task-status/4b532ce4-2c19-4da2-ba1a-d95dfa41152a/#}
-    const poll = () => {
-        fetch(`/CheckObjectionApp/task-status/${taskId}/`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Polling response:', data); // 调试信息
+        function pollTaskStatus(taskId, loading, resultArea, resultContent) {
+            const maxAttempts = 60; // 最大尝试次数（30秒）
+            let attempts = 0;
+            {#http://localhost:8000/CheckObjectionApp/task-status/4b532ce4-2c19-4da2-ba1a-d95dfa41152a/#}
+            const poll = () => {
+                fetch(`/CheckObjectionApp/task-status/${taskId}/`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Polling response:', data); // 调试信息
 
-            if (data.status === 'SUCCESS') {
-                loading.style.display = 'none';
-                resultArea.style.display = 'block';
-                if (data.result && data.result.success) {
-                    displayResults(data.result);
-                } else {
-                    resultContent.innerHTML = `<p class="status-error">执行失败: ${data.result?.error || '未知错误'}</p>`;
-                }
-                // 隐藏查看结果按钮
-                document.getElementById('check-result-btn').style.display = 'none';
-            } else if (data.status === 'FAILURE') {
-                loading.style.display = 'none';
-                resultArea.style.display = 'block';
-                resultContent.innerHTML = `<p class="status-error">任务执行失败: ${data.error || '未知错误'}</p>`;
-                // 隐藏查看结果按钮
-                document.getElementById('check-result-btn').style.display = 'none';
-            } else if (attempts >= maxAttempts) {
-                loading.style.display = 'none';
-                resultArea.style.display = 'block';
-                resultContent.innerHTML = `<p class="status-error">任务处理超时，请稍后查看结果</p>`;
-                // 隐藏查看结果按钮
-                document.getElementById('check-result-btn').style.display = 'none';
-            } else {
-                // 继续轮询
-                attempts++;
-                setTimeout(poll, 500);
-            }
-        })
-        .catch(error => {
-            console.error('Polling error:', error); // 调试信息
-            loading.style.display = 'none';
-            resultArea.style.display = 'block';
-            resultContent.innerHTML = `<p class="status-error">轮询失败: ${error.message}</p>`;
-            // 隐藏查看结果按钮
-            document.getElementById('check-result-btn').style.display = 'none';
-        });
-    };
+                        if (data.status === 'SUCCESS') {
+                            loading.style.display = 'none';
+                            resultArea.style.display = 'block';
+                            if (data.result && data.result.success) {
+                                displayResults(data.result);
+                            } else {
+                                resultContent.innerHTML = `<p class="status-error">执行失败: ${data.result?.error || '未知错误'}</p>`;
+                            }
+                            // 隐藏查看结果按钮
+                            document.getElementById('check-result-btn').style.display = 'none';
+                        } else if (data.status === 'FAILURE') {
+                            loading.style.display = 'none';
+                            resultArea.style.display = 'block';
+                            resultContent.innerHTML = `<p class="status-error">任务执行失败: ${data.error || '未知错误'}</p>`;
+                            // 隐藏查看结果按钮
+                            document.getElementById('check-result-btn').style.display = 'none';
+                        } else if (attempts >= maxAttempts) {
+                            loading.style.display = 'none';
+                            resultArea.style.display = 'block';
+                            resultContent.innerHTML = `<p class="status-error">任务处理超时，请稍后查看结果</p>`;
+                            // 隐藏查看结果按钮
+                            document.getElementById('check-result-btn').style.display = 'none';
+                        } else {
+                            // 继续轮询
+                            attempts++;
+                            setTimeout(poll, 500);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Polling error:', error); // 调试信息
+                        loading.style.display = 'none';
+                        resultArea.style.display = 'block';
+                        resultContent.innerHTML = `<p class="status-error">轮询失败: ${error.message}</p>`;
+                        // 隐藏查看结果按钮
+                        document.getElementById('check-result-btn').style.display = 'none';
+                    });
+            };
 
-    poll();
-}
+            poll();
+        }
 
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', function () {

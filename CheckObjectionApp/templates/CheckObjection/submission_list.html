@@ -1,0 +1,291 @@
+{% extends 'CheckObjection/CheckObjectionApp_base.html' %}
+{% block title %}算法实验室 - 提交情况{% endblock %}
+{% block head %}
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title|default:"提交记录" }}</title>
+    <link rel="stylesheet" href="{% static 'bootstrap5/css/bootstrap.min.css' %}">
+    <style>
+        /* 自定义鲜艳颜色 */
+        .bg-accepted { background-color: #10b981 !important; color: white; }
+        .bg-success-custom { background-color: #22c55e !important; }
+        .bg-wrong-answer { background-color: #ef4444 !important; color: white; }
+        .bg-danger-custom { background-color: #dc2626 !important; }
+        .bg-running { background-color: #f59e0b !important; color: white; }
+        .bg-warning-custom { background-color: #eab308 !important; }
+        .bg-compile-error { background-color: #f97316 !important; color: white; }
+        .bg-time-limit { background-color: #8b5cf6 !important; color: white; }
+        .bg-memory-limit { background-color: #ec4899 !important; color: white; }
+        .bg-runtime-error { background-color: #6b7280 !important; color: white; }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(59, 130, 246, 0.08);
+            transform: translateY(-1px);
+            transition: all 0.2s ease;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.35em 0.65em;
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .language-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 500;
+        }
+
+        .user-badge {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            font-weight: 500;
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+        }
+
+        .table-header th {
+            border: none;
+            font-weight: 600;
+            padding: 1rem 0.75rem;
+        }
+    </style>
+</head>
+{% endblock %}
+{% block main %}
+
+<body>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4 text-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                    {{ page_title|default:"提交记录" }}
+                </h1>
+
+                {% if submissions and submissions|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover border">
+                        <thead class="table-header">
+                            <tr>
+                                <th>用户名</th>
+                                <th>题目ID</th>
+                                <th>语言</th>
+                                <th>状态</th>
+                                <th>结果</th>
+                                <th>提交时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for submission in submissions %}
+                            <tr class="align-middle">
+                                <!-- 用户名 -->
+                                <td>
+                                    <span class="badge user-badge status-badge">
+                                        {% if submission.user_name %}
+                                            {{ submission.user_name }}
+                                        {% else %}
+                                            <span class="text-muted">匿名用户</span>
+                                        {% endif %}
+                                    </span>
+                                </td>
+
+                                <!-- 题目ID -->
+                                <td>
+                                    <strong class="text-primary">
+                                        {% if submission.topic_id %}
+                                            {{ submission.topic_id }}
+                                        {% else %}
+                                            <span class="text-muted">未知</span>
+                                        {% endif %}
+                                    </strong>
+                                </td>
+
+                                <!-- 语言 -->
+                                <td>
+                                    <span class="badge language-badge status-badge">
+                                        {% if submission.language_id %}
+                                            {% if submission.language_id == 71 %}
+                                                🐍 Python
+                                            {% elif submission.language_id == 54 %}
+                                                ⚡ C++
+                                            {% elif submission.language_id == 62 %}
+                                                ☕ Java
+                                            {% else %}
+                                                其他 ({{ submission.language_id }})
+                                            {% endif %}
+                                        {% else %}
+                                            未知
+                                        {% endif %}
+                                    </span>
+                                </td>
+
+                                <!-- 状态 -->
+                                <td>
+                                    {% if submission.status %}
+                                        {% if submission.status == 'Accepted' %}
+                                            <span class="badge bg-accepted status-badge">✅ {{ submission.status }}</span>
+                                        {% elif submission.status == 'Wrong Answer' %}
+                                            <span class="badge bg-wrong-answer status-badge">❌ {{ submission.status }}</span>
+                                        {% elif submission.status == 'Running' %}
+                                            <span class="badge bg-running status-badge">⏳ {{ submission.status }}</span>
+                                        {% elif submission.status == 'Compile Error' %}
+                                            <span class="badge bg-compile-error status-badge">🔧 {{ submission.status }}</span>
+                                        {% elif submission.status == 'Time Limit Exceeded' %}
+                                            <span class="badge bg-time-limit status-badge">⏰ {{ submission.status }}</span>
+                                        {% elif submission.status == 'Memory Limit Exceeded' %}
+                                            <span class="badge bg-memory-limit status-badge">💾 {{ submission.status }}</span>
+                                        {% elif submission.status == 'Runtime Error' %}
+                                            <span class="badge bg-runtime-error status-badge">💥 {{ submission.status }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary status-badge">{{ submission.status }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-light text-dark status-badge">未设置</span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- 结果 -->
+                                <td>
+                                    {% if submission.overall_result %}
+                                        {% if submission.overall_result == 'AC' %}
+                                            <span class="badge bg-success-custom status-badge">✅ AC</span>
+                                        {% elif submission.overall_result == 'WA' %}
+                                            <span class="badge bg-danger-custom status-badge">❌ WA</span>
+                                        {% elif submission.overall_result == 'CE' %}
+                                            <span class="badge bg-warning-custom status-badge">🔧 CE</span>
+                                        {% elif submission.overall_result == 'TLE' %}
+                                            <span class="badge bg-time-limit status-badge">⏰ TLE</span>
+                                        {% elif submission.overall_result == 'MLE' %}
+                                            <span class="badge bg-memory-limit status-badge">💾 MLE</span>
+                                        {% elif submission.overall_result == 'RE' %}
+                                            <span class="badge bg-runtime-error status-badge">💥 RE</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary status-badge">{{ submission.overall_result }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-light text-dark status-badge">-</span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- 提交时间 -->
+                                <td>
+                                    <small class="text-muted">
+                                        {% if submission.created_at %}
+                                            {{ submission.created_at|date:"Y-m-d H:i:s" }}
+                                        {% else %}
+                                            <span class="text-muted">未知时间</span>
+                                        {% endif %}
+                                    </small>
+                                </td>
+
+                                <!-- 操作 -->
+                                <td>
+                                    {% if submission.id %}
+                                        <a href="{% url 'CheckObjectionApp:submission_detail' pk=submission.id%}"
+                                           class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                           查看详情
+                                        </a>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-outline-secondary rounded-pill" disabled>无效记录</button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                {% if is_paginated and page_obj %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link border-0 shadow-sm" href="?page=1" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">首页</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link border-0 shadow-sm" href="?page={{ page_obj.previous_page_number }}" style="background: #f8f9fa; color: #4f46e5;">上一页</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link border-0">首页</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link border-0">上一页</span>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item disabled">
+                            <span class="page-link border-0 text-dark">
+                                第
+                                <strong class="text-primary">{{ page_obj.number|default:1 }}</strong> 页，共
+                                <strong class="text-primary">{{ page_obj.paginator.num_pages|default:1 }}</strong> 页
+                            </span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link border-0 shadow-sm" href="?page={{ page_obj.next_page_number }}" style="background: #f8f9fa; color: #4f46e5;">下一页</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link border-0 shadow-sm" href="?page={{ page_obj.paginator.num_pages }}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">末页</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link border-0">下一页</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link border-0">末页</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+                {% else %}
+                <div class="alert alert-info text-center border-0 shadow-sm" style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%); border-left: 4px solid #4f46e5 !important;">
+                    <h4 class="text-primary">📝 暂无提交记录</h4>
+                    <p class="text-muted mb-0">您还没有任何代码提交记录。</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const links = document.querySelectorAll('a[href="#"], a[href=""]');
+            links.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    if (!this.getAttribute('href') || this.getAttribute('href') === '#') {
+                        e.preventDefault();
+                        console.warn('阻止了空链接的点击');
+                    }
+                });
+            });
+
+            // 添加行点击效果
+            const tableRows = document.querySelectorAll('.table tbody tr');
+            tableRows.forEach(row => {
+                row.style.cursor = 'pointer';
+                row.addEventListener('click', function() {
+                    const link = this.querySelector('a.btn');
+                    if (link) {
+                        link.click();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+{% endblock %}

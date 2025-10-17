@@ -550,6 +550,79 @@ class TestCaseViewSet(viewsets.ModelViewSet):
             )
 
 
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.views.generic import ListView, DetailView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .models import Submission
+
+
+# 基于函数的视图
+@login_required
+def submission_list(request):
+    """显示全部用户的所有提交记录"""
+    submissions = Submission.objects.all()
+    context = {
+        'submissions': submissions,
+        'page_title': '全部提交记录'
+    }
+    return render(request, 'CheckObjection/submission_list.html', context)
+
+
+@login_required
+def submission_detail(request, pk):
+    """显示单个提交记录的详细信息"""
+    submission = get_object_or_404(Submission, pk=pk)
+    context = {
+        'submission': submission,
+        'page_title': f'提交详情 - {submission.topic_id}'
+    }
+    return render(request, 'CheckObjection/submission_detail.html', context)
+
+@login_required
+def my_submission_list(request):
+    """显示我的所有提交记录"""
+    submissions = Submission.objects.filter(user_name=request.user.username)
+    context = {
+        'submissions': submissions,
+        'page_title': '我的提交记录'
+    }
+    return render(request, 'CheckObjection/submission_list.html', context)
+
+
+
+# 基于类的视图（推荐）
+class SubmissionListView(LoginRequiredMixin, ListView):
+    """使用类视图显示提交列表"""
+    model = Submission
+    template_name = 'CheckObjection/submission_list.html'
+    context_object_name = 'submissions'
+    paginate_by = 10
+
+    def get_queryset(self):
+        return Submission.objects.filter(
+            user_name=self.request.user.username
+        ).order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = '我的提交记录'
+        return context
+
+
+class SubmissionDetailView(LoginRequiredMixin, DetailView):
+    """使用类视图显示提交详情"""
+    model = Submission
+    template_name = 'CheckObjection/submission_detail.html'
+    context_object_name = 'submission'
+
+    def get_queryset(self):
+        return Submission.objects.filter(user_name=self.request.user.username)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = f'提交详情 - {self.object.topic_id}'
+        return context
 
 
 

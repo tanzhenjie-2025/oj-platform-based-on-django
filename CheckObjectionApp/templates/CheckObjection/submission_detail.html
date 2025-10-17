@@ -1,0 +1,658 @@
+{% extends 'CheckObjection/CheckObjectionApp_base.html' %}
+{% block title %}算法实验室 - 提交详情{% endblock %}
+{% block head %}
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title|default:"提交详情" }}</title>
+    <link rel="stylesheet" href="{% static 'bootstrap5/css/bootstrap.min.css' %}">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --warning-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            --info-gradient: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+
+        .null-value {
+            color: #9ca3af;
+            font-style: italic;
+        }
+        .code-block {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            max-height: 500px;
+            overflow: auto;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.95em;
+            white-space: pre-wrap;
+            word-break: break-all;
+            border: 1px solid #475569;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .test-case-item {
+            border-left: 6px solid #dee2e6;
+            transition: all 0.3s ease;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .test-case-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .test-case-accepted {
+            border-left-color: #10b981;
+            background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%);
+        }
+        .test-case-wrong {
+            border-left-color: #ef4444;
+            background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%);
+        }
+        .test-case-running {
+            border-left-color: #f59e0b;
+            background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%);
+        }
+        .test-case-pending {
+            border-left-color: #6b7280;
+            background: linear-gradient(135deg, #f3f4f6 0%, #f9fafb 100%);
+        }
+        .test-case-tle {
+            border-left-color: #8b5cf6;
+            background: linear-gradient(135deg, #e0e7ff 0%, #eef2ff 100%);
+        }
+        .test-case-mle {
+            border-left-color: #ec4899;
+            background: linear-gradient(135deg, #fce7f3 0%, #fdf2f8 100%);
+        }
+        .status-badge {
+            min-width: 100px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 8px 16px;
+            border-radius: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .card:hover {
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+        .card-header {
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            padding: 20px 24px;
+            font-weight: 600;
+        }
+        .bg-gradient-primary {
+            background: var(--primary-gradient) !important;
+        }
+        .bg-gradient-success {
+            background: var(--success-gradient) !important;
+        }
+        .bg-gradient-danger {
+            background: var(--danger-gradient) !important;
+        }
+        .bg-gradient-warning {
+            background: var(--warning-gradient) !important;
+        }
+        .bg-gradient-info {
+            background: var(--info-gradient) !important;
+        }
+        .breadcrumb {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 12px;
+            padding: 12px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .breadcrumb-item.active {
+            color: #4f46e5;
+            font-weight: 600;
+        }
+        .btn-glow {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+            transition: all 0.3s ease;
+        }
+        .btn-glow:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.6);
+            color: white;
+        }
+        .info-item {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border-left: 4px solid #4f46e5;
+        }
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        .language-badge {
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            color: white;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+        .test-count-badge {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 15px;
+        }
+        .code-block-small {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            margin: 4px 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .result-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .detail-item {
+            background: rgba(255,255,255,0.7);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .detail-label {
+            font-size: 0.8em;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        .detail-value {
+            font-weight: 600;
+            font-size: 1em;
+        }
+        .score-badge {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+{% endblock %}
+{% block main %}
+<body style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); min-height: 100vh;">
+    <div class="container py-4">
+        <div class="row">
+            <div class="col-12">
+                <!-- 面包屑导航 -->
+                <nav aria-label="breadcrumb" class="mb-4">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="#" style="text-decoration: none; color: #64748b;">📊 提交记录</a>
+                        </li>
+                        <li class="breadcrumb-item active">🔍 提交详情</li>
+                    </ol>
+                </nav>
+
+                <!-- 页面标题 -->
+                <div class="text-center mb-5">
+                    <h1 class="display-5 fw-bold" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                        🚀 {{ page_title|default:"提交详情" }}
+                    </h1>
+                    <p class="text-muted">查看代码提交的详细信息和测试结果</p>
+                </div>
+
+                <!-- 基本信息卡片 -->
+                <div class="card mb-5">
+                    <div class="card-header bg-gradient-primary text-white">
+                        <h5 class="mb-0">📋 基本信息</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <strong>🆔 提交ID:</strong>
+                                    <div class="mt-2">
+                                        {% if submission.id %}
+                                            <code style="background: #4f46e5; color: white; padding: 4px 8px; border-radius: 6px;">{{ submission.id }}</code>
+                                        {% else %}
+                                            <span class="null-value">未分配</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <strong>👤 用户名:</strong>
+                                    <div class="mt-2">
+                                        {% if submission.user_name %}
+                                            <span class="badge language-badge">{{ submission.user_name }}</span>
+                                        {% else %}
+                                            <span class="null-value">未知用户</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <strong>📝 题目ID:</strong>
+                                    <div class="mt-2">
+                                        {% if submission.topic_id %}
+                                            <span style="color: #4f46e5; font-weight: 600; font-size: 1.1em;">{{ submission.topic_id }}</span>
+                                        {% else %}
+                                            <span class="null-value">未知题目</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <strong>💻 编程语言:</strong>
+                                    <div class="mt-2">
+                                        {% if submission.language_id %}
+                                            <span class="badge language-badge">
+                                                {% if submission.language_id == 71 %}
+                                                    🐍 Python
+                                                {% elif submission.language_id == 54 %}
+                                                    ⚡ C++
+                                                {% elif submission.language_id == 62 %}
+                                                    ☕ Java
+                                                {% else %}
+                                                    🔧 其他 (ID: {{ submission.language_id }})
+                                                {% endif %}
+                                            </span>
+                                        {% else %}
+                                            <span class="null-value">未指定</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <strong>📊 状态:</strong>
+                                    <div class="mt-2">
+                                        {% if submission.status %}
+                                            {% if submission.status == 'Accepted' %}
+                                                <span class="badge bg-gradient-success status-badge">✅ {{ submission.status }}</span>
+                                            {% elif submission.status == 'Wrong Answer' %}
+                                                <span class="badge bg-gradient-danger status-badge">❌ {{ submission.status }}</span>
+                                            {% elif submission.status == 'Running' %}
+                                                <span class="badge bg-gradient-warning status-badge pulse-animation">⏳ {{ submission.status }}</span>
+                                            {% elif submission.status == 'Compile Error' %}
+                                                <span class="badge bg-gradient-danger status-badge">🔧 {{ submission.status }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary status-badge">{{ submission.status }}</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-light text-dark status-badge null-value">未知状态</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-item">
+                                    <strong>🎯 总体结果:</strong>
+                                    <div class="mt-2">
+                                        {% if submission.overall_result %}
+                                            {% if submission.overall_result == 'AC' %}
+                                                <span class="badge bg-gradient-success status-badge">✅ AC</span>
+                                            {% elif submission.overall_result == 'WA' %}
+                                                <span class="badge bg-gradient-danger status-badge">❌ WA</span>
+                                            {% elif submission.overall_result == 'TLE' %}
+                                                <span class="badge bg-gradient-warning status-badge">⏰ TLE</span>
+                                            {% elif submission.overall_result == 'MLE' %}
+                                                <span class="badge bg-gradient-info status-badge">💾 MLE</span>
+                                            {% elif submission.overall_result == 'RE' %}
+                                                <span class="badge bg-gradient-danger status-badge">💥 RE</span>
+                                            {% elif submission.overall_result == 'CE' %}
+                                                <span class="badge bg-gradient-danger status-badge">🔧 CE</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary status-badge">{{ submission.overall_result }}</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="null-value">暂无结果</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <strong>🕐 创建时间:</strong>
+                                    <div class="mt-2">
+                                        {% if submission.created_at %}
+                                            <span style="color: #059669; font-weight: 500;">{{ submission.created_at|date:"Y-m-d H:i:s" }}</span>
+                                        {% else %}
+                                            <span class="null-value">未知时间</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <strong>🔄 更新时间:</strong>
+                                    <div class="mt-2">
+                                        {% if submission.updated_at %}
+                                            <span style="color: #dc2626; font-weight: 500;">{{ submission.updated_at|date:"Y-m-d H:i:s" }}</span>
+                                        {% else %}
+                                            <span class="null-value">未知时间</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- 源代码展示 -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">📜 源代码</h5>
+                                {% if submission.language_id %}
+                                    <span class="badge bg-light text-dark">
+                                        {% if submission.language_id == 71 %}🐍 Python
+                                        {% elif submission.language_id == 54 %}⚡ C++
+                                        {% elif submission.language_id == 62 %}☕ Java
+                                        {% else %}🔧 Language {{ submission.language_id }}
+                                        {% endif %}
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="card-body p-0">
+                                {% if submission.source_code %}
+                                    <pre class="code-block m-0"><code>{{ submission.source_code }}</code></pre>
+                                {% else %}
+                                    <div class="p-5 text-center">
+                                        <span class="null-value">📭 暂无源代码</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 测试结果 -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-gradient-success text-white d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">🧪 测试结果</h5>
+                                {% if submission.results %}
+                                    <span class="badge test-count-badge">{{ submission.results|length }} 个测试用例</span>
+                                {% endif %}
+                            </div>
+                            <div class="card-body p-4">
+                                {% if submission.results %}
+                                    <div class="mb-4">
+                                        <small class="text-muted">共 {{ submission.results|length }} 个测试用例</small>
+                                    </div>
+
+                                    {% for result in submission.results %}
+                                    <div class="test-case-item p-4
+                                        {% if result.result.status == 'Accepted' %}test-case-accepted
+                                        {% elif result.result.status == 'Wrong Answer' %}test-case-wrong
+                                        {% elif result.result.status == 'Running' %}test-case-running
+                                        {% elif result.result.status == 'Time Limit Exceeded' %}test-case-tle
+                                        {% elif result.result.status == 'Memory Limit Exceeded' %}test-case-mle
+                                        {% else %}test-case-pending
+                                        {% endif %}">
+
+                                        <!-- 测试用例头部 -->
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <strong>📋 测试用例 {{ forloop.counter }}</strong>
+                                                {% if result.is_sample %}
+                                                <span class="badge bg-info" style="font-size: 0.7em;">样例</span>
+                                                {% endif %}
+{#                                                <span class="score-badge">得分: {{ result.score }}</span>#}
+                                            </div>
+                                            <span class="badge status-badge
+                                                {% if result.result.status == 'Accepted' %}bg-gradient-success
+                                                {% elif result.result.status == 'Wrong Answer' %}bg-gradient-danger
+                                                {% elif result.result.status == 'Time Limit Exceeded' %}bg-gradient-warning
+                                                {% elif result.result.status == 'Memory Limit Exceeded' %}bg-gradient-info
+                                                {% elif result.result.status == 'Runtime Error' %}bg-gradient-danger
+                                                {% elif result.result.status == 'Running' %}bg-gradient-warning pulse-animation
+                                                {% else %}bg-secondary{% endif %}">
+                                                {% if result.result.status == 'Accepted' %}✅ Accepted
+                                                {% elif result.result.status == 'Wrong Answer' %}❌ Wrong Answer
+                                                {% elif result.result.status == 'Time Limit Exceeded' %}⏰ Time Limit Exceeded
+                                                {% elif result.result.status == 'Memory Limit Exceeded' %}💾 Memory Limit Exceeded
+                                                {% elif result.result.status == 'Runtime Error' %}💥 Runtime Error
+                                                {% elif result.result.status == 'Running' %}⏳ Running
+                                                {% else %}⏳ {{ result.result.status|default:"Pending" }}
+                                                {% endif %}
+                                            </span>
+                                        </div>
+
+                                        <!-- 性能指标网格 -->
+                                        <div class="result-detail-grid">
+                                            <div class="detail-item">
+                                                <div class="detail-label">⏱️ 运行时间</div>
+                                                <div class="detail-value" style="color: #059669;">{{ result.result.time }}s</div>
+                                            </div>
+                                            <div class="detail-item">
+                                                <div class="detail-label">💾 内存使用</div>
+                                                <div class="detail-value" style="color: #3b82f6;">{{ result.result.memory }}KB</div>
+                                            </div>
+                                            <div class="detail-item">
+                                                <div class="detail-label">📊 状态ID</div>
+                                                <div class="detail-value">{{ result.result.status_id }}</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 输入输出对比 -->
+                                        <div class="mt-3 p-3 rounded" style="background: rgba(255,255,255,0.7);">
+                                            <!-- 输入数据 -->
+                                            <div class="mb-3">
+                                                <small><strong>📥 输入数据:</strong></small>
+                                                <div class="code-block-small mt-1">
+                                                    {{ result.input_data }}
+                                                </div>
+                                            </div>
+
+                                            <!-- 预期输出和实际输出 -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <small><strong>📤 预期输出:</strong></small>
+                                                    <div class="code-block-small mt-1">
+                                                        {{ result.expected_output }}
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <small><strong>📥 实际输出:</strong></small>
+                                                    <div class="code-block-small mt-1">
+                                                        {{ result.user_output }}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 标准输出和标准错误 -->
+                                            {% if result.result.stdout or result.result.stderr %}
+                                            <div class="row mt-3">
+                                                {% if result.result.stdout %}
+                                                <div class="col-md-6">
+                                                    <small><strong>📄 标准输出:</strong></small>
+                                                    <div class="code-block-small mt-1">
+                                                        {{ result.result.stdout }}
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                {% if result.result.stderr %}
+                                                <div class="col-md-6">
+                                                    <small><strong>❌ 标准错误:</strong></small>
+                                                    <div class="code-block-small mt-1">
+                                                        {{ result.result.stderr }}
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            {% endif %}
+
+                                            <!-- 编译输出 -->
+                                            {% if result.result.compile_output %}
+                                            <div class="mt-3">
+                                                <small><strong>🔧 编译输出:</strong></small>
+                                                <div class="code-block-small mt-1">
+                                                    {{ result.result.compile_output }}
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- 消息 -->
+                                        {% if result.result.message %}
+                                        <div class="mt-3">
+                                            <small><strong>💬 执行消息:</strong> {{ result.result.message }}</small>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-center py-5">
+                                        <span class="null-value">📭 暂无测试结果</span>
+                                        {% if submission.status == 'Running' %}
+                                        <div class="mt-3">
+                                            <div class="spinner-border text-warning" role="status">
+                                                <span class="visually-hidden">正在评测...</span>
+                                            </div>
+                                            <small class="text-muted d-block mt-2">正在评测中...</small>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 备注信息 -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card mb-4">
+                            <div class="card-header bg-gradient-info text-white d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">📝 备注信息</h5>
+                                {% if not submission.notes %}
+                                    <span class="badge bg-light text-dark">无备注</span>
+                                {% endif %}
+                            </div>
+                            <div class="card-body p-4">
+                                {% if submission.notes %}
+                                    <div class="notes-content p-3 rounded" style="background: #f8fafc; border-left: 4px solid #4f46e5;">
+                                        {{ submission.notes|linebreaks }}
+                                    </div>
+                                {% else %}
+                                    <div class="text-center py-4">
+                                        <span class="null-value">📭 暂无备注信息</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center p-4 rounded" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);">
+                            <a href="#" class="btn btn-outline-secondary rounded-pill px-4">
+                                ← 返回列表
+                            </a>
+
+                            <div class="d-flex gap-3">
+                                {% if submission.status == 'Running' %}
+                                <button class="btn btn-glow" onclick="location.reload()">
+                                    🔄 刷新状态
+                                </button>
+                                {% endif %}
+
+                                {% if submission.source_code %}
+                                <button class="btn btn-glow" onclick="copySourceCode()">
+                                    📋 复制代码
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copySourceCode() {
+            const sourceCode = `{{ submission.source_code|escapejs }}`;
+            navigator.clipboard.writeText(sourceCode).then(function() {
+                // 显示复制成功提示
+                const btn = event.target;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ 已复制';
+                btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+
+                setTimeout(function() {
+                    btn.innerHTML = originalText;
+                    btn.style.background = 'var(--primary-gradient)';
+                }, 2000);
+            }).catch(function(err) {
+                console.error('复制失败: ', err);
+                alert('复制失败，请手动复制代码');
+            });
+        }
+
+        // 自动刷新正在运行的任务
+        {% if submission.status == 'Running' %}
+        setTimeout(function() {
+            location.reload();
+        }, 5000); // 5秒后自动刷新
+        {% endif %}
+
+        // 处理页面加载
+        document.addEventListener('DOMContentLoaded', function() {
+            // 为代码块添加简单的语法高亮
+            const codeBlocks = document.querySelectorAll('pre code');
+            codeBlocks.forEach(function(block) {
+                // 简单的关键词高亮
+                const code = block.textContent;
+                // 这里可以添加更复杂的高亮逻辑，但为了稳定性先保持简单
+                block.innerHTML = code;
+            });
+
+            // 添加卡片悬停效果
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                });
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+        });
+    </script>
+</body>
+{% endblock %}

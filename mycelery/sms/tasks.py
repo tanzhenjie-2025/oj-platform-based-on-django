@@ -41,6 +41,7 @@ def submit_code_task(self, submission_data):
         topic_id = submission_data.get('topic_id', '')
         user_name = submission_data.get('user_name', '')
         submission_id = submission_data.get('submission_id', '')
+        notes = submission_data.get('notes', '')
 
         # 根据题目ID获取测试用例（使用缓存）
         test_cases = get_test_cases_by_topic_with_cache(topic_id)
@@ -72,6 +73,18 @@ def submit_code_task(self, submission_data):
         # 计算总体结果
         overall_result = calculate_overall_result(results)
 
+        # 保存提交结果到数据库
+        save_submission_result(
+            submission_id=submission_id,
+            user_name=user_name,
+            topic_id=topic_id,
+            source_code=source_code,
+            language_id=language_id,
+            results=results,
+            notes=notes,
+            overall_result=overall_result,
+        )
+
         # 返回结果
         return {
             "success": True,
@@ -88,6 +101,29 @@ def submit_code_task(self, submission_data):
         # 如果发生异常，重试
         raise self.retry(countdown=2 ** self.request.retries, exc=e)
 
+
+def save_submission_result(submission_id, user_name, topic_id, source_code,
+                           language_id, results, overall_result, notes):
+    """
+    保存提交结果到数据库
+    """
+    from CheckObjectionApp.models import Submission
+    try:
+        submission = Submission.objects.create(
+            id=submission_id,
+            user_name=user_name,
+            topic_id=topic_id,
+            source_code=source_code,
+            language_id=language_id,
+            results=results,
+            overall_result=overall_result,
+            notes=notes,
+            status='completed'
+        )
+        return submission
+    except Exception as e:
+        print(f"保存提交结果失败: {str(e)}")
+        return None
 
 @shared_task
 def process_test_run(submission_data):

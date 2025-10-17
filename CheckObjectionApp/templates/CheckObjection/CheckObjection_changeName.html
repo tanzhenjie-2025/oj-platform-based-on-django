@@ -1,12 +1,16 @@
 {% extends 'CheckObjection/CheckObjectionApp_base.html' %}
+{% load static %}
 {% block head %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>修改用户资料</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 使用本地Bootstrap CSS -->
+    <link rel="stylesheet" href="{% static 'bootstrap5/css/bootstrap.min.css' %}">
+{#    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">#}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* 您的CSS样式保持不变 */
         body {
             background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -284,8 +288,10 @@
             </div>
         </div>
     </div>
-    <link rel="stylesheet" href="{% static 'bootstrap5/js/bootstrap.bundle.min.js' %}">
-{#    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>#}
+
+    <!-- 修复：使用正确的script标签引入本地Bootstrap JS -->
+    <script src="{% static 'bootstrap5/js/bootstrap.bundle.min.js' %}"></script>
+
     <script>
         // 头像上传功能
         document.getElementById('changeAvatarBtn').addEventListener('click', function() {

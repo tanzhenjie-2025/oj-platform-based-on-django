@@ -18,6 +18,10 @@ urlpatterns = [
 path('detail/proxy-submit-code/', JudgeCodeView.as_view(), name='proxy_submit_code'),
 path('api/', include(router.urls)),
 path('task-status/<str:task_id>/', TaskStatusView.as_view(), name='task_status'),
+path('submission', views.submission_list, name='submission_list'),
+    path('submission/<uuid:pk>/', views.submission_detail, name='submission_detail'),
+
+path('my_submission', views.my_submission_list, name='my_submission_list'),
 
     path("index", views.index, name="CheckObjectionApp_index"),
     path("base",views.base,name="CheckObjectionApp_base"),
