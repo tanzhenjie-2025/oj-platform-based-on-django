@@ -182,21 +182,21 @@ def get_test_cases_by_topic_with_cache(topic_id):
     """
     根据题目ID从Redis缓存或数据库获取测试用例
     # """
-    from django.conf import settings
-    cache_key = f"test_cases_topic_{topic_id}"
-
-    # 尝试从缓存获取测试用例
-    cached_test_cases = cache.get(cache_key)
-
-    if cached_test_cases is not None:
-        return cached_test_cases
+    # from django.conf import settings
+    # cache_key = f"test_cases_topic_{topic_id}"
+    #
+    # # 尝试从缓存获取测试用例
+    # cached_test_cases = cache.get(cache_key)
+    #
+    # if cached_test_cases is not None:
+    #     return cached_test_cases
 
     # 缓存未命中，从数据库获取
     test_cases = get_test_cases_from_db(topic_id)
 
     # 将结果存入缓存
-    if test_cases:
-        cache.set(cache_key, test_cases, timeout=getattr(settings, 'CACHE_TTL', 900))
+    # if test_cases:
+    #     cache.set(cache_key, test_cases, timeout=getattr(settings, 'CACHE_TTL', 900))
 
     return test_cases
 
