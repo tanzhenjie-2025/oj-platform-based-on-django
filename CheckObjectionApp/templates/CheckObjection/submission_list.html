@@ -203,6 +203,19 @@
                     </table>
                 </div>
 
+                    <!-- submission_list.html -->
+{#<div class="cache-info">#}
+{#    <small class="text-muted">#}
+{#        {% if cache_status %}#}
+{#            数据来源: {{ cache_status }} |#}
+{#            缓存超时: {{ cache_timeout }}秒 |#}
+{#        <a href="{% url 'CheckObjectionApp:clear_my_submission_cache' %}">清除我的缓存</a>#}
+{#            {% else %}#}
+{#            数据来源: 缓存未启用#}
+{#        {% endif %}#}
+{#    </small>#}
+{#</div>#}
+
                 <!-- 分页 -->
                 {% if is_paginated and page_obj %}
                 <nav aria-label="Page navigation" class="mt-4">

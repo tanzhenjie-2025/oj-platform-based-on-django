@@ -595,8 +595,6 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import Submission
-
 
 # 基于函数的视图
 @login_required
@@ -620,6 +618,46 @@ def submission_detail(request, pk):
     }
     return render(request, 'CheckObjection/submission_detail.html', context)
 
+
+from django.core.cache import cache
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from .models import Submission
+from .utils.cache_utils import SubmissionCache
+
+
+# @login_required
+# def my_submission_list(request):
+#     """显示我的所有提交记录（带缓存）"""
+#     user_name = request.user.username
+#     cache_key = f"user_submissions_{user_name}"
+#
+#     # 尝试从缓存获取数据
+#     submissions = cache.get(cache_key)
+#
+#     if submissions is None:
+#         # 缓存中没有，从数据库查询
+#         submissions = Submission.objects.filter(user_name=user_name)
+#
+#         # 将查询结果转换为可缓存格式（避免查询集缓存问题）
+#         submissions_list = list(submissions)
+#
+#         # 设置缓存，使用默认超时时间
+#         cache_timeout = SubmissionCache.get_cache_timeout()
+#         cache.set(cache_key, submissions_list, cache_timeout)
+#
+#         cache_status = "数据库查询"
+#     else:
+#         cache_status = "缓存命中"
+#
+#     context = {
+#         'submissions': submissions,
+#         'page_title': '我的提交记录',
+#         'cache_status': cache_status,
+#         'cache_timeout': SubmissionCache.get_cache_timeout()
+#     }
+#     return render(request, 'CheckObjection/submission_list.html', context)
+
 @login_required
 def my_submission_list(request):
     """显示我的所有提交记录"""
@@ -628,8 +666,43 @@ def my_submission_list(request):
         'submissions': submissions,
         'page_title': '我的提交记录'
     }
+    print(submissions)
+
     return render(request, 'CheckObjection/submission_list.html', context)
 
+# views.py
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.http import JsonResponse
+from django.shortcuts import redirect
+from django.contrib import messages
+from .utils.cache_utils import SubmissionCache
+
+
+# 管理缓存
+@login_required
+def clear_my_submission_cache(request):
+    """清除当前用户的提交记录缓存"""
+    user_name = request.user.username
+    SubmissionCache.delete_submissions(user_name)
+    messages.success(request, '您的提交记录缓存已清除')
+    return redirect('my_submission_list')
+
+
+@user_passes_test(lambda u: u.is_staff)
+def update_cache_timeout(request):
+    """管理员更新缓存超时时间"""
+    if request.method == 'POST':
+        try:
+            timeout = int(request.POST.get('timeout', 300))
+            if timeout < 0:
+                return JsonResponse({'success': False, 'error': '超时时间不能为负数'})
+
+            SubmissionCache.set_cache_timeout(timeout)
+            return JsonResponse({'success': True, 'new_timeout': timeout})
+        except ValueError:
+            return JsonResponse({'success': False, 'error': '无效的超时时间'})
+
+    return JsonResponse({'success': False, 'error': '仅支持POST请求'})
 
 
 # 基于类的视图（推荐）

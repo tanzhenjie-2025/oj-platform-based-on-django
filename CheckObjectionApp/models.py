@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+from CheckObjection import settings
+
+
 # Create your models here.
 class topic(models.Model):
     """内容"""
@@ -71,6 +74,13 @@ import uuid
 
 class Submission(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='submissions',
+        blank=True,# 允许为空,后面修改晚再改
+        null=True
+    )
     user_name = models.CharField(max_length=100)
     topic_id = models.CharField(max_length=100)
     source_code = models.TextField()

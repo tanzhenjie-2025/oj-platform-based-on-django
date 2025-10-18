@@ -28,10 +28,12 @@ urlpatterns = [
     path("show", views.submission_list, name="CheckObjectionApp_show"),
     path("changeName", views.changeName, name="CheckObjectionApp_changeName"),
     path('changePassword', views.changePassword, name="CheckObjectionApp_changePassword"),
-
+    # 排行
     path('ranking/', views.ranking_view, name='ranking_page'),
-
+    # 生成验证码
     path('image_code',views.image_code,name='image_code'),
+    # 删除缓存
+    path('clear_my_submission_cache', views.clear_my_submission_cache, name='clear_my_submission_cache'),
 
     path("CheckObjection_login", views.CheckObjection_login, name="CheckObjectionApp_login"),
     path("CheckObjection_logout", views.CheckObjection_logout, name="CheckObjectionApp_logout"),
