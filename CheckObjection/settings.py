@@ -27,7 +27,7 @@ DEBUG = False
 
 # ALLOWED_HOSTS = []
 # 加入 '127.0.0.1' 和 'localhost'，支持两种本地访问方式
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost','6cdaf627.r8.cpolar.cn']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost','5b03eddf.r10.vip.cpolar.cn']
 
 # Application definition
 

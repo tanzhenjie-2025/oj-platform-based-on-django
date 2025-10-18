@@ -1,7 +1,7 @@
 import random
 from PIL import Image,ImageDraw,ImageFont,ImageFilter
 
-def check_code(width=120, height=30, char_length=5, font_file='kumo.ttf', font_size=28):
+def check_code(width=120, height=30, char_length=5, font_file='D:\python object\CheckObjection\CheckObjectionApp\Monaco.ttf', font_size=28):
     code = []
     img = Image.new(mode='RGB', size=(width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(img, mode='RGB')

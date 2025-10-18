@@ -7,47 +7,46 @@ app_name = 'CheckObjectionApp'
 
 from django.urls import path, include
 
-
 router = DefaultRouter()
 router.register(r'topics', views.TopicViewSet)
 router.register(r'testcases', views.TestCaseViewSet)
 
-
 urlpatterns = [
-# path('detail/proxy-submit-code', views.quick_judge_example, name='proxy_submit_code'),
-path('detail/proxy-submit-code/', JudgeCodeView.as_view(), name='proxy_submit_code'),
-path('api/', include(router.urls)),
-path('task-status/<str:task_id>/', TaskStatusView.as_view(), name='task_status'),
-path('submission', views.submission_list, name='submission_list'),
+    # path('detail/proxy-submit-code', views.quick_judge_example, name='proxy_submit_code'),
+    path('detail/proxy-submit-code/', JudgeCodeView.as_view(), name='proxy_submit_code'),
+    path('api/', include(router.urls)),
+    path('task-status/<str:task_id>/', TaskStatusView.as_view(), name='task_status'),
+    path('submission', views.submission_list, name='submission_list'),
     path('submission/<uuid:pk>/', views.submission_detail, name='submission_detail'),
 
-path('my_submission', views.my_submission_list, name='my_submission_list'),
+    path('my_submission', views.my_submission_list, name='my_submission_list'),
 
     path("index", views.index, name="CheckObjectionApp_index"),
-    path("base",views.base,name="CheckObjectionApp_base"),
-    path("detail/<topic_id>",views.detail,name="CheckObjectionApp_detail"),
-    path("design",views.design,name="CheckObjectionApp_design"),
-    path("show",views.submission_list,name="CheckObjectionApp_show"),
-    path("changeName",views.changeName,name="CheckObjectionApp_changeName"),
-    path('changePassword',views.changePassword,name="CheckObjectionApp_changePassword"),
+    path("base", views.base, name="CheckObjectionApp_base"),
+    path("detail/<topic_id>", views.detail, name="CheckObjectionApp_detail"),
+    path("design", views.design, name="CheckObjectionApp_design"),
+    path("show", views.submission_list, name="CheckObjectionApp_show"),
+    path("changeName", views.changeName, name="CheckObjectionApp_changeName"),
+    path('changePassword', views.changePassword, name="CheckObjectionApp_changePassword"),
 
-path('ranking/', views.ranking_view, name='ranking_page'),
-    # path('api/ranking/', views.ranking_view, name='ranking_api'),
+    path('ranking/', views.ranking_view, name='ranking_page'),
 
-    path("CheckObjection_login",views.CheckObjection_login,name="CheckObjectionApp_login"),
-    path("CheckObjection_logout",views.CheckObjection_logout,name="CheckObjectionApp_logout"),
-    path("CheckObjection_noPower",views.CheckObjection_noPower,name="CheckObjection_noPower"),
+    path('image_code',views.image_code,name='image_code'),
+
+    path("CheckObjection_login", views.CheckObjection_login, name="CheckObjectionApp_login"),
+    path("CheckObjection_logout", views.CheckObjection_logout, name="CheckObjectionApp_logout"),
+    path("CheckObjection_noPower", views.CheckObjection_noPower, name="CheckObjection_noPower"),
     path('CheckObjection_search', views.CheckObjection_search, name='CheckObjection_search'),
     path("CheckObjection_filter", views.CheckObjection_filter, name='CheckObjection_filter'),
     # path("get",views.topic_get.as_view(),name="CheckObjection_topic_get"),
     # path("get",views.topicModel_get.as_view({"get":"get"}), name="CheckObjection_get"),
-    path("t1",views.topicModel_get.as_view()),
-    path("t2",views.topicAPIGenericAPIView.as_view()),
-    path('get',views.topicAPIView.as_view(),name='CheckObjection_get'),
+    path("t1", views.topicModel_get.as_view()),
+    path("t2", views.topicAPIGenericAPIView.as_view()),
+    path('get', views.topicAPIView.as_view(), name='CheckObjection_get'),
     path('topic/', views.Topic.as_view(), name='topic-list'),
     path('topic/<int:pk>/', views.Topic.as_view(), name='topic-detail'),
-    path("get1",views.get1,name="CheckObjection_get1"),
-    path('s1',views.topicAPIView.as_view()),
+    path("get1", views.get1, name="CheckObjection_get1"),
+    path('s1', views.topicAPIView.as_view()),
     # path("CheckObjectionApp_pub", views.CheckObjectionApp_pub, name="CheckObjectionApp_pub"),
     # path("send_email_captcha", views.send_email_captcha, name="send_email_captcha"),
     # path("CheckObjectionApp_register", views.CheckObjectionApp_register, name="CheckObjectionApp_register"),

@@ -78,6 +78,48 @@
             box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
         }
 
+        .captcha-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .captcha-input {
+            flex: 1;
+        }
+
+        .captcha-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .captcha-image {
+            height: 45px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .captcha-image:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .captcha-refresh {
+            font-size: 0.75rem;
+            color: var(--gray);
+            text-align: center;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .captcha-refresh:hover {
+            color: var(--primary);
+        }
+
         .remember-forgot {
             display: flex;
             justify-content: space-between;
@@ -225,6 +267,14 @@
                 align-items: flex-start;
                 gap: 10px;
             }
+
+            .captcha-container {
+                flex-direction: column;
+            }
+
+            .captcha-input {
+                width: 100%;
+            }
         }
     </style>
 {% endblock head %}
@@ -253,7 +303,22 @@
                     <div class="input-with-icon">
                         <i class="fas fa-lock input-icon"></i>
                         <input type="password" id="password" name="password" placeholder="请输入密码" required>
+                    </div>
+                </div>
 
+                <div class="form-group">
+                    <label for="captcha">验证码</label>
+                    <div class="captcha-container">
+                        <div class="input-with-icon captcha-input">
+                            <i class="fas fa-shield-alt input-icon"></i>
+                            <input type="text" id="captcha" name="captcha" placeholder="请输入验证码" required maxlength="6">
+                        </div>
+                        <div class="captcha-display">
+                            <img src="{% url 'CheckObjectionApp:image_code' %}" alt="captcha" class="captcha-image" id="captcha-image">
+                            <div class="captcha-refresh" id="refresh-captcha">
+                                <i class="fas fa-redo-alt"></i> 刷新
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -271,4 +336,24 @@
             </form>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const captchaImage = document.getElementById('captcha-image');
+            const refreshCaptcha = document.getElementById('refresh-captcha');
+
+            // 刷新验证码
+            function refreshCaptchaImage() {
+                const currentSrc = captchaImage.src;
+                const separator = currentSrc.includes('?') ? '&' : '?';
+                captchaImage.src = currentSrc + separator + 't=' + new Date().getTime();
+            }
+
+            // 点击图片刷新验证码
+            captchaImage.addEventListener('click', refreshCaptchaImage);
+
+            // 点击文字刷新验证码
+            refreshCaptcha.addEventListener('click', refreshCaptchaImage);
+        });
+    </script>
 {% endblock main %}

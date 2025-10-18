@@ -16,6 +16,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .code import check_code
 from .models import answer
 from .forms import LoginForm
 from .models import UserProfile
@@ -679,7 +680,6 @@ def ranking_view(request):
         solved_count=Count('topic_id', distinct=True)
     ).order_by('-solved_count')
 
-    print(user_rankings)
 
     # 构建排行榜数据
     rankings = []
@@ -694,10 +694,18 @@ def ranking_view(request):
         'rankings': rankings,
         'total_users': len(rankings)
     }
-    print(context)
 
     return render(request, 'CheckObjection/CheckObjection_ranking.html', context)
 
 
+from io import BytesIO
 
+def image_code(request):
+    "生成图片验证码"
+    #调用pillow函数，生成图片
+    img,code_string = check_code()
+    print(code_string)
+    stream = BytesIO()
+    img.save(stream, 'png')
+    return HttpResponse(stream.getvalue())
 
