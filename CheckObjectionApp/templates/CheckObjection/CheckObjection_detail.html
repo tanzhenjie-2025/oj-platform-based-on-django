@@ -1072,16 +1072,16 @@ int main() {
         }
 
         // 显示执行结果
-       function displayResults(data) {
-    let resultHTML = '';
+        function displayResults(data) {
+            let resultHTML = '';
 
-    // 计算统计数据（仅保留通过用例）
-    const totalCases = data.results.length;
-    const passedCases = data.results.filter(result =>
-        result.result.status === 'Accepted').length;
+            // 计算统计数据（仅保留通过用例）
+            const totalCases = data.results.length;
+            const passedCases = data.results.filter(result =>
+                result.result.status === 'Accepted').length;
 
-    // 统计卡片：重点压缩垂直方向（上下）间距，消除冗余高度
-    resultHTML += `
+            // 统计卡片：重点压缩垂直方向（上下）间距，消除冗余高度
+            resultHTML += `
         <div style="display: flex; gap: 0.05px; margin: 0.05px 0; line-height: 0.95;">
             <div style="flex: 1; background: #f8f9fa; padding: 0.1px 0; border-radius: 2px; text-align: center; line-height: 0.95;">
                 <div style="color: #6c757d; margin: 0; font-size: inherit;">通过用例</div>
@@ -1094,17 +1094,17 @@ int main() {
         </div>
     `;
 
-    // 测试用例详情：压缩标题上下间距，与统计卡片紧凑衔接
-    if (data.results && data.results.length > 0) {
-        resultHTML += `<div style="font-weight: bold; margin: 0.05px 0; line-height: 0.95; font-size: inherit;">测试用例详情:</div>`;
+            // 测试用例详情：压缩标题上下间距，与统计卡片紧凑衔接
+            if (data.results && data.results.length > 0) {
+                resultHTML += `<div style="font-weight: bold; margin: 0.05px 0; line-height: 0.95; font-size: inherit;">测试用例详情:</div>`;
 
-        data.results.forEach((testCase, index) => {
-            const result = testCase.result;
-            const statusColor = result.status === 'Accepted' ? '#28a745' : '#dc3545';
-            const bgColor = result.status === 'Accepted' ? '#f8fff8' : '#fff8f8';
+                data.results.forEach((testCase, index) => {
+                    const result = testCase.result;
+                    const statusColor = result.status === 'Accepted' ? '#28a745' : '#dc3545';
+                    const bgColor = result.status === 'Accepted' ? '#f8fff8' : '#fff8f8';
 
-            // 单个用例容器：极致压缩上下内边距和外边距，减小垂直高度
-            resultHTML += `
+                    // 单个用例容器：极致压缩上下内边距和外边距，减小垂直高度
+                    resultHTML += `
                 <div style="margin: 0.05px 0; padding: 0.05px 0; border-left: 1.5px solid ${statusColor}; background-color: ${bgColor}; border-radius: 2px; line-height: 0.95;">
                     <!-- 用例标题栏：无垂直间隙 -->
                     <div style="display: flex; justify-content: space-between; align-items: center; margin: 0; line-height: 0.95;">
@@ -1118,8 +1118,8 @@ int main() {
                     </div>
             `;
 
-            // 输入输出：完全消除垂直间隙，仅靠行高控制上下距离
-            resultHTML += `
+                    // 输入输出：完全消除垂直间隙，仅靠行高控制上下距离
+                    resultHTML += `
                 <div style="margin: 0; line-height: 0.95;">
                     <div style="margin: 0; line-height: 0.95;"><strong style="font-size: inherit;">输入:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.05px; border-radius: 1px; font-size: inherit;">${testCase.input_data || '无'}</span></div>
                     <div style="margin: 0; line-height: 0.95;"><strong style="font-size: inherit;">期望输出:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.05px; border-radius: 1px; font-size: inherit;">${testCase.expected_output || '无'}</span></div>
@@ -1127,41 +1127,41 @@ int main() {
                 </div>
             `;
 
-            // 执行信息：垂直间距压缩至接近0
-            let execInfo = [];
-            if (result.time) execInfo.push(`执行时间:${result.time}秒`);
-            if (result.memory) execInfo.push(`内存使用:${result.memory}KB`);
+                    // 执行信息：垂直间距压缩至接近0
+                    let execInfo = [];
+                    if (result.time) execInfo.push(`执行时间:${result.time}秒`);
+                    if (result.memory) execInfo.push(`内存使用:${result.memory}KB`);
 
-            if (execInfo.length > 0) {
-                resultHTML += `<div style="margin: 0.02px 0; color: #6c757d; line-height: 0.95; font-size: inherit;">${execInfo.join('|')}</div>`;
-            }
+                    if (execInfo.length > 0) {
+                        resultHTML += `<div style="margin: 0.02px 0; color: #6c757d; line-height: 0.95; font-size: inherit;">${execInfo.join('|')}</div>`;
+                    }
 
-            // 编译/错误信息：无垂直冗余空间
-            if (result.compile_output) {
-                resultHTML += `<div style="margin: 0; line-height: 0.95; font-size: inherit;">
+                    // 编译/错误信息：无垂直冗余空间
+                    if (result.compile_output) {
+                        resultHTML += `<div style="margin: 0; line-height: 0.95; font-size: inherit;">
                     <strong style="font-size: inherit;">编译信息:</strong>
                     <span style="font-family: 'Courier New', monospace; background: #fff3cd; padding: 0 0.05px; border-radius: 1px; font-size: inherit;">${result.compile_output}</span>
                 </div>`;
-            }
+                    }
 
-            if (result.stderr) {
-                resultHTML += `<div style="margin: 0; line-height: 0.95; font-size: inherit;">
+                    if (result.stderr) {
+                        resultHTML += `<div style="margin: 0; line-height: 0.95; font-size: inherit;">
                     <strong style="font-size: inherit;">错误信息:</strong>
                     <span style="font-family: 'Courier New', monospace; background: #f8d7da; padding: 0 0.05px; border-radius: 1px; font-size: inherit;">${result.stderr}</span>
                 </div>`;
+                    }
+
+                    resultHTML += `</div>`;
+                });
             }
 
-            resultHTML += `</div>`;
-        });
-    }
-
-    // 整体容器：进一步压缩上下内边距，减小整体垂直占用
-    const resultContent = document.getElementById('result-content');
-    resultContent.innerHTML = resultHTML;
-    resultContent.style.maxHeight = 'none';
-    resultContent.style.overflowY = 'visible';
-    resultContent.style.padding = '0.3px 0'; // 上下padding再减，左右保持0
-}
+            // 整体容器：进一步压缩上下内边距，减小整体垂直占用
+            const resultContent = document.getElementById('result-content');
+            resultContent.innerHTML = resultHTML;
+            resultContent.style.maxHeight = 'none';
+            resultContent.style.overflowY = 'visible';
+            resultContent.style.padding = '0.3px 0'; // 上下padding再减，左右保持0
+        }
 
         // 表单提交事件
         document.getElementById('submission-form').addEventListener('submit', function (e) {

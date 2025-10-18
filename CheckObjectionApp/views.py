@@ -233,15 +233,52 @@ def CheckObjection_logout(request):
 def CheckObjection_noPower(request):
     return render(request,'CheckObjection/CheckObjection_noPower.html')
 
-def changeName( request):
-    """修改用户资料"""
+
+@require_http_methods(['GET', 'POST'])
+@login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
+def changePassword(request):
+    """修改密码"""
     if request.method == "POST":
-        username = request.POST.get('username')
+        user_id = request.user.id
+        old_password = request.POST.get('old_password', '').strip()
+        new_password = request.POST.get('new_password', '').strip()
+        check_new_password = request.POST.get('check_new_password', '').strip()
+
+        # 1. 获取单个用户实例（用get()而非filter()）
+        user = User.objects.get(id=user_id)  # get()返回单个User对象
+
+        # 2. 验证旧密码和新密码
+        if not old_password or not new_password or not check_new_password:
+            return redirect(reverse("CheckObjectionApp:CheckObjectionApp_changePassword"))  # 跳回密码修改页
+
+        if new_password != check_new_password:
+            return redirect(reverse("CheckObjectionApp:CheckObjectionApp_changePassword"))
+
+        if not user.check_password(old_password):  # 现在user是实例，可以调用check_password
+            return redirect(reverse("CheckObjectionApp:CheckObjectionApp_changePassword"))
+
+        # 3. 正确设置新密码（自动加密）
+        user.set_password(new_password)  # set_password会自动加密密码
+        user.save()  # 保存修改
+
+        return redirect(reverse("CheckObjectionApp:CheckObjectionApp_login"))  # 建议修改后重新登录
+
+    if request.method == "GET":
         user = request.user
-        user.username = username
-        user.save()
+        return render(request, 'CheckObjection/CheckObjection_changeName.html', context={'user': user})
+@require_http_methods(['GET', 'POST'])
+@login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
+def changeName(request):
+    """修改用户名"""
+    if request.method == "POST":
+        user_id = request.user.id
+        User.objects.filter(id=user_id).update(username=request.POST.get('username',''))
+        # 正确示例：批量更新QuerySet中的所有对象
+        # 你的模型类.objects.filter(某个条件).update(name="新名称")  # 直接更新，无需save()
         return redirect(reverse("CheckObjectionApp:CheckObjectionApp_index"))
-    return render(request,'CheckObjection/CheckObjection_changeName.html')
+    if request.method == "GET":
+        user = request.user
+        return render(request,'CheckObjection/CheckObjection_changeName.html',context={'user':user})
 # @require_GET
 # @login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
 # def CheckObjection_search(request):
@@ -383,6 +420,7 @@ class JudgeCodeView(View):
                 'is_test': is_test
             }
 
+
             if is_test:
                 # 测试运行 - 同步处理以便快速返回
                 result = process_test_run.delay(submission_data)
@@ -398,6 +436,7 @@ class JudgeCodeView(View):
                     })
             else:
                 # 正式提交 - 异步处理
+
                 task = submit_code_task.delay(submission_data)
 
                 # 立即返回任务ID，前端可以轮询结果
@@ -465,6 +504,7 @@ class TopicViewSet(viewsets.ModelViewSet):
         """获取特定题目的所有测试用例"""
         topic_obj = self.get_object()
         test_cases = topic_obj.testcase_set.all()
+
         serializer = TestCaseSerializer(test_cases, many=True)
         return Response(serializer.data)
 
@@ -623,6 +663,41 @@ class SubmissionDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context['page_title'] = f'提交详情 - {self.object.topic_id}'
         return context
+
+# 以下是排行榜功能
+from django.db.models import Count, Q
+from django.http import JsonResponse
+from .models import Submission, User, UserProfile
+
+
+def ranking_view(request):
+    """排行榜页面，直接渲染所有数据"""
+    # 获取所有用户通过的题目统计（去重）
+    user_rankings = Submission.objects.filter(
+        overall_result='Accepted'
+    ).values('user_name').annotate(
+        solved_count=Count('topic_id', distinct=True)
+    ).order_by('-solved_count')
+
+    print(user_rankings)
+
+    # 构建排行榜数据
+    rankings = []
+    for rank, user_data in enumerate(user_rankings, 1):
+        rankings.append({
+            'rank': rank,
+            'user_name': user_data['user_name'],
+            'solved_count': user_data['solved_count'],
+        })
+
+    context = {
+        'rankings': rankings,
+        'total_users': len(rankings)
+    }
+    print(context)
+
+    return render(request, 'CheckObjection/CheckObjection_ranking.html', context)
+
 
 
 

@@ -376,6 +376,7 @@
                 {% endif %}
                 <li><a href="{% url 'CheckObjectionApp:my_submission_list' %}" class="nav-link">我的提交</a></li>
                 {% if user.is_authenticated %}
+                    <li><a href="{% url 'CheckObjectionApp:ranking_page' %}" class="nav-link">排行</a></li>
                     <li><a href="{% url 'CheckObjectionApp:CheckObjectionApp_logout' %}" class="nav-link">退出登录</a>
                     </li>
                 {% else %}

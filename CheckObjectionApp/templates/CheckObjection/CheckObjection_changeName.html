@@ -109,7 +109,7 @@
                 </button>
                 <input type="file" id="avatarInput" accept="image/*" style="display: none;">
             </div>
-            <h2 id="usernameDisplay">张三</h2>
+            <h2 id="usernameDisplay">{{ user.username }}</h2>
             <p class="mb-0">UID: #USR1001</p>
         </div>
 
@@ -129,12 +129,13 @@
             <div class="tab-content" id="profileTabsContent">
                 <!-- 基本信息标签页 -->
                 <div class="tab-pane fade show active" id="basic" role="tabpanel">
-                    <form id="profileForm">
+                    <form id="profileForm"  method="post">
+                        {% csrf_token %}
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="username" class="form-label">用户名</label>
-                                    <input type="text" class="form-control" id="username" value="张三">
+                                    <input type="text" class="form-control" name="username" id="username" value="张三">
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -189,33 +190,34 @@
 
                 <!-- 安全设置标签页 -->
                 <div class="tab-pane fade" id="security" role="tabpanel">
-                    <form id="securityForm">
+                    <form id="securityForm" method="post" action="{% url 'CheckObjectionApp:CheckObjectionApp_changePassword' %}">
+                        {% csrf_token %}
                         <div class="form-group">
                             <label for="currentPassword" class="form-label">当前密码</label>
-                            <input type="password" class="form-control" id="currentPassword">
+                            <input type="password" class="form-control" name="old_password" id="currentPassword">
                         </div>
 
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="newPassword" class="form-label">新密码</label>
-                                    <input type="password" class="form-control" id="newPassword">
+                                    <input type="password" class="form-control" name="new_password" id="newPassword">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="confirmPassword" class="form-label">确认新密码</label>
-                                    <input type="password" class="form-control" id="confirmPassword">
+                                    <input type="password" class="form-control" name="check_new_password" id="confirmPassword">
                                 </div>
                             </div>
                         </div>
 
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="twoFactorAuth">
-                            <label class="form-check-label" for="twoFactorAuth">
-                                启用双因素认证
-                            </label>
-                        </div>
+{#                        <div class="form-check mb-3">#}
+{#                            <input class="form-check-input" type="checkbox" id="twoFactorAuth">#}
+{#                            <label class="form-check-label" for="twoFactorAuth">#}
+{#                                启用双因素认证#}
+{#                            </label>#}
+{#                        </div>#}
 
                         <div class="d-flex justify-content-between mt-4">
                             <button type="button" class="btn btn-outline-secondary">取消</button>
@@ -225,78 +227,76 @@
                 </div>
 
                 <!-- 偏好设置标签页 -->
-                <div class="tab-pane fade" id="preferences" role="tabpanel">
-                    <form id="preferencesForm">
-                        <div class="form-group">
-                            <label class="form-label">语言偏好</label>
-                            <select class="form-select" id="language">
-                                <option value="zh-CN" selected>简体中文</option>
-                                <option value="en-US">English</option>
-                                <option value="ja-JP">日本語</option>
-                            </select>
-                        </div>
+{#                <div class="tab-pane fade" id="preferences" role="tabpanel">#}
+{#                    <form id="preferencesForm">#}
+{#                        <div class="form-group">#}
+{#                            <label class="form-label">语言偏好</label>#}
+{#                            <select class="form-select" id="language">#}
+{#                                <option value="zh-CN" selected>简体中文</option>#}
+{#                                <option value="en-US">English</option>#}
+{#                                <option value="ja-JP">日本語</option>#}
+{#                            </select>#}
+{#                        </div>#}
 
-                        <div class="form-group">
-                            <label class="form-label">时区设置</label>
-                            <select class="form-select" id="timezone">
-                                <option value="UTC+8" selected>(UTC+8) 北京时间</option>
-                                <option value="UTC+0">(UTC+0) 格林威治标准时间</option>
-                                <option value="UTC-5">(UTC-5) 美国东部时间</option>
-                            </select>
-                        </div>
+{#                        <div class="form-group">#}
+{#                            <label class="form-label">时区设置</label>#}
+{#                            <select class="form-select" id="timezone">#}
+{#                                <option value="UTC+8" selected>(UTC+8) 北京时间</option>#}
+{#                                <option value="UTC+0">(UTC+0) 格林威治标准时间</option>#}
+{#                                <option value="UTC-5">(UTC-5) 美国东部时间</option>#}
+{#                            </select>#}
+{#                        </div>#}
 
-                        <div class="form-group">
-                            <label class="form-label">主题设置</label>
-                            <div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="theme" id="lightTheme" value="light" checked>
-                                    <label class="form-check-label" for="lightTheme">浅色模式</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="theme" id="darkTheme" value="dark">
-                                    <label class="form-check-label" for="darkTheme">深色模式</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="theme" id="autoTheme" value="auto">
-                                    <label class="form-check-label" for="autoTheme">跟随系统</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">邮件通知</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
-                                <label class="form-check-label" for="emailNotifications">
-                                    接收产品更新和公告
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="marketingEmails">
-                                <label class="form-check-label" for="marketingEmails">
-                                    接收营销和推广信息
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-between mt-4">
-                            <button type="button" class="btn btn-outline-secondary">重置偏好</button>
-                            <button type="submit" class="btn btn-primary">保存设置</button>
-                        </div>
-                    </form>
+{#                        <div class="form-group">#}
+{#                            <label class="form-label">主题设置</label>#}
+{#                            <div>#}
+{#                                <div class="form-check form-check-inline">#}
+{#                                    <input class="form-check-input" type="radio" name="theme" id="lightTheme" value="light" checked>#}
+{#                                    <label class="form-check-label" for="lightTheme">浅色模式</label>#}
+{#                                </div>#}
+{#                                <div class="form-check form-check-inline">#}
+{#                                    <input class="form-check-input" type="radio" name="theme" id="darkTheme" value="dark">#}
+{#                                    <label class="form-check-label" for="darkTheme">深色模式</label>#}
+{#                                </div>#}
+{#                                <div class="form-check form-check-inline">#}
+{#                                    <input class="form-check-input" type="radio" name="theme" id="autoTheme" value="auto">#}
+{#                                    <label class="form-check-label" for="autoTheme">跟随系统</label>#}
+{#                                </div>#}
+{#                            </div>#}
+{#                        </div>#}
+{##}
+{#                        <div class="form-group">#}
+{#                            <label class="form-label">邮件通知</label>#}
+{#                            <div class="form-check">#}
+{#                                <input class="form-check-input" type="checkbox" id="emailNotifications" checked>#}
+{#                                <label class="form-check-label" for="emailNotifications">#}
+{#                                    接收产品更新和公告#}
+{#                                </label>#}
+{#                            </div>#}
+{#                            <div class="form-check">#}
+{#                                <input class="form-check-input" type="checkbox" id="marketingEmails">#}
+{#                                <label class="form-check-label" for="marketingEmails">#}
+{#                                    接收营销和推广信息#}
+{#                                </label>#}
+{#                            </div>#}
+{#                        </div>#}
+{##}
+{#                        <div class="d-flex justify-content-between mt-4">#}
+{#                            <button type="button" class="btn btn-outline-secondary">重置偏好</button>#}
+{#                            <button type="submit" class="btn btn-primary">保存设置</button>#}
+{#                        </div>#}
+{#                    </form>#}
                 </div>
             </div>
         </div>
-    </div>
+
 
     <!-- 修复：使用正确的script标签引入本地Bootstrap JS -->
     <script src="{% static 'bootstrap5/js/bootstrap.bundle.min.js' %}"></script>
 
     <script>
         // 头像上传功能
-        document.getElementById('changeAvatarBtn').addEventListener('click', function() {
-            document.getElementById('avatarInput').click();
-        });
+
 
         document.getElementById('avatarInput').addEventListener('change', function(e) {
             if (e.target.files && e.target.files[0]) {
@@ -308,29 +308,7 @@
             }
         });
 
-        // 表单提交处理
-        document.getElementById('profileForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            // 这里添加实际提交数据的代码
-            alert('基本信息已保存！');
-        });
 
-        document.getElementById('securityForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            // 这里添加实际提交数据的代码
-            alert('安全设置已更新！');
-        });
-
-        document.getElementById('preferencesForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            // 这里添加实际提交数据的代码
-            alert('偏好设置已保存！');
-        });
-
-        // 用户名实时更新
-        document.getElementById('username').addEventListener('input', function() {
-            document.getElementById('usernameDisplay').textContent = this.value;
-        });
     </script>
 </body>
 {% endblock %}

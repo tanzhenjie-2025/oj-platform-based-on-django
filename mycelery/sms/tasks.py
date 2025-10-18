@@ -1,5 +1,5 @@
 # celery的任务必须写在tasks.py的文件中，别的文件名称不识别！！！
-from CheckObjectionApp.models import TestCase
+from CheckObjectionApp.models import TestCase, topic
 from CheckObjectionApp.utils.judge0_service import Judge0Service
 from mycelery.main import app
 import time
@@ -181,7 +181,7 @@ def process_test_run(submission_data):
 def get_test_cases_by_topic_with_cache(topic_id):
     """
     根据题目ID从Redis缓存或数据库获取测试用例
-    """
+    # """
     from django.conf import settings
     cache_key = f"test_cases_topic_{topic_id}"
 
@@ -236,9 +236,16 @@ def get_test_cases_from_db(topic_id):
     从数据库获取测试用例
     """
     try:
+
         test_cases = TestCase.objects.filter(
             titleSlug_id=topic_id
         ).order_by('order')
+
+        # Topic = topic.objects.get(id=topic_id)
+        # test_cases = TestCase.objects.filter(
+        #     titleSlug=Topic
+        # ).order_by('order')
+
 
         formatted_test_cases = []
         for test_case in test_cases:
