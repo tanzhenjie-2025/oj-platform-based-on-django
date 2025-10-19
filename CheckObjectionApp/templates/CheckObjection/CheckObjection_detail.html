@@ -1238,95 +1238,141 @@ int main() {
 
         // 显示执行结果
         function displayResults(data) {
-            let resultHTML = '';
+    let resultHTML = '';
 
-            // 计算统计数据（仅保留通过用例）
-            const totalCases = data.results.length;
-            const passedCases = data.results.filter(result =>
-                result.result.status === 'Accepted').length;
+    // 计算统计数据
+    const totalCases = data.results.length;
+    const passedCases = data.results.filter(result =>
+        result.result.status === 'Accepted').length;
 
-            // 统计卡片：重点压缩垂直方向（上下）间距，消除冗余高度
-            resultHTML += `
-        <div style="display: flex; gap: 0.05px; margin: 0.05px 0; line-height: 0.95;">
-            <div style="flex: 1; background: #f8f9fa; padding: 0.1px 0; border-radius: 2px; text-align: center; line-height: 0.95;">
-                <div style="color: #6c757d; margin: 0; font-size: inherit;">通过用例</div>
-                <div style="font-weight: bold; color: #28a745; margin: 0; font-size: inherit;">${passedCases}/${totalCases}</div>
+    // 预先计算动态值
+    const overallBg = data.overall_result === 'Accepted'
+        ? 'linear-gradient(135deg, #00b09b, #96c93d)'
+        : 'linear-gradient(135deg, #ff416c, #ff4b2b)';
+
+    const overallShadow = data.overall_result === 'Accepted'
+        ? 'rgba(0, 176, 155, 0.3)'
+        : 'rgba(255, 65, 108, 0.3)';
+
+    const overallBorderColor = data.overall_result === 'Accepted'
+        ? '#00b09b'
+        : '#ff416c';
+
+    // 统计卡片 - 进一步缩小
+    resultHTML += `
+        <div style="display: flex; gap: 5px; margin: 5px 0; line-height: 1.1;">
+            <div style="flex: 1; background: linear-gradient(135deg, #00b09b, #96c93d); padding: 5px 0; border-radius: 4px; text-align: center; line-height: 1.1; box-shadow: 0 2px 4px rgba(0, 176, 155, 0.2); border: 1px solid #00b09b;">
+                <div style="color: white; margin: 0; font-size: 19px; font-weight: 500; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">通过用例</div>
+                <div style="font-weight: bold; color: white; margin: 1px 0 0 0; font-size: 25px; text-shadow: 0 1px 3px rgba(0,0,0,0.3);">${passedCases}/${totalCases}</div>
             </div>
-            <div style="flex: 1; background: #f8f9fa; padding: 0.1px 0; border-radius: 2px; text-align: center; line-height: 0.95;">
-                <div style="color: #6c757d; margin: 0; font-size: inherit;">总体结果</div>
-                <div style="font-weight: bold; color: ${data.overall_result === 'Accepted' ? '#28a745' : '#dc3545'}; margin: 0; font-size: inherit;">${data.overall_result}</div>
+            <div style="flex: 1; background: ${overallBg}; padding: 5px 0; border-radius: 4px; text-align: center; line-height: 1.1; box-shadow: 0 2px 4px ${overallShadow}; border: 1px solid ${overallBorderColor};">
+                <div style="color: white; margin: 0; font-size: 19px; font-weight: 500; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">总体结果</div>
+                <div style="font-weight: bold; color: white; margin: 1px 0 0 0; font-size: 25px; text-shadow: 0 1px 3px rgba(0,0,0,0.3);">${data.overall_result}</div>
             </div>
         </div>
     `;
 
-            // 测试用例详情：压缩标题上下间距，与统计卡片紧凑衔接
-            if (data.results && data.results.length > 0) {
-                resultHTML += `<div style="font-weight: bold; margin: 0.05px 0; line-height: 0.95; font-size: inherit;">测试用例详情:</div>`;
+    // 测试用例详情 - 解决标题与结果黏连，同时保持紧凑
+    if (data.results && data.results.length > 0) {
+        resultHTML += `
+            <div style="font-weight: bold; margin: 7px 0 3px 0; line-height: 1.2; font-size: 23px; color: white; padding: 3px 8px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 4px; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+                📊 测试用例详情
+            </div>`;
 
-                data.results.forEach((testCase, index) => {
-                    const result = testCase.result;
-                    const statusColor = result.status === 'Accepted' ? '#28a745' : '#dc3545';
-                    const bgColor = result.status === 'Accepted' ? '#f8fff8' : '#fff8f8';
+        data.results.forEach((testCase, index) => {
+            const result = testCase.result;
 
-                    // 单个用例容器：极致压缩上下内边距和外边距，减小垂直高度
-                    resultHTML += `
-                <div style="margin: 0.05px 0; padding: 0.05px 0; border-left: 1.5px solid ${statusColor}; background-color: ${bgColor}; border-radius: 2px; line-height: 0.95;">
-                    <!-- 用例标题栏：无垂直间隙 -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 0; line-height: 0.95;">
-                        <div style="line-height: 0.95;">
-                            <strong style="font-size: inherit;">测试用例 ${testCase.test_case}:</strong>
-                            <span style="color: ${statusColor}; margin-left: 0.1px; font-size: inherit;">${result.status}</span>
+            // 状态相关样式
+            const statusBg = result.status === 'Accepted'
+                ? 'linear-gradient(135deg, #00b09b, #96c93d)'
+                : 'linear-gradient(135deg, #ff416c, #ff4b2b)';
+
+            const caseBg = result.status === 'Accepted'
+                ? 'linear-gradient(135deg, #e8f5e8, #c8e6c9)'
+                : 'linear-gradient(135deg, #ffeaea, #ffcdd2)';
+
+            const borderColor = result.status === 'Accepted' ? '#00c853' : '#ff5252';
+
+            // 单个用例容器 - 缩小但保留标题与内容的间隙
+            resultHTML += `
+                <div style="margin: 3px 0; padding: 5px; border-left: 3px solid ${borderColor}; background: ${caseBg}; border-radius: 4px; line-height: 1.25; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                    <!-- 用例标题栏 - 增加底部间隙解决黏连 -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 0 4px 0; line-height: 1.2;">
+                        <div style="line-height: 1.2; display: flex; align-items: center;">
+                            <strong style="font-size: 21px; color: #2c3e50;">测试用例 ${testCase.test_case}:</strong>
+                            <span style="background: ${statusBg}; color: white; margin-left: 5px; font-size: 19px; padding: 1px 5px; border-radius: 9px; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">${result.status}</span>
                         </div>
-                        <div style="display: flex; gap: 0.05px; line-height: 0.95;">
-                            ${testCase.is_sample ? `<span style="padding: 0 0.05px; border-radius: 1px; background: #3498db; color: white; font-size: inherit;">样例</span>` : ''}
+                        <div style="display: flex; gap: 3px; line-height: 1.2;">
+                            ${testCase.is_sample ? '<span style="padding: 1px 5px; border-radius: 9px; background: linear-gradient(135deg, #3498db, #2980b9); color: white; font-size: 17px; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">📝 样例</span>' : ''}
                         </div>
                     </div>
             `;
 
-                    // 输入输出：完全消除垂直间隙，仅靠行高控制上下距离
-                    resultHTML += `
-                <div style="margin: 0; line-height: 0.95;">
-                    <div style="margin: 0; line-height: 0.95;"><strong style="font-size: inherit;">输入:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.05px; border-radius: 1px; font-size: inherit;">${testCase.input_data || '无'}</span></div>
-                    <div style="margin: 0; line-height: 0.95;"><strong style="font-size: inherit;">期望输出:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.05px; border-radius: 1px; font-size: inherit;">${testCase.expected_output || '无'}</span></div>
-                    <div style="margin: 0; line-height: 0.95;"><strong style="font-size: inherit;">实际输出:</strong> <span style="font-family: 'Courier New', monospace; background: #f5f5f5; padding: 0 0.05px; border-radius: 1px; font-size: inherit;">${testCase.user_output || '无输出'}</span></div>
+            // 输入输出信息 - 紧凑但不拥挤
+            resultHTML += `
+                <div style="margin: 2px 0; line-height: 1.25;">
+                    <div style="margin: 1px 0; line-height: 1.25;">
+                        <strong style="font-size: 19px; color: #34495e;">📥 输入:</strong>
+                        <span style="font-family: monospace; background: #f5f7fa; padding: 1px 5px; border-radius: 3px; font-size: 19px; border: 1px solid #d1d9e6; display: inline-block; margin-left: 3px;">${testCase.input_data || '无'}</span>
+                    </div>
+                    <div style="margin: 1px 0; line-height: 1.25;">
+                        <strong style="font-size: 19px; color: #34495e;">🎯 期望输出:</strong>
+                        <span style="font-family: monospace; background: #e0f7fa; padding: 1px 5px; border-radius: 3px; font-size: 19px; border: 1px solid #4dd0e1; display: inline-block; margin-left: 3px;">${testCase.expected_output || '无'}</span>
+                    </div>
+                    <div style="margin: 1px 0; line-height: 1.25;">
+                        <strong style="font-size: 19px; color: #34495e;">📤 实际输出:</strong>
+                        <span style="font-family: monospace; background: #f3e5f5; padding: 1px 5px; border-radius: 3px; font-size: 19px; border: 1px solid #ab47bc; display: inline-block; margin-left: 3px;">${testCase.user_output || '无输出'}</span>
+                    </div>
                 </div>
             `;
 
-                    // 执行信息：垂直间距压缩至接近0
-                    let execInfo = [];
-                    if (result.time) execInfo.push(`执行时间:${result.time}秒`);
-                    if (result.memory) execInfo.push(`内存使用:${result.memory}KB`);
+            // 执行信息 - 保持紧凑
+            let execInfo = [];
+            if (result.time) execInfo.push(`⏱️ 执行时间: ${result.time}秒`);
+            if (result.memory) execInfo.push(`💾 内存使用: ${result.memory}KB`);
 
-                    if (execInfo.length > 0) {
-                        resultHTML += `<div style="margin: 0.02px 0; color: #6c757d; line-height: 0.95; font-size: inherit;">${execInfo.join('|')}</div>`;
-                    }
-
-                    // 编译/错误信息：无垂直冗余空间
-                    if (result.compile_output) {
-                        resultHTML += `<div style="margin: 0; line-height: 0.95; font-size: inherit;">
-                    <strong style="font-size: inherit;">编译信息:</strong>
-                    <span style="font-family: 'Courier New', monospace; background: #fff3cd; padding: 0 0.05px; border-radius: 1px; font-size: inherit;">${result.compile_output}</span>
-                </div>`;
-                    }
-
-                    if (result.stderr) {
-                        resultHTML += `<div style="margin: 0; line-height: 0.95; font-size: inherit;">
-                    <strong style="font-size: inherit;">错误信息:</strong>
-                    <span style="font-family: 'Courier New', monospace; background: #f8d7da; padding: 0 0.05px; border-radius: 1px; font-size: inherit;">${result.stderr}</span>
-                </div>`;
-                    }
-
-                    resultHTML += `</div>`;
-                });
+            if (execInfo.length > 0) {
+                resultHTML += `
+                    <div style="margin: 2px 0; line-height: 1.2; font-size: 19px;">
+                        <span style="background: #ffeaa7; color: #2d3436; padding: 1px 5px; border-radius: 9px; font-weight: 500; margin-right: 3px;">${execInfo.join('</span><span style="background: #a29bfe; color: white; padding: 1px 5px; border-radius: 9px; font-weight: 500; margin-right: 3px;">')}</span>
+                    </div>`;
             }
 
-            // 整体容器：进一步压缩上下内边距，减小整体垂直占用
-            const resultContent = document.getElementById('result-content');
-            resultContent.innerHTML = resultHTML;
-            resultContent.style.maxHeight = 'none';
-            resultContent.style.overflowY = 'visible';
-            resultContent.style.padding = '0.3px 0'; // 上下padding再减，左右保持0
-        }
+            // 编译/错误信息 - 紧凑且清晰
+            if (result.compile_output) {
+                resultHTML += `
+                    <div style="margin: 2px 0; line-height: 1.25;">
+                        <strong style="font-size: 19px; color: #e67e22;">🔧 编译信息:</strong>
+                        <div style="font-family: monospace; background: #fff3cd; padding: 3px; border-radius: 3px; font-size: 19px; border: 1px solid #ffc107; margin-top: 1px; color: #856404;">
+                            ${result.compile_output}
+                        </div>
+                    </div>`;
+            }
+
+            if (result.stderr) {
+                resultHTML += `
+                    <div style="margin: 2px 0; line-height: 1.25;">
+                        <strong style="font-size: 19px; color: #e74c3c;">❌ 错误信息:</strong>
+                        <div style="font-family: monospace; background: #f8d7da; padding: 3px; border-radius: 3px; font-size: 19px; border: 1px solid #e74c3c; margin-top: 1px; color: #721c24;">
+                            ${result.stderr}
+                        </div>
+                    </div>`;
+            }
+
+            resultHTML += `</div>`;
+        });
+    }
+
+    // 整体容器进一步缩小
+    const resultContent = document.getElementById('result-content');
+    resultContent.innerHTML = resultHTML;
+    resultContent.style.maxHeight = 'none';
+    resultContent.style.overflowY = 'visible';
+    resultContent.style.padding = '5px';  // 整体内边距最小化
+    resultContent.style.background = '#f5f7fa';
+    resultContent.style.borderRadius = '7px';
+    resultContent.style.boxShadow = '0 3px 10px rgba(0,0,0,0.07)';
+}
 
         // 表单提交事件
         document.getElementById('submission-form').addEventListener('submit', function (e) {

@@ -105,3 +105,88 @@ class Submission(models.Model):
         db_table = 'submissions'
         ordering = ['-created_at']
 
+
+# 新增比赛模型
+class Contest(models.Model):
+    CONTEST_STATUS = (
+        ('pending', '未开始'),
+        ('running', '进行中'),
+        ('ended', '已结束')
+    )
+
+    title = models.CharField(max_length=200, verbose_name='比赛标题')
+    description = models.TextField(verbose_name='比赛描述')
+    start_time = models.DateTimeField(verbose_name='开始时间')
+    end_time = models.DateTimeField(verbose_name='结束时间')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='创建者')
+    is_public = models.BooleanField(default=True, verbose_name='是否公开')
+    password = models.CharField(max_length=100, blank=True, null=True, verbose_name='访问密码')
+
+    # 比赛规则设置
+    penalty_time = models.IntegerField(default=20, verbose_name='错误提交罚时(分钟)')
+    allow_register = models.BooleanField(default=True, verbose_name='允许报名')
+    ranking_frozen = models.BooleanField(default=False, verbose_name='封榜')
+    frozen_time = models.DateTimeField(blank=True, null=True, verbose_name='封榜时间')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def status(self):
+        from django.utils import timezone
+        now = timezone.now()
+        if now < self.start_time:
+            return 'pending'
+        elif now > self.end_time:
+            return 'ended'
+        else:
+            return 'running'
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = '比赛'
+        verbose_name_plural = '比赛'
+        ordering = ['-start_time']
+
+
+# 比赛题目关联
+class ContestTopic(models.Model):
+    contest = models.ForeignKey(Contest, on_delete=models.CASCADE, related_name='contest_topics')
+    topic = models.ForeignKey(topic, on_delete=models.CASCADE, verbose_name='题目')
+    order = models.IntegerField(default=0, verbose_name='题目顺序')
+    score = models.IntegerField(default=100, verbose_name='题目分数')
+
+    class Meta:
+        verbose_name = '比赛题目'
+        verbose_name_plural = '比赛题目'
+        unique_together = ['contest', 'topic']
+        ordering = ['order']
+
+
+# 比赛参与者
+class ContestParticipant(models.Model):
+    contest = models.ForeignKey(Contest, on_delete=models.CASCADE, related_name='participants')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='参与者')
+    registered_at = models.DateTimeField(auto_now_add=True)
+    is_disqualified = models.BooleanField(default=False, verbose_name='是否取消资格')
+
+    class Meta:
+        verbose_name = '比赛参与者'
+        verbose_name_plural = '比赛参与者'
+        unique_together = ['contest', 'user']
+
+
+# 比赛提交记录
+class ContestSubmission(models.Model):
+    contest = models.ForeignKey(Contest, on_delete=models.CASCADE)
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
+    participant = models.ForeignKey(ContestParticipant, on_delete=models.CASCADE)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = '比赛提交记录'
+        verbose_name_plural = '比赛提交记录'
+        ordering = ['submitted_at']
+

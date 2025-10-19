@@ -1,0 +1,8 @@
+
+{% for contest in object_list %}
+<div class="contest-item">
+    <h3><a href="{% url 'CheckObjectionApp:contest_detail' contest.id %}">{{ contest.title }}</a></h3>
+    <p>时间: {{ contest.start_time }} - {{ contest.end_time }}</p>
+    <span class="status-badge {{ contest.status }}">{{ contest.get_status_display }}</span>
+</div>
+{% endfor %}

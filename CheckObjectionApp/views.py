@@ -1,3 +1,4 @@
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import render,redirect,reverse
 import string
 from django.http.response import JsonResponse
@@ -18,8 +19,8 @@ from rest_framework.views import APIView
 
 from CheckObjection.settings import DB_QUERY_KEY, CACHE_KEY_HIT
 from .code import check_code
-from .models import answer
-from .forms import LoginForm
+from .models import answer, Contest, ContestParticipant, ContestSubmission
+from .forms import LoginForm, RegisterForm
 from .models import UserProfile
 from django.db.models import F
 # TODO 生产环境时打开csrf验证
@@ -193,6 +194,7 @@ def show(request):
 # 以下为登录模块
 from django.http import HttpResponse
 
+
 @require_http_methods(['GET', 'POST'])
 @csrf_exempt
 def CheckObjection_login(request):
@@ -201,36 +203,39 @@ def CheckObjection_login(request):
         content = {'form': form}
         return render(request, 'CheckObjection/CheckObjection_login.html', content)
     else:
-            form = LoginForm(request.POST)
-            if form.is_valid():
-                user_input_captcha = form.cleaned_data.pop('captcha')
-                user_captcha = str(request.session.get('captcha'))
-                if user_input_captcha.lower() == user_captcha.lower():
-                    username = form.cleaned_data.get('username')
-                    password = form.cleaned_data.get('password')
-                    remember = form.cleaned_data.get('remember')
-                    user = authenticate(username=username, password=password)
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            user_input_captcha = form.cleaned_data.pop('captcha')
+            user_captcha = str(request.session.get('captcha'))
+            if user_input_captcha.lower() == user_captcha.lower():
+                username = form.cleaned_data.get('username')
+                password = form.cleaned_data.get('password')
+                remember = form.cleaned_data.get('remember')
+                user = authenticate(username=username, password=password)
 
-                    if user is not None:
-                        login(request, user)
-                        request.session['captcha'] = None
-                        if remember:
-                            request.session.set_expiry(60*60*24*7)
-                        else:
-                            # 设置session的过期时间
-                            request.session.set_expiry(0)
-                        return redirect(reverse("CheckObjectionApp:CheckObjectionApp_index"))
+                if user is not None:
+                    login(request, user)
+                    request.session['captcha'] = None
+                    if remember:
+                        request.session.set_expiry(60 * 60 * 24 * 7)
                     else:
-                        user = User.objects.create_user(username=username, password=password)
-                        user_profile = UserProfile.objects.create(user_id=user.id)
-                        login(request, user)
-                        return redirect(reverse("CheckObjectionApp:CheckObjectionApp_index"))
+                        request.session.set_expiry(0)
+                    return redirect(reverse("CheckObjectionApp:CheckObjectionApp_index"))
                 else:
-                    content = {'form': form}
-                    return render(request, 'CheckObjection/CheckObjection_login.html', content)
+                    # 方法1：使用initial参数初始化注册表单
+                    initial_data = {
+                        'username': username,
+                        'remember': remember,
+                    }
+                    register_form = RegisterForm(initial=initial_data)
+
+                    return render(request, 'CheckObjection/CheckObjection_register.html', {'form': register_form})
             else:
                 content = {'form': form}
                 return render(request, 'CheckObjection/CheckObjection_login.html', content)
+        else:
+            content = {'form': form}
+            return render(request, 'CheckObjection/CheckObjection_login.html', content)
 
 
 
@@ -238,9 +243,28 @@ def CheckObjection_login(request):
 def CheckObjection_register(request):
     """注册功能实现"""
     if request.method == 'GET':
-        # form = RegisterForm()
-        # content = {'form': form}
-        return render(request, 'CheckObjection/CheckObjection_register.html')
+        form = RegisterForm()
+        return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+    else:
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user_input_captcha = form.cleaned_data.get('captcha')
+            user_captcha = str(request.session.get('captcha'))
+            if user_input_captcha.lower() == user_captcha.lower():
+                user = User.objects.create_user(username=username, password=password)
+                user_profile = UserProfile.objects.create(user_id=user.id)
+                login(request, user)
+                if form.cleaned_data.get('remember'):
+                    request.session.set_expiry(60*60*24*7)
+                else:
+                    request.session.set_expiry(0)
+                return redirect(reverse("CheckObjectionApp:CheckObjectionApp_index"))
+            else:
+                return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+        else:
+            return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
 
 
 @require_http_methods(['GET', 'POST'])
@@ -286,6 +310,7 @@ def changePassword(request):
     if request.method == "GET":
         user = request.user
         return render(request, 'CheckObjection/CheckObjection_changeName.html', context={'user': user})
+
 @require_http_methods(['GET', 'POST'])
 @login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
 def changeName(request):
@@ -847,3 +872,94 @@ def image_code(request):
     img.save(stream, 'png')
     return HttpResponse(stream.getvalue())
 
+# 以下是比赛模块
+# views/contest_views.py
+from django.views.generic import ListView, DetailView, CreateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import get_object_or_404
+from CheckObjectionApp.utils.contest_service import ContestService
+from datetime import timezone
+class ContestListView(ListView):
+    model = Contest
+    template_name = 'CheckObjection/contest/list.html'
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = Contest.objects.all()
+        status = self.request.GET.get('status')
+        if status == 'running':
+            queryset = queryset.filter(
+                start_time__lte=timezone.now(),
+                end_time__gte=timezone.now()
+            )
+        elif status == 'upcoming':
+            queryset = queryset.filter(start_time__gt=timezone.now())
+        elif status == 'ended':
+            queryset = queryset.filter(end_time__lt=timezone.now())
+        return queryset
+
+
+class ContestDetailView(LoginRequiredMixin, DetailView):
+    model = Contest
+    template_name = 'CheckObjection/contest/detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        contest = self.object
+
+        # 检查用户权限
+        if not ContestService.can_view_contest(self.request.user, contest):
+            raise PermissionDenied("无权查看此比赛")
+
+        # 获取比赛题目
+        contest_topics = contest.contest_topics.select_related('topic').all()
+        context['contest_topics'] = contest_topics
+
+        # 获取当前用户的提交统计
+        if hasattr(self.request.user, 'id'):
+            participant = ContestParticipant.objects.filter(
+                contest=contest, user=self.request.user
+            ).first()
+
+            if participant:
+                submissions = ContestSubmission.objects.filter(
+                    participant=participant
+                ).select_related('submission')
+
+                problem_status = {}
+                for submission in submissions:
+                    topic_id = submission.submission.topic_id
+                    if topic_id not in problem_status:
+                        problem_status[topic_id] = {
+                            'solved': False,
+                            'submissions': []
+                        }
+
+                    problem_status[topic_id]['submissions'].append(submission)
+                    if submission.submission.overall_result == 'AC':
+                        problem_status[topic_id]['solved'] = True
+
+                context['problem_status'] = problem_status
+
+        return context
+
+
+class ContestRankView(LoginRequiredMixin, DetailView):
+    model = Contest
+    template_name = 'CheckObjection/contest/rank.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        contest = self.object
+
+        # 检查封榜逻辑
+        if contest.ranking_frozen and contest.frozen_time:
+            show_real_time = self.request.user == contest.created_by
+        else:
+            show_real_time = True
+
+        rank_data = ContestService.get_contest_ranklist(contest.id)
+        context['rank_data'] = rank_data
+        context['show_real_time'] = show_real_time
+
+        return context

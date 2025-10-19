@@ -2,7 +2,9 @@ from django.contrib import admin
 from django.contrib.admin import ModelAdmin
 from django.utils.html import format_html
 from django.db.models import Count
-from .models import topic, answer, UserProfile, TestCase, Submission
+
+from .forms import User
+from .models import topic, answer, UserProfile, TestCase, Submission, Contest, ContestParticipant
 
 
 # 修改 answer 模型，添加外键关系（推荐）
@@ -303,6 +305,167 @@ class SubmissionAdmin(admin.ModelAdmin):
 
     results_display.short_description = '详细结果'
 
+
+# admin.py
+from django.contrib import admin
+from django.utils.html import format_html
+from .models import Contest, ContestTopic, ContestParticipant, ContestSubmission, topic
+
+
+# 比赛题目内联配置
+class ContestTopicInline(admin.TabularInline):
+    model = ContestTopic
+    extra = 3  # 默认显示3个空白的题目表单
+    fields = ['topic', 'order', 'score']
+    ordering = ['order']
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """过滤可选的题目"""
+        if db_field.name == "topic":
+            # 可以在这里添加题目过滤逻辑，比如只显示特定难度的题目
+            kwargs["queryset"] = topic.objects.all().order_by('level', 'title')
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+# 比赛参与者内联配置
+class ContestParticipantInline(admin.TabularInline):
+    model = ContestParticipant
+    extra = 1
+    fields = ['user', 'is_disqualified']
+    readonly_fields = ['registered_at']
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "user":
+            kwargs["queryset"] = User.objects.all().order_by('username')
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+@admin.register(Contest)
+class ContestAdmin(admin.ModelAdmin):
+    list_display = [
+        'title',
+        'start_time',
+        'end_time',
+        'status_display',
+        'topic_count',
+        'participant_count',
+        'created_by',
+        'is_public'
+    ]
+    list_filter = ['is_public', 'start_time', 'created_by']
+    search_fields = ['title', 'description']
+    readonly_fields = ['status_display', 'created_at', 'updated_at']
+    date_hierarchy = 'start_time'
+
+    # 在编辑页面显示的内联
+    inlines = [ContestTopicInline, ContestParticipantInline]
+
+    # 字段分组显示
+    fieldsets = (
+        ('基本信息', {
+            'fields': ('title', 'description', 'start_time', 'end_time', 'created_by')
+        }),
+        ('权限设置', {
+            'fields': ('is_public', 'password', 'allow_register')
+        }),
+        ('比赛规则', {
+            'fields': ('penalty_time', 'ranking_frozen', 'frozen_time')
+        }),
+        ('状态信息', {
+            'fields': ('status_display', 'created_at', 'updated_at')
+        })
+    )
+
+    # 自定义方法用于列表显示
+    def status_display(self, obj):
+        status_colors = {
+            'pending': 'orange',
+            'running': 'green',
+            'ended': 'gray'
+        }
+        color = status_colors.get(obj.status, 'black')
+        return format_html(
+            '<span style="color: {};">{}</span>',
+            color,
+            obj.get_status_display()
+        )
+
+    status_display.short_description = '比赛状态'
+
+    def topic_count(self, obj):
+        return obj.contest_topics.count()
+
+    topic_count.short_description = '题目数量'
+
+    def participant_count(self, obj):
+        return obj.participants.count()
+
+    participant_count.short_description = '参赛人数'
+
+    def save_model(self, request, obj, form, change):
+        if not obj.pk:  # 新建时自动设置创建者
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+    # 批量操作
+    actions = ['make_public', 'make_private']
+
+    def make_public(self, request, queryset):
+        queryset.update(is_public=True)
+
+    make_public.short_description = "设为公开比赛"
+
+    def make_private(self, request, queryset):
+        queryset.update(is_public=False)
+
+    make_private.short_description = "设为私有比赛"
+
+
+# 单独注册比赛题目模型，方便独立管理
+@admin.register(ContestTopic)
+class ContestTopicAdmin(admin.ModelAdmin):
+    list_display = ['contest', 'topic', 'order', 'score']
+    list_filter = ['contest']
+    search_fields = ['contest__title', 'topic__title']
+    list_editable = ['order', 'score']
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "contest":
+            kwargs["queryset"] = Contest.objects.all().order_by('-start_time')
+        elif db_field.name == "topic":
+            kwargs["queryset"] = topic.objects.all().order_by('level', 'title')
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+@admin.register(ContestParticipant)
+class ContestParticipantAdmin(admin.ModelAdmin):
+    list_display = ['contest', 'user', 'registered_at', 'is_disqualified']
+    list_filter = ['contest', 'registered_at', 'is_disqualified']
+    search_fields = ['user__username', 'contest__title']
+    list_editable = ['is_disqualified']
+
+    actions = ['disqualify_participants', 'qualify_participants']
+
+    def disqualify_participants(self, request, queryset):
+        queryset.update(is_disqualified=True)
+
+    disqualify_participants.short_description = "取消选中参与者的资格"
+
+    def qualify_participants(self, request, queryset):
+        queryset.update(is_disqualified=False)
+
+    qualify_participants.short_description = "恢复选中参与者的资格"
+
+
+@admin.register(ContestSubmission)
+class ContestSubmissionAdmin(admin.ModelAdmin):
+    list_display = ['contest', 'participant', 'submission', 'submitted_at']
+    list_filter = ['contest', 'submitted_at']
+    readonly_fields = ['submitted_at']
+
+    def has_add_permission(self, request):
+        # 比赛提交记录应该通过系统自动创建，不允许手动添加
+        return False
 
 # 在文件顶部添加导入
 from django.urls import reverse

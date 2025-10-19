@@ -337,36 +337,32 @@
                 </div>
 
                 <!-- 邮箱字段 -->
-                <div class="form-group">
-                    <label for="{{ form.email.id_for_label }}">电子邮箱</label>
-                    <div class="input-with-icon">
-                        <i class="fas fa-envelope input-icon"></i>
-                        {{ form.email.errors }}
-                        {{ form.email }}
-                    </div>
-                </div>
+{#                <div class="form-group">#}
+{#                    <label for="{{ form.email.id_for_label }}">电子邮箱</label>#}
+{#                    <div class="input-with-icon">#}
+{#                        <i class="fas fa-envelope input-icon"></i>#}
+{#                        {{ form.email.errors }}#}
+{#                        {{ form.email }}#}
+{#                    </div>#}
+{#                </div>#}
 
                 <!-- 密码字段 -->
                 <div class="form-group">
-                    <label for="{{ form.password1.id_for_label }}">密码</label>
+                    <label for="{{ form.password.id_for_label }}">密码</label>
                     <div class="input-with-icon">
                         <i class="fas fa-lock input-icon"></i>
-                        {{ form.password1.errors }}
-                        {{ form.password1 }}
+                        {{ form.password.errors }}
+                        {{ form.password }}
                     </div>
-                    <div class="password-strength" id="password-strength">
-                        <div class="password-strength-bar"></div>
-                    </div>
-                    <div class="password-hint">至少8个字符，包含字母和数字</div>
                 </div>
 
                 <!-- 确认密码字段 -->
                 <div class="form-group">
-                    <label for="{{ form.password2.id_for_label }}">确认密码</label>
+                    <label for="{{ form.password.id_for_label }}">确认密码</label>
                     <div class="input-with-icon">
                         <i class="fas fa-lock input-icon"></i>
-                        {{ form.password2.errors }}
-                        {{ form.password2 }}
+                        {{ form.confirm_password.errors }}
+                        {{ form.confirm_password }}
                     </div>
                 </div>
 
@@ -389,12 +385,19 @@
                 </div>
 
                 <!-- 同意条款 -->
-                <div class="terms-agreement">
-                    {{ form.agree_terms.errors }}
-                    {{ form.agree_terms }}
-                    <label for="{{ form.agree_terms.id_for_label }}">
-                        我已阅读并同意 <a href="#" class="terms-link">服务条款</a> 和 <a href="#" class="terms-link">隐私政策</a>
-                    </label>
+{#                <div class="terms-agreement">#}
+{#                    {{ form.agree_terms.errors }}#}
+{#                    {{ form.agree_terms }}#}
+{#                    <label for="{{ form.agree_terms.id_for_label }}">#}
+{#                        我已阅读并同意 <a href="#" class="terms-link">服务条款</a> 和 <a href="#" class="terms-link">隐私政策</a>#}
+{#                    </label>#}
+{#                </div>#}
+                <div class="remember-forgot">
+                    <div class="remember-me">
+                        {{ form.remember.errors }}
+                        {{ form.remember }}
+                        <label for="{{ form.remember.id_for_label }}">记住我</label>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-register" id="register-btn">

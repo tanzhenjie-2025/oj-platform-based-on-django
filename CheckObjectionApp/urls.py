@@ -40,11 +40,19 @@ urlpatterns = [
     path("CheckObjection_login", views.CheckObjection_login, name="CheckObjectionApp_login"),
     # 退出登录
     path("CheckObjection_logout", views.CheckObjection_logout, name="CheckObjectionApp_logout"),
+    # 无权限则返回
     path("CheckObjection_noPower", views.CheckObjection_noPower, name="CheckObjection_noPower"),
+    # 搜索
     path('CheckObjection_search', views.CheckObjection_search, name='CheckObjection_search'),
     path("CheckObjection_filter", views.CheckObjection_filter, name='CheckObjection_filter'),
     # path("get",views.topic_get.as_view(),name="CheckObjection_topic_get"),
     # path("get",views.topicModel_get.as_view({"get":"get"}), name="CheckObjection_get"),
+    path('contest/', views.ContestListView.as_view(), name='contest_list'),
+    path('contest/<int:pk>/', views.ContestDetailView.as_view(), name='contest_detail'),
+    path('contest/<int:pk>/rank/', views.ContestRankView.as_view(), name='contest_rank'),
+    # path('contest/<int:pk>/register/', views.contest_register, name='contest_register'),
+    # path('contest/<int:contest_id>/problem/<int:problem_id>/', views.contest_problem, name='contest_problem'),
+
     path("t1", views.topicModel_get.as_view()),
     path("t2", views.topicAPIGenericAPIView.as_view()),
     path('get', views.topicAPIView.as_view(), name='CheckObjection_get'),

@@ -77,3 +77,50 @@ class RegisterForm(forms.Form):
             'class': 'form-control'  # 直接添加CSS类
         })
     )
+    password = forms.CharField(
+        label="密码",
+        widget=forms.PasswordInput(attrs={
+            'placeholder': '请输入密码',
+            'required': 'required',
+            'class': 'form-control'  # 直接添加CSS类
+        })
+    )
+    confirm_password = forms.CharField(
+        label="确认密码",
+        widget=forms.PasswordInput(attrs={
+            'placeholder': '请输入确认密码',
+            'required': 'required',
+            'class': 'form-control'  # 直接添加CSS类
+        })
+    )
+    captcha = forms.CharField(
+        label="验证码",
+        widget=forms.TextInput(attrs={
+            'placeholder': '请输入验证码',
+            'required': 'required',
+            'maxlength': '6',
+            'class': 'form-control'  # 直接添加CSS类
+        })
+    )
+    remember = forms.BooleanField(
+        label="记住我",
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'id': 'remember'
+        })
+    )
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError('用户名已存在')
+        return username
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        confirm_password = cleaned_data.get('confirm_password')
+
+        if password and confirm_password and password != confirm_password:
+            raise forms.ValidationError("两次输入的密码不一致")
+
+        return cleaned_data

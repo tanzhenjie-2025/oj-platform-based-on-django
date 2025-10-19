@@ -161,21 +161,25 @@
 
                                     <!-- 语言 -->
                                     <td>
-                                    <span class="badge language-badge status-badge">
-                                        {% if submission.language_id %}
-                                            {% if submission.language_id == 71 %}
-                                                🐍 Python
-                                            {% elif submission.language_id == 54 %}
-                                                ⚡ C++
-                                            {% elif submission.language_id == 62 %}
-                                                ☕ Java
+                                        <span class="badge language-badge status-badge">
+                                            {% if submission.language_id %}
+                                                {% if submission.language_id == 71 %}
+                                                    🐍 Python
+                                                {% elif submission.language_id == 54 %}
+                                                    ⚡ C++
+                                                {% elif submission.language_id == 62 %}
+                                                    ☕ Java
+                                                {% elif submission.language_id == 63 %}
+                                                    🟨 JavaScript
+                                                {% elif submission.language_id == 50 %}
+                                                    ⚙️ C
+                                                {% else %}
+                                                    其他 ({{ submission.language_id }})
+                                                {% endif %}
                                             {% else %}
-                                                其他 ({{ submission.language_id }})
+                                                未知
                                             {% endif %}
-                                        {% else %}
-                                            未知
-                                        {% endif %}
-                                    </span>
+                                        </span>
                                     </td>
 
                                     <!-- 状态 -->

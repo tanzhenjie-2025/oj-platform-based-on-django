@@ -1,0 +1,10 @@
+<!-- templates/contest/detail.html -->
+<h1>{{ contest.title }}</h1>
+<div class="contest-problems">
+    {% for contest_topic in contest_topics %}
+    <div class="problem-item {% if problem_status %}solved{% endif %}">
+        <span>{{ contest_topic.order }}. {{ contest_topic.topic.title }}</span>
+        <span>分值: {{ contest_topic.score }}</span>
+    </div>
+    {% endfor %}
+</div>
