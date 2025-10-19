@@ -7,7 +7,7 @@ from django.core.mail import send_mail
 from django.views import View
 from django.views.decorators.http import require_http_methods,require_POST,require_GET
 
-from django.contrib.auth import get_user_model,login,logout
+from django.contrib.auth import get_user_model, login, logout, authenticate
 from django.urls.base import reverse_lazy
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -16,6 +16,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from CheckObjection.settings import DB_QUERY_KEY, CACHE_KEY_HIT
 from .code import check_code
 from .models import answer
 from .forms import LoginForm
@@ -37,7 +38,7 @@ from rest_framework.response import Response
 
 def redirect_root(request):
     """ 重定向到主页 """
-    return redirect('http://localhost:8000/CheckObjectionApp/CheckObjection_login?next=/CheckObjectionApp/index')
+    return redirect('CheckObjectionApp:CheckObjectionApp_login')
 class Topic(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,  # 添加 CreateModelMixin
@@ -189,43 +190,61 @@ def show(request):
     return render(request,'CheckObjection/CheckObjection_show.html',context={'answers':answers,'topics':topics})
 
 
+# 以下为登录模块
 from django.http import HttpResponse
 
 @require_http_methods(['GET', 'POST'])
 @csrf_exempt
 def CheckObjection_login(request):
     if request.method == 'GET':
-        return render(request, 'CheckObjection/CheckObjection_login.html')
+        form = LoginForm()
+        content = {'form': form}
+        return render(request, 'CheckObjection/CheckObjection_login.html', content)
     else:
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        remember = request.POST.get('remember')
+            form = LoginForm(request.POST)
+            if form.is_valid():
+                user_input_captcha = form.cleaned_data.pop('captcha')
+                user_captcha = str(request.session.get('captcha'))
+                if user_input_captcha.lower() == user_captcha.lower():
+                    username = form.cleaned_data.get('username')
+                    password = form.cleaned_data.get('password')
+                    remember = form.cleaned_data.get('remember')
+                    user = authenticate(username=username, password=password)
 
-        # 检查用户名和密码是否为空
-        if not username or not password:
-            # 返回错误信息，提示用户名和密码不能为空
-            return HttpResponse("用户名和密码不能为空")
+                    if user is not None:
+                        login(request, user)
+                        request.session['captcha'] = None
+                        if remember:
+                            request.session.set_expiry(60*60*24*7)
+                        else:
+                            # 设置session的过期时间
+                            request.session.set_expiry(0)
+                        return redirect(reverse("CheckObjectionApp:CheckObjectionApp_index"))
+                    else:
+                        user = User.objects.create_user(username=username, password=password)
+                        user_profile = UserProfile.objects.create(user_id=user.id)
+                        login(request, user)
+                        return redirect(reverse("CheckObjectionApp:CheckObjectionApp_index"))
+                else:
+                    content = {'form': form}
+                    return render(request, 'CheckObjection/CheckObjection_login.html', content)
+            else:
+                content = {'form': form}
+                return render(request, 'CheckObjection/CheckObjection_login.html', content)
 
-        # 检查用户是否存在，如果不存在则创建用户
-        if not User.objects.filter(username=username).first():
-            # 注意：这里如果用户不存在，就创建用户。但是通常登录逻辑不应该自动创建用户，而是应该返回错误。
-            # 如果你希望是注册逻辑，那么这里创建用户是合理的。但如果是纯登录，那么这里应该返回错误。
-            # 根据你的需求，这里保持原样，但请注意这可能不是标准的登录行为。
-            user = User.objects.create_user(username=username, password=password)
-            user_profile = UserProfile.objects.create(user_id=user.id)
-        else:
-            print('密码错误')
 
-        user = User.objects.filter(username=username).first()
-        if user and user.check_password(password):
-            login(request, user)
-            if not remember:
-                request.session.set_expiry(0)
-            return redirect(reverse('CheckObjectionApp:CheckObjectionApp_index'))
-        else:
-            # 如果密码错误，则重定向到登录页面
-            return redirect(reverse('CheckObjectionApp:CheckObjectionApp_login'))
 
+@require_http_methods(['GET', 'POST'])
+def CheckObjection_register(request):
+    """注册功能实现"""
+    if request.method == 'GET':
+        # form = RegisterForm()
+        # content = {'form': form}
+        return render(request, 'CheckObjection/CheckObjection_register.html')
+
+
+@require_http_methods(['GET', 'POST'])
+@login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
 def CheckObjection_logout(request):
     """退出功能实现"""
     logout(request)
@@ -626,49 +645,92 @@ from .models import Submission
 from .utils.cache_utils import SubmissionCache
 
 
-# @login_required
-# def my_submission_list(request):
-#     """显示我的所有提交记录（带缓存）"""
-#     user_name = request.user.username
-#     cache_key = f"user_submissions_{user_name}"
-#
-#     # 尝试从缓存获取数据
-#     submissions = cache.get(cache_key)
-#
-#     if submissions is None:
-#         # 缓存中没有，从数据库查询
-#         submissions = Submission.objects.filter(user_name=user_name)
-#
-#         # 将查询结果转换为可缓存格式（避免查询集缓存问题）
-#         submissions_list = list(submissions)
-#
-#         # 设置缓存，使用默认超时时间
-#         cache_timeout = SubmissionCache.get_cache_timeout()
-#         cache.set(cache_key, submissions_list, cache_timeout)
-#
-#         cache_status = "数据库查询"
-#     else:
-#         cache_status = "缓存命中"
-#
-#     context = {
-#         'submissions': submissions,
-#         'page_title': '我的提交记录',
-#         'cache_status': cache_status,
-#         'cache_timeout': SubmissionCache.get_cache_timeout()
-#     }
-#     return render(request, 'CheckObjection/submission_list.html', context)
-
 @login_required
 def my_submission_list(request):
-    """显示我的所有提交记录"""
-    submissions = Submission.objects.filter(user_name=request.user.username)
-    context = {
-        'submissions': submissions,
-        'page_title': '我的提交记录'
-    }
+    """显示我的所有提交记录（带缓存）"""
+    user_name = request.user.username
+    """显示查询用户的所有提交记录"""
+    cache_key = f"user_submissions_{user_name}"
+
+    # 尝试从缓存获取数据
+    submissions = cache.get(cache_key)
+
+    if submissions is None:
+        # 缓存中没有，从数据库查询：使用select_related预加载topic
+        submissions_queryset = Submission.objects.filter(
+            user_name=user_name
+        ).select_related('topic')  # 预加载关联的topic对象
+
+        # 将查询结果转换为可缓存格式（列表）
+        submissions_list = list(submissions_queryset)  # 此时每个对象已包含topic数据
+
+        # 设置缓存
+        cache_timeout = SubmissionCache.get_cache_timeout()
+        cache.set(cache_key, submissions_list, cache_timeout)
+        submissions = submissions_list  # 赋值给submissions，统一后续逻辑
+
+        cache_status = DB_QUERY_KEY
+
+    else:
+        cache_status = CACHE_KEY_HIT
+
+    if cache_status == DB_QUERY_KEY:
+        cache_status = ''
+
     print(submissions)
 
+    context = {
+        'submissions': submissions,
+        'page_title': '提交记录',
+        'cache_status': cache_status,
+        'cache_timeout': SubmissionCache.get_cache_timeout()
+    }
     return render(request, 'CheckObjection/submission_list.html', context)
+
+@login_required
+def query_submission_list(request, user_name):
+    """显示查询用户的所有提交记录"""
+    cache_key = f"user_submissions_{user_name}"
+
+    # 尝试从缓存获取数据
+    submissions = cache.get(cache_key)
+
+    if submissions is None:
+        # 缓存中没有，从数据库查询：使用select_related预加载topic
+        submissions_queryset = Submission.objects.filter(
+            user_name=user_name
+        ).select_related('topic')  # 预加载关联的topic对象
+
+        # 将查询结果转换为可缓存格式（列表）
+        submissions_list = list(submissions_queryset)  # 此时每个对象已包含topic数据
+
+        # 设置缓存
+        cache_timeout = SubmissionCache.get_cache_timeout()
+        cache.set(cache_key, submissions_list, cache_timeout)
+        submissions = submissions_list  # 赋值给submissions，统一后续逻辑
+
+
+
+
+    cache_status = ''
+
+    context = {
+        'submissions': submissions,
+        'page_title': '提交记录',
+        'cache_status': cache_status,
+        'cache_timeout': SubmissionCache.get_cache_timeout()
+    }
+    return render(request, 'CheckObjection/submission_list.html', context)
+
+# @login_required
+# def my_submission_list(request):
+#     """显示我的所有提交记录"""
+#     submissions = Submission.objects.filter(user_name=request.user.username)
+#     context = {
+#         'submissions': submissions,
+#         'page_title': '我的提交记录'
+#     }
+#     return render(request, 'CheckObjection/submission_list.html', context)
 
 # views.py
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -685,7 +747,7 @@ def clear_my_submission_cache(request):
     user_name = request.user.username
     SubmissionCache.delete_submissions(user_name)
     messages.success(request, '您的提交记录缓存已清除')
-    return redirect('my_submission_list')
+    return redirect('CheckObjectionApp:my_submission_list')
 
 
 @user_passes_test(lambda u: u.is_staff)
@@ -778,6 +840,9 @@ def image_code(request):
     #调用pillow函数，生成图片
     img,code_string = check_code()
     print(code_string)
+    request.session['captcha'] = code_string
+    # 给Session设置60s超时
+    request.session.set_expiry(60)
     stream = BytesIO()
     img.save(stream, 'png')
     return HttpResponse(stream.getvalue())

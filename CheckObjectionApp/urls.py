@@ -20,7 +20,7 @@ urlpatterns = [
     path('submission/<uuid:pk>/', views.submission_detail, name='submission_detail'),
 
     path('my_submission', views.my_submission_list, name='my_submission_list'),
-
+    path('query_submission_list/<user_name>',views.query_submission_list,name='query_submission_list'),
     path("index", views.index, name="CheckObjectionApp_index"),
     path("base", views.base, name="CheckObjectionApp_base"),
     path("detail/<topic_id>", views.detail, name="CheckObjectionApp_detail"),
@@ -34,8 +34,11 @@ urlpatterns = [
     path('image_code',views.image_code,name='image_code'),
     # 删除缓存
     path('clear_my_submission_cache', views.clear_my_submission_cache, name='clear_my_submission_cache'),
-
+    # 注册
+    path("CheckObjection_register", views.CheckObjection_register, name="CheckObjectionApp_register"),
+    # 登录
     path("CheckObjection_login", views.CheckObjection_login, name="CheckObjectionApp_login"),
+    # 退出登录
     path("CheckObjection_logout", views.CheckObjection_logout, name="CheckObjectionApp_logout"),
     path("CheckObjection_noPower", views.CheckObjection_noPower, name="CheckObjection_noPower"),
     path('CheckObjection_search', views.CheckObjection_search, name='CheckObjection_search'),

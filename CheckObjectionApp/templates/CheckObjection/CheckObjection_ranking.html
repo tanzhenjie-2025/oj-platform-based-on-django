@@ -316,7 +316,10 @@
                     </thead>
                     <tbody>
                         {% for item in rankings %}
-                        <tr class="rank-item {% if item.rank <= 3 %}rank-{{ item.rank }}{% endif %}">
+                        <tr
+    onclick="window.location.href='{% url 'CheckObjectionApp:query_submission_list' user_name=item.user_name %}'"
+    class="rank-item {% if item.rank <= 3 %}rank-{{ item.rank }}{% endif %}"
+    style="cursor: pointer;"  >
                             <td class="fw-bold">
                                 {% if item.rank == 1 %}
                                     <span class="medal gold"><i class="fas fa-trophy"></i></span>

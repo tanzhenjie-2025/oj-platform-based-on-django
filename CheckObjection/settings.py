@@ -202,3 +202,7 @@ CHANNEL_LAYERS = {
 }
 
 AUTH_USER_MODEL = 'auth.User'
+
+# 缓存相关常量
+CACHE_KEY_HIT = 'cache_hit'
+DB_QUERY_KEY = 'db_query'

@@ -207,16 +207,23 @@ class TestCaseAdmin(ModelAdmin):
     topic_title.short_description = '题目'
 
 
+from django.contrib import admin
+from django.utils.html import format_html
+from .models import Submission  # 确保导入正确
+
+
 @admin.register(Submission)
-class SubmissionAdmin(ModelAdmin):
+class SubmissionAdmin(admin.ModelAdmin):
     """提交记录管理"""
+    # 1. 将 list_display 中的 'topic_id' 改为 'old_topic_id'
     list_display = (
-        'id_short', 'user_name', 'topic_id',
+        'id_short', 'user_name', 'old_topic_id',  # 这里修改
         'language_display', 'status_badge',
         'overall_result', 'created_at'
     )
     list_filter = ('status', 'language_id', 'created_at')
-    search_fields = ('user_name', 'topic_id', 'source_code')
+    # 2. 将 search_fields 中的 'topic_id' 改为 'old_topic_id'
+    search_fields = ('user_name', 'old_topic_id', 'source_code')  # 这里修改
     list_per_page = 25
     readonly_fields = (
         'id', 'created_at', 'updated_at',
@@ -226,7 +233,8 @@ class SubmissionAdmin(ModelAdmin):
 
     fieldsets = (
         ('基本信息', {
-            'fields': ('id', 'user_name', 'topic_id', 'created_at')
+            # 3. 将 fields 中的 'topic_id' 改为 'old_topic_id'
+            'fields': ('id', 'user_name', 'old_topic_id', 'created_at')  # 这里修改
         }),
         ('提交内容', {
             'fields': ('language_id', 'source_code_preview', 'notes')
@@ -236,6 +244,7 @@ class SubmissionAdmin(ModelAdmin):
         }),
     )
 
+    # 以下方法保持不变
     def id_short(self, obj):
         """缩短ID显示"""
         return str(obj.id)[:8]

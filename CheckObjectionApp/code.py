@@ -6,6 +6,8 @@ def check_code(width=120, height=30, char_length=5, font_file='D:\python object\
     img = Image.new(mode='RGB', size=(width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(img, mode='RGB')
 
+
+
     def rndChar():
         """
         生成随机字母

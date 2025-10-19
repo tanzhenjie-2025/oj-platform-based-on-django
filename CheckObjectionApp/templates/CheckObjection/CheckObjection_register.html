@@ -2,7 +2,7 @@
 {% block head %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .login-container {
+        .register-container {
             display: flex;
             justify-content: center;
             align-items: center;
@@ -10,32 +10,32 @@
             padding: 40px 20px;
         }
 
-        .login-card {
+        .register-card {
             background-color: var(--bg-light);
             border-radius: 12px;
             padding: 30px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 400px;
+            max-width: 450px;
         }
 
-        .login-header {
+        .register-header {
             text-align: center;
             margin-bottom: 30px;
         }
 
-        .login-title {
+        .register-title {
             font-size: 1.8rem;
             color: var(--secondary);
             margin-bottom: 10px;
         }
 
-        .login-subtitle {
+        .register-subtitle {
             color: var(--gray);
             font-size: 1rem;
         }
 
-        .login-form {
+        .register-form {
             margin-bottom: 20px;
         }
 
@@ -76,6 +76,41 @@
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        }
+
+        .password-strength {
+            margin-top: 5px;
+            height: 4px;
+            background-color: #e9ecef;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s;
+        }
+
+        .password-strength.weak .password-strength-bar {
+            width: 33%;
+            background-color: #dc3545;
+        }
+
+        .password-strength.medium .password-strength-bar {
+            width: 66%;
+            background-color: #ffc107;
+        }
+
+        .password-strength.strong .password-strength-bar {
+            width: 100%;
+            background-color: #28a745;
+        }
+
+        .password-hint {
+            font-size: 0.75rem;
+            color: var(--gray);
+            margin-top: 5px;
         }
 
         .errorlist {
@@ -128,30 +163,29 @@
             color: var(--primary);
         }
 
-        .remember-forgot {
+        .terms-agreement {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
+            gap: 8px;
             margin-bottom: 20px;
             font-size: 0.9rem;
         }
 
-        .remember-me {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .terms-agreement label {
+            margin: 0;
+            line-height: 1.4;
         }
 
-        .forgot-password {
+        .terms-link {
             color: var(--primary);
             text-decoration: none;
         }
 
-        .forgot-password:hover {
+        .terms-link:hover {
             text-decoration: underline;
         }
 
-        .btn-login {
+        .btn-register {
             width: 100%;
             padding: 12px;
             background-color: var(--primary);
@@ -168,37 +202,37 @@
             gap: 10px;
         }
 
-        .btn-login:hover {
+        .btn-register:hover {
             background-color: var(--secondary);
         }
 
-        .btn-login:disabled {
+        .btn-register:disabled {
             background-color: var(--gray);
             cursor: not-allowed;
         }
 
-        .login-footer {
+        .register-footer {
             text-align: center;
             margin-top: 20px;
             padding-top: 20px;
             border-top: 1px solid var(--border);
         }
 
-        .register-link {
+        .login-link {
             color: var(--primary);
             text-decoration: none;
             font-weight: 500;
         }
 
-        .register-link:hover {
+        .login-link:hover {
             text-decoration: underline;
         }
 
-        .social-login {
+        .social-register {
             margin-top: 20px;
         }
 
-        .social-login-title {
+        .social-register-title {
             text-align: center;
             margin-bottom: 15px;
             position: relative;
@@ -206,8 +240,8 @@
             font-size: 0.9rem;
         }
 
-        .social-login-title::before,
-        .social-login-title::after {
+        .social-register-title::before,
+        .social-register-title::after {
             content: "";
             position: absolute;
             top: 50%;
@@ -216,11 +250,11 @@
             background-color: var(--border);
         }
 
-        .social-login-title::before {
+        .social-register-title::before {
             left: 0;
         }
 
-        .social-login-title::after {
+        .social-register-title::after {
             right: 0;
         }
 
@@ -262,18 +296,12 @@
 
         /* 响应式设计 */
         @media (max-width: 480px) {
-            .login-card {
+            .register-card {
                 padding: 20px;
             }
 
-            .login-title {
+            .register-title {
                 font-size: 1.5rem;
-            }
-
-            .remember-forgot {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
             }
 
             .captcha-container {
@@ -288,20 +316,19 @@
 {% endblock head %}
 
 {% block main %}
-    <div class="login-container">
-        <div class="login-card">
-            <div class="login-header">
-                <h1 class="login-title">欢迎回来</h1>
-                <p class="login-subtitle">登录您的账号继续使用算法实验室</p>
-                <p class="login-subtitle">未注册账号将自动注册</p>
+    <div class="register-container">
+        <div class="register-card">
+            <div class="register-header">
+                <h1 class="register-title">创建账号</h1>
+                <p class="register-subtitle">注册新账号加入算法实验室</p>
             </div>
 
-            <form class="login-form" id="login-form" method="post">
+            <form class="register-form" id="register-form" method="post">
                 {% csrf_token %}
 
-                <!-- 用户名/邮箱字段 -->
+                <!-- 用户名字段 -->
                 <div class="form-group">
-                    <label for="{{ form.username.id_for_label }}">用户名或邮箱</label>
+                    <label for="{{ form.username.id_for_label }}">用户名</label>
                     <div class="input-with-icon">
                         <i class="fas fa-user input-icon"></i>
                         {{ form.username.errors }}
@@ -309,13 +336,37 @@
                     </div>
                 </div>
 
+                <!-- 邮箱字段 -->
+                <div class="form-group">
+                    <label for="{{ form.email.id_for_label }}">电子邮箱</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-envelope input-icon"></i>
+                        {{ form.email.errors }}
+                        {{ form.email }}
+                    </div>
+                </div>
+
                 <!-- 密码字段 -->
                 <div class="form-group">
-                    <label for="{{ form.password.id_for_label }}">密码</label>
+                    <label for="{{ form.password1.id_for_label }}">密码</label>
                     <div class="input-with-icon">
                         <i class="fas fa-lock input-icon"></i>
-                        {{ form.password.errors }}
-                        {{ form.password }}
+                        {{ form.password1.errors }}
+                        {{ form.password1 }}
+                    </div>
+                    <div class="password-strength" id="password-strength">
+                        <div class="password-strength-bar"></div>
+                    </div>
+                    <div class="password-hint">至少8个字符，包含字母和数字</div>
+                </div>
+
+                <!-- 确认密码字段 -->
+                <div class="form-group">
+                    <label for="{{ form.password2.id_for_label }}">确认密码</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-lock input-icon"></i>
+                        {{ form.password2.errors }}
+                        {{ form.password2 }}
                     </div>
                 </div>
 
@@ -337,20 +388,39 @@
                     </div>
                 </div>
 
-                <!-- 记住我 -->
-                <div class="remember-forgot">
-                    <div class="remember-me">
-                        {{ form.remember.errors }}
-                        {{ form.remember }}
-                        <label for="{{ form.remember.id_for_label }}">记住我</label>
-                    </div>
-                    <a href="#" class="forgot-password">忘记密码?</a>
+                <!-- 同意条款 -->
+                <div class="terms-agreement">
+                    {{ form.agree_terms.errors }}
+                    {{ form.agree_terms }}
+                    <label for="{{ form.agree_terms.id_for_label }}">
+                        我已阅读并同意 <a href="#" class="terms-link">服务条款</a> 和 <a href="#" class="terms-link">隐私政策</a>
+                    </label>
                 </div>
 
-                <button type="submit" class="btn-login" id="login-btn">
-                    <i class="fas fa-sign-in-alt"></i> 登录
+                <button type="submit" class="btn-register" id="register-btn">
+                    <i class="fas fa-user-plus"></i> 注册账号
                 </button>
             </form>
+
+            <div class="register-footer">
+                <p>已有账号? <a href="{% url 'CheckObjectionApp:CheckObjectionApp_login' %}" class="login-link">立即登录</a></p>
+            </div>
+
+            <!-- 第三方注册 -->
+{#            <div class="social-register">#}
+{#                <div class="social-register-title">或使用以下方式注册</div>#}
+{#                <div class="social-buttons">#}
+{#                    <div class="social-btn">#}
+{#                        <i class="fab fa-google"></i>#}
+{#                    </div>#}
+{#                    <div class="social-btn">#}
+{#                        <i class="fab fa-github"></i>#}
+{#                    </div>#}
+{#                    <div class="social-btn">#}
+{#                        <i class="fab fa-weixin"></i>#}
+{#                    </div>#}
+{#                </div>#}
+{#            </div>#}
         </div>
     </div>
 
@@ -358,6 +428,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             const captchaImage = document.getElementById('captcha-image');
             const refreshCaptcha = document.getElementById('refresh-captcha');
+            const passwordInput = document.getElementById('{{ form.password1.id_for_label }}');
+            const passwordStrength = document.getElementById('password-strength');
+            const registerForm = document.getElementById('register-form');
 
             // 刷新验证码
             function refreshCaptchaImage() {
@@ -366,11 +439,64 @@
                 captchaImage.src = currentSrc + separator + 't=' + new Date().getTime();
             }
 
+            // 密码强度检测
+            function checkPasswordStrength(password) {
+                let strength = 0;
+                
+                if (password.length >= 8) strength++;
+                if (/[a-z]/.test(password)) strength++;
+                if (/[A-Z]/.test(password)) strength++;
+                if (/[0-9]/.test(password)) strength++;
+                if (/[^a-zA-Z0-9]/.test(password)) strength++;
+                
+                return strength;
+            }
+
+            // 更新密码强度显示
+            function updatePasswordStrength() {
+                const password = passwordInput.value;
+                const strength = checkPasswordStrength(password);
+                
+                passwordStrength.className = 'password-strength';
+                
+                if (password.length > 0) {
+                    if (strength <= 2) {
+                        passwordStrength.classList.add('weak');
+                    } else if (strength <= 4) {
+                        passwordStrength.classList.add('medium');
+                    } else {
+                        passwordStrength.classList.add('strong');
+                    }
+                }
+            }
+
             // 点击图片刷新验证码
             captchaImage.addEventListener('click', refreshCaptchaImage);
 
             // 点击文字刷新验证码
             refreshCaptcha.addEventListener('click', refreshCaptchaImage);
+
+            // 监听密码输入
+            passwordInput.addEventListener('input', updatePasswordStrength);
+
+            // 表单提交前验证
+            registerForm.addEventListener('submit', function(e) {
+                const password1 = document.getElementById('{{ form.password1.id_for_label }}').value;
+                const password2 = document.getElementById('{{ form.password2.id_for_label }}').value;
+                const agreeTerms = document.getElementById('{{ form.agree_terms.id_for_label }}');
+                
+                if (password1 !== password2) {
+                    e.preventDefault();
+                    alert('两次输入的密码不一致，请重新输入');
+                    return false;
+                }
+                
+                if (!agreeTerms.checked) {
+                    e.preventDefault();
+                    alert('请阅读并同意服务条款和隐私政策');
+                    return false;
+                }
+            });
         });
     </script>
 {% endblock main %}

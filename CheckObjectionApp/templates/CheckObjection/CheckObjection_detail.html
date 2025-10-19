@@ -493,6 +493,7 @@
     <!-- 主内容区域 -->
     <div class="container">
         <div class="main-content">
+
             <!-- 题目信息区域 -->
             <div class="problem-info">
                 <div class="problem-header">
@@ -511,13 +512,13 @@
                 </div>
 
                 <div class="problem-description">
-                    <p>{{ topic_content.content }}</p>
+                    <p>{{ topic_content.content|linebreaks }}</p>
                 </div>
 
                 <div class="problem-constraints">
                     <h4>示例</h4>
                     <div class="constraint-list">
-                        {{ topic_content.example|safe }}
+                        {{ topic_content.example|safe|linebreaks }}
                     </div>
                 </div>
 
@@ -818,7 +819,52 @@ int main() {
                     kind: monaco.languages.CompletionItemKind.Keyword,
                     documentation: '从模块导入',
                     insertText: 'from ${1:module} import ${2:function}'
-                }
+                },
+                {
+                    label: 'len',
+                    kind: monaco.languages.CompletionItemKind.Function,
+                    documentation: '返回对象长度',
+                    insertText: 'len(${1:obj})'
+                },
+                {
+                    label: 'range',
+                    kind: monaco.languages.CompletionItemKind.Function,
+                    documentation: '生成一个整数序列',
+                    insertText: 'range(${1:start}, ${2:stop}, ${3:step})'
+                },
+                {
+                    label: 'list',
+                    kind: monaco.languages.CompletionItemKind.Class,
+                    documentation: '列表',
+                    insertText: 'list(${1:iterable})'
+                },
+                {
+                    label: 'dict',
+                    kind: monaco.languages.CompletionItemKind.Class,
+                    documentation: '字典',
+                    insertText: 'dict(${1:key_value_pairs})'
+                },
+                // 常用库导入片段
+                {
+                    label: 'import_json',
+                    kind: monaco.languages.CompletionItemKind.Snippet,
+                    documentation: '导入 json 模块',
+                    insertText: 'import json'
+                },
+                {
+                    label: 'import_math',
+                    kind: monaco.languages.CompletionItemKind.Snippet,
+                    documentation: '导入 math 模块',
+                    insertText: 'import math'
+                },
+                {
+                    label: 'class',
+                    kind: monaco.languages.CompletionItemKind.Class,
+                    documentation: '定义类',
+                    insertText: 'class ${1:ClassName} {\n\tconstructor(${2:parameters}) {\n\t\t${3:}\n\t}\n\t${4:}\n}',
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                },
+
             ];
         }
 
@@ -884,6 +930,42 @@ int main() {
                     documentation: 'for 循环',
                     insertText: 'for (int ${1:i} = 0; $1 < ${2:count}; $1++) {\n\t${3:}\n}',
                     insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                },
+                {
+                    label: 'ArrayList',
+                    kind: monaco.languages.CompletionItemKind.Class,
+                    documentation: 'ArrayList 类',
+                    insertText: 'ArrayList<${1:String}> ${2:list} = new ArrayList<>();'
+                },
+                {
+                    label: 'HashMap',
+                    kind: monaco.languages.CompletionItemKind.Class,
+                    documentation: 'HashMap 类',
+                    insertText: 'HashMap<${1:String}, ${2:Object}> ${3:map} = new HashMap<>();'
+                },
+                {
+                    label: 'Scanner',
+                    kind: monaco.languages.CompletionItemKind.Class,
+                    documentation: 'Scanner 类，用于输入',
+                    insertText: 'Scanner ${1:scanner} = new Scanner(System.in);'
+                },
+                // 常用控制流片段
+                {
+                    label: 'for_i',
+                    kind: monaco.languages.CompletionItemKind.Snippet,
+                    documentation: 'for 循环 (带索引)',
+                    insertText: 'for (int ${1:i} = 0; $1 < ${2:length}; $1++) {\n\t${3:}\n}'
+                },
+                {
+                    label: 'try_catch',
+                    kind: monaco.languages.CompletionItemKind.Snippet,
+                    documentation: 'try-catch 块',
+                    insertText: 'try {\n\t${1:}\n} catch (Exception e) {\n\t${2:e.printStackTrace();}\n}'
+                }, {
+                    label: 'if',
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    documentation: 'if 语句',
+                    insertText: 'if (condition) {\n\t}\n'
                 }
             ];
         }
@@ -916,6 +998,54 @@ int main() {
                     documentation: 'for 循环',
                     insertText: 'for (int ${1:i} = 0; $1 < ${2:count}; $1++) {\n\t${3:}\n}',
                     insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                }, {
+                    label: 'if',
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    documentation: 'if 语句',
+                    insertText: 'if (${1:condition}) {\n\t${2:}\n}'
+
+                },
+                {
+                    label: 'vector',
+                    kind: monaco.languages.CompletionItemKind.Class,
+                    documentation: 'std::vector 容器',
+                    insertText: 'std::vector<${1:int}> ${2:vec}${3:(${4:size})};'
+                },
+                {
+                    label: 'string',
+                    kind: monaco.languages.CompletionItemKind.Class,
+                    documentation: 'std::string',
+                    insertText: 'std::string ${1:str}${2:(\"${3:hello}\")};'
+                },
+                {
+                    label: 'cin',
+                    kind: monaco.languages.CompletionItemKind.Variable,
+                    documentation: '标准输入',
+                    insertText: 'std::cin >> ${1:variable};'
+                },
+                {
+                    label: 'endl',
+                    kind: monaco.languages.CompletionItemKind.Property,
+                    documentation: '换行并刷新输出缓冲区',
+                    insertText: 'std::endl'
+                },
+                // 头文件包含片段
+                {
+                    label: 'include_vector',
+                    kind: monaco.languages.CompletionItemKind.Snippet,
+                    documentation: '#include <vector>',
+                    insertText: '#include <vector>'
+                },
+                {
+                    label: 'include_string',
+                    kind: monaco.languages.CompletionItemKind.Snippet,
+                    documentation: '#include <string>',
+                    insertText: '#include <string>'
+                }, {
+                    label: 'while',
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    documentation: 'while 循环',
+                    insertText: 'while (${1:condition}) {\n\t${2:}\n}'
                 }
             ];
         }
@@ -948,6 +1078,41 @@ int main() {
                     documentation: 'for 循环',
                     insertText: 'for (int ${1:i} = 0; $1 < ${2:count}; $1++) {\n\t${3:}\n}',
                     insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+                }, {
+                    label: 'if',
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    documentation: 'if 语句',
+                    insertText: 'if (${1:condition}) {\n\t${2:}\n}'
+                }, {
+                    label: 'malloc',
+                    kind: monaco.languages.CompletionItemKind.Function,
+                    documentation: '动态内存分配',
+                    insertText: '${1:int} *${2:ptr} = (${1}*)malloc(${3:size} * sizeof(${1}));'
+                },
+                {
+                    label: 'free',
+                    kind: monaco.languages.CompletionItemKind.Function,
+                    documentation: '释放动态分配的内存',
+                    insertText: 'free(${1:ptr});'
+                },
+                {
+                    label: 'sizeof',
+                    kind: monaco.languages.CompletionItemKind.Operator,
+                    documentation: '返回类型或对象的大小',
+                    insertText: 'sizeof(${1:type_or_object})'
+                },
+                {
+                    label: 'typedef_struct',
+                    kind: monaco.languages.CompletionItemKind.Snippet,
+                    documentation: '定义结构体类型',
+                    insertText: 'typedef struct {\n\t${1:int} ${2:field};\n} ${3:MyStruct};'
+                },
+                // 条件编译片段
+                {
+                    label: 'ifdef',
+                    kind: monaco.languages.CompletionItemKind.Snippet,
+                    documentation: '#ifdef 条件编译',
+                    insertText: '#ifdef ${1:MACRO}\n\t${2:}\n#endif'
                 }
             ];
         }

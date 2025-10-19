@@ -82,7 +82,16 @@ class Submission(models.Model):
         null=True
     )
     user_name = models.CharField(max_length=100)
-    topic_id = models.CharField(max_length=100)
+    topic = models.ForeignKey(
+        'topic',  # 关联到topic模型（类名是小写的topic）
+        on_delete=models.CASCADE,  # 当题目被删除时，关联的提交也删除
+        related_name='submissions',  # 反向关联名：topic.submissions可查所有提交
+        null=False  # 暂时允许为空，后续会填充数据
+
+    )
+
+    old_topic_id = models.CharField(max_length=100)
+
     source_code = models.TextField()
     language_id = models.IntegerField(default=71)
     status = models.CharField(max_length=20)
