@@ -378,6 +378,11 @@ class ContestAdmin(admin.ModelAdmin):
 
     # 自定义方法用于列表显示
     def status_display(self, obj):
+        # 用CONTEST_STATUS创建一个"状态值: 显示文本"的映射字典
+        status_mapping = dict(Contest.CONTEST_STATUS)
+        # 获取当前状态对应的显示文本（比如obj.status是'pending'，则对应'未开始'）
+        display_text = status_mapping.get(obj.status, obj.status)  # 兜底防止未定义的状态
+
         status_colors = {
             'pending': 'orange',
             'running': 'green',
@@ -387,7 +392,7 @@ class ContestAdmin(admin.ModelAdmin):
         return format_html(
             '<span style="color: {};">{}</span>',
             color,
-            obj.get_status_display()
+            display_text  # 这里用手动映射的显示文本，替代get_status_display()
         )
 
     status_display.short_description = '比赛状态'

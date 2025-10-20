@@ -72,6 +72,11 @@
             transition: all 0.3s;
         }
 
+        .form-control.error {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+        }
+
         .form-control:focus {
             outline: none;
             border-color: var(--primary);
@@ -84,6 +89,14 @@
             padding: 5px 0;
             margin: 0;
             font-size: 0.875rem;
+        }
+
+        .errorlist.nonfield {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 6px;
+            padding: 10px 15px;
+            margin-bottom: 20px;
         }
 
         .captcha-container {
@@ -298,14 +311,29 @@
             <form class="login-form" id="login-form" method="post">
                 {% csrf_token %}
 
+                <!-- 显示非字段错误 -->
+                {% if form.non_field_errors %}
+                <div class="errorlist nonfield">
+                    {% for error in form.non_field_errors %}
+                        <div><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
                 <!-- 用户名/邮箱字段 -->
                 <div class="form-group">
                     <label for="{{ form.username.id_for_label }}">用户名或邮箱</label>
                     <div class="input-with-icon">
                         <i class="fas fa-user input-icon"></i>
-                        {{ form.username.errors }}
                         {{ form.username }}
                     </div>
+                    {% if form.username.errors %}
+                    <div class="errorlist">
+                        {% for error in form.username.errors %}
+                            <div><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
 
                 <!-- 密码字段 -->
@@ -313,9 +341,15 @@
                     <label for="{{ form.password.id_for_label }}">密码</label>
                     <div class="input-with-icon">
                         <i class="fas fa-lock input-icon"></i>
-                        {{ form.password.errors }}
                         {{ form.password }}
                     </div>
+                    {% if form.password.errors %}
+                    <div class="errorlist">
+                        {% for error in form.password.errors %}
+                            <div><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
 
                 <!-- 验证码字段 -->
@@ -324,7 +358,6 @@
                     <div class="captcha-container">
                         <div class="input-with-icon captcha-input">
                             <i class="fas fa-shield-alt input-icon"></i>
-                            {{ form.captcha.errors }}
                             {{ form.captcha }}
                         </div>
                         <div class="captcha-display">
@@ -334,12 +367,18 @@
                             </div>
                         </div>
                     </div>
+                    {% if form.captcha.errors %}
+                    <div class="errorlist">
+                        {% for error in form.captcha.errors %}
+                            <div><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
 
                 <!-- 记住我 -->
                 <div class="remember-forgot">
                     <div class="remember-me">
-                        {{ form.remember.errors }}
                         {{ form.remember }}
                         <label for="{{ form.remember.id_for_label }}">记住我</label>
                     </div>
@@ -357,6 +396,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const captchaImage = document.getElementById('captcha-image');
             const refreshCaptcha = document.getElementById('refresh-captcha');
+            const form = document.getElementById('login-form');
 
             // 刷新验证码
             function refreshCaptchaImage() {
@@ -370,6 +410,27 @@
 
             // 点击文字刷新验证码
             refreshCaptcha.addEventListener('click', refreshCaptchaImage);
+
+            // 为有错误的输入框添加错误样式
+            const errorInputs = document.querySelectorAll('.errorlist + .input-with-icon input, .errorlist + .captcha-container input');
+            errorInputs.forEach(input => {
+                input.classList.add('error');
+            });
+
+            // 输入时移除错误样式
+            const allInputs = form.querySelectorAll('input');
+            allInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    if (this.classList.contains('error')) {
+                        this.classList.remove('error');
+                        // 清除对应的错误信息
+                        const errorDiv = this.closest('.form-group').querySelector('.errorlist');
+                        if (errorDiv) {
+                            errorDiv.style.display = 'none';
+                        }
+                    }
+                });
+            });
         });
     </script>
 {% endblock main %}

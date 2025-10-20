@@ -1,4 +1,5 @@
 from django.core.exceptions import PermissionDenied
+from django.db import IntegrityError
 from django.shortcuts import render,redirect,reverse
 import string
 from django.http.response import JsonResponse
@@ -131,6 +132,7 @@ def base(request):
     return render(request,'CheckObjection/CheckObjectionApp_base.html')
 
 
+# todo 下面这段代码的逻辑不知道在写什么，有空重构
 @require_http_methods(['GET', 'POST'])
 @login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
 def detail(request, topic_id):
@@ -162,7 +164,7 @@ def detail(request, topic_id):
     else:
         topic_content = topic.objects.get(id=topic_id)
         user = request.user
-        return render(request, 'CheckObjection/CheckObjection_detail.html',
+        return render(request, 'CheckObjection/submission/practice_submission.html',
                       context={'topic_content': topic_content, 'user': user})
 @require_http_methods(['GET', 'POST'])
 @login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
@@ -207,36 +209,51 @@ def CheckObjection_login(request):
         if form.is_valid():
             user_input_captcha = form.cleaned_data.pop('captcha')
             user_captcha = str(request.session.get('captcha'))
-            if user_input_captcha.lower() == user_captcha.lower():
-                username = form.cleaned_data.get('username')
-                password = form.cleaned_data.get('password')
-                remember = form.cleaned_data.get('remember')
-                user = authenticate(username=username, password=password)
 
-                if user is not None:
-                    login(request, user)
-                    request.session['captcha'] = None
-                    if remember:
-                        request.session.set_expiry(60 * 60 * 24 * 7)
-                    else:
-                        request.session.set_expiry(0)
-                    return redirect(reverse("CheckObjectionApp:CheckObjectionApp_index"))
+            # 验证码校验
+            if user_input_captcha.lower() != user_captcha.lower():
+                form.add_error('captcha', '验证码错误，请重新输入')
+                content = {'form': form}
+                return render(request, 'CheckObjection/CheckObjection_login.html', content)
+
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            remember = form.cleaned_data.get('remember')
+            user = authenticate(username=username, password=password)
+
+            if user is not None:
+                # 检查用户是否激活
+                if not user.is_active:
+                    form.add_error(None, '账户已被禁用，请联系管理员')
+                    content = {'form': form}
+                    return render(request, 'CheckObjection/CheckObjection_login.html', content)
+
+                login(request, user)
+                request.session['captcha'] = None
+                if remember:
+                    request.session.set_expiry(60 * 60 * 24 * 7)
                 else:
-                    # 方法1：使用initial参数初始化注册表单
-                    initial_data = {
-                        'username': username,
-                        'remember': remember,
-                    }
-                    register_form = RegisterForm(initial=initial_data)
-
-                    return render(request, 'CheckObjection/CheckObjection_register.html', {'form': register_form})
+                    request.session.set_expiry(0)
+                return redirect(reverse("CheckObjectionApp:CheckObjectionApp_index"))
             else:
+                # 用户认证失败，检查是用户名问题还是密码问题
+                try:
+                    from django.contrib.auth import get_user_model
+                    User = get_user_model()
+                    user_exists = User.objects.filter(username=username).exists()
+                    if not user_exists:
+                        form.add_error('username', '用户名不存在')
+                    else:
+                        form.add_error('password', '密码错误')
+                except Exception:
+                    form.add_error(None, '用户名或密码错误')
+
                 content = {'form': form}
                 return render(request, 'CheckObjection/CheckObjection_login.html', content)
         else:
+            # 表单验证失败，错误信息已经在form中
             content = {'form': form}
             return render(request, 'CheckObjection/CheckObjection_login.html', content)
-
 
 
 @require_http_methods(['GET', 'POST'])
@@ -251,19 +268,52 @@ def CheckObjection_register(request):
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user_input_captcha = form.cleaned_data.get('captcha')
-            user_captcha = str(request.session.get('captcha'))
-            if user_input_captcha.lower() == user_captcha.lower():
+            user_captcha = str(request.session.get('captcha', ''))
+
+            # 验证验证码
+            if not user_captcha:
+                form.add_error('captcha', '验证码已过期，请刷新验证码')
+                return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+
+            if user_input_captcha.lower() != user_captcha.lower():
+                form.add_error('captcha', '验证码错误')
+                return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+
+            # 双重检查用户名是否存在（防止并发注册等情况）
+            if User.objects.filter(username=username).exists():
+                form.add_error('username', '用户名已存在')
+                return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+
+            try:
+                # 创建用户
                 user = User.objects.create_user(username=username, password=password)
                 user_profile = UserProfile.objects.create(user_id=user.id)
                 login(request, user)
+
+                # 设置session过期时间
                 if form.cleaned_data.get('remember'):
-                    request.session.set_expiry(60*60*24*7)
+                    request.session.set_expiry(60 * 60 * 24 * 7)
                 else:
                     request.session.set_expiry(0)
+
+                # 注册成功后清除验证码session
+                if 'captcha' in request.session:
+                    del request.session['captcha']
+
                 return redirect(reverse("CheckObjectionApp:CheckObjectionApp_index"))
-            else:
+
+            except IntegrityError:
+                # 处理数据库唯一性约束错误（用户名重复）
+                form.add_error('username', '用户名已存在，请选择其他用户名')
                 return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+
+            except Exception as e:
+                # 处理创建用户时的意外错误
+                form.add_error(None, f'注册失败：{str(e)}')
+                return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+
         else:
+            # 表单验证失败，返回错误信息
             return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
 
 
@@ -311,19 +361,37 @@ def changePassword(request):
         user = request.user
         return render(request, 'CheckObjection/CheckObjection_changeName.html', context={'user': user})
 
+
 @require_http_methods(['GET', 'POST'])
 @login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
 def changeName(request):
-    """修改用户名"""
+    """修改用户资料"""
     if request.method == "POST":
         user_id = request.user.id
-        User.objects.filter(id=user_id).update(username=request.POST.get('username',''))
-        # 正确示例：批量更新QuerySet中的所有对象
-        # 你的模型类.objects.filter(某个条件).update(name="新名称")  # 直接更新，无需save()
+        # 更新用户信息
+        User.objects.filter(id=user_id).update(
+            username=request.POST.get('username', ''),
+            # 添加其他字段的更新，根据你的用户模型
+            # email=request.POST.get('email', ''),
+            # phone=request.POST.get('phone', ''),
+            # 等等...
+        )
         return redirect(reverse("CheckObjectionApp:CheckObjectionApp_index"))
+
     if request.method == "GET":
         user = request.user
-        return render(request,'CheckObjection/CheckObjection_changeName.html',context={'user':user})
+        # 准备用户信息，处理空值
+        user_info = {
+            'username': user.username or '暂无',
+            'email': getattr(user, 'email', '') or '暂无',
+            'phone': getattr(user, 'phone', '') or '暂无',
+            'birthday': getattr(user, 'birthday', '') or '暂无',
+            'bio': getattr(user, 'bio', '') or '暂无',
+            'location': getattr(user, 'location', '') or '暂无',
+            'website': getattr(user, 'website', '') or '暂无',
+        }
+        return render(request, 'CheckObjection/CheckObjection_changeName.html',
+                      context={'user': user, 'user_info': user_info})
 # @require_GET
 # @login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
 # def CheckObjection_search(request):
@@ -434,8 +502,6 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from .models import TestCase, topic
 from mycelery.sms.tasks import submit_code_task, process_test_run
-
-
 @method_decorator(csrf_exempt, name='dispatch')
 class JudgeCodeView(View):
     def post(self, request):
@@ -451,7 +517,6 @@ class JudgeCodeView(View):
             user_name = data.get('user_name', '')
             notes = data.get('notes', '')
             is_test = data.get('is_test', False)
-
             # 生成唯一的提交ID
             submission_id = str(uuid.uuid4())
 
@@ -464,7 +529,6 @@ class JudgeCodeView(View):
                 'submission_id': submission_id,
                 'is_test': is_test
             }
-
 
             if is_test:
                 # 测试运行 - 同步处理以便快速返回
@@ -505,13 +569,11 @@ class TaskStatusView(View):
     """
     查询任务状态的接口
     """
-
     def get(self, request, task_id):
         from celery.result import AsyncResult
         from mycelery.sms.tasks import submit_code_task
 
         task_result = AsyncResult(task_id, app=submit_code_task.app)
-
         response_data = {
             'task_id': task_id,
             'status': task_result.status,
@@ -734,8 +796,39 @@ def query_submission_list(request, user_name):
         cache.set(cache_key, submissions_list, cache_timeout)
         submissions = submissions_list  # 赋值给submissions，统一后续逻辑
 
+    cache_status = ''
+
+    context = {
+        'submissions': submissions,
+        'page_title': '提交记录',
+        'cache_status': cache_status,
+        'cache_timeout': SubmissionCache.get_cache_timeout()
+    }
+    return render(request, 'CheckObjection/submission_list.html', context)
 
 
+# TODO 下面这个函数还未完成
+@login_required
+def query_topic_submission_list(request, user_name):
+    """显示查询题目的所有提交记录"""
+    cache_key = f"user_submissions_{user_name}"
+
+    # 尝试从缓存获取数据
+    submissions = cache.get(cache_key)
+
+    if submissions is None:
+        # 缓存中没有，从数据库查询：使用select_related预加载topic
+        submissions_queryset = Submission.objects.filter(
+            user_name=user_name
+        ).select_related('topic')  # 预加载关联的topic对象
+
+        # 将查询结果转换为可缓存格式（列表）
+        submissions_list = list(submissions_queryset)  # 此时每个对象已包含topic数据
+
+        # 设置缓存
+        cache_timeout = SubmissionCache.get_cache_timeout()
+        cache.set(cache_key, submissions_list, cache_timeout)
+        submissions = submissions_list  # 赋值给submissions，统一后续逻辑
 
     cache_status = ''
 
@@ -881,7 +974,7 @@ from CheckObjectionApp.utils.contest_service import ContestService
 from datetime import timezone
 class ContestListView(ListView):
     model = Contest
-    template_name = 'CheckObjection/contest/list.html'
+    template_name = 'CheckObjection/contest/contest_list.html'
     paginate_by = 20
 
     def get_queryset(self):
@@ -901,7 +994,7 @@ class ContestListView(ListView):
 
 class ContestDetailView(LoginRequiredMixin, DetailView):
     model = Contest
-    template_name = 'CheckObjection/contest/detail.html'
+    template_name = 'CheckObjection/contest/contest_detail.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -946,7 +1039,7 @@ class ContestDetailView(LoginRequiredMixin, DetailView):
 
 class ContestRankView(LoginRequiredMixin, DetailView):
     model = Contest
-    template_name = 'CheckObjection/contest/rank.html'
+    template_name = 'CheckObjection/contest/rank/rank_list.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -963,3 +1056,131 @@ class ContestRankView(LoginRequiredMixin, DetailView):
         context['show_real_time'] = show_real_time
 
         return context
+
+# todo 下面五个函数没写完
+# 以下为比赛代码提交记录展示
+@login_required
+def contest_submission_list(request):
+    """显示全部比赛用户的所有提交记录"""
+    submissions = Submission.objects.all()
+    context = {
+        'submissions': submissions,
+        'page_title': '全部提交记录'
+    }
+    return render(request, 'CheckObjection/submission_list.html', context)
+
+@login_required
+def contest_submission_detail(request, pk):
+    """显示单个提交记录的详细信息"""
+    submission = get_object_or_404(Submission, pk=pk)
+    context = {
+        'submission': submission,
+        'page_title': f'提交详情 - {submission.topic_id}'
+    }
+    return render(request, 'CheckObjection/submission_detail.html', context)
+
+@login_required
+def my_contest_submission_list(request):
+    """显示我的所有比赛提交记录（带缓存）"""
+    user_name = request.user.username
+    """显示查询用户的所有提交记录"""
+    cache_key = f"user_submissions_{user_name}"
+
+    # 尝试从缓存获取数据
+    submissions = cache.get(cache_key)
+
+    if submissions is None:
+        # 缓存中没有，从数据库查询：使用select_related预加载topic
+        submissions_queryset = Submission.objects.filter(
+            user_name=user_name
+        ).select_related('topic')  # 预加载关联的topic对象
+
+        # 将查询结果转换为可缓存格式（列表）
+        submissions_list = list(submissions_queryset)  # 此时每个对象已包含topic数据
+
+        # 设置缓存
+        cache_timeout = SubmissionCache.get_cache_timeout()
+        cache.set(cache_key, submissions_list, cache_timeout)
+        submissions = submissions_list  # 赋值给submissions，统一后续逻辑
+
+        cache_status = DB_QUERY_KEY
+
+    else:
+        cache_status = CACHE_KEY_HIT
+
+    if cache_status == DB_QUERY_KEY:
+        cache_status = ''
+
+    print(submissions)
+
+    context = {
+        'submissions': submissions,
+        'page_title': '提交记录',
+        'cache_status': cache_status,
+        'cache_timeout': SubmissionCache.get_cache_timeout()
+    }
+    return render(request, 'CheckObjection/submission_list.html', context)
+
+@login_required
+def query_contest_submission_list(request, user_name):
+    """显示查询单个用户的所有比赛提交记录"""
+    cache_key = f"user_submissions_{user_name}"
+
+    # 尝试从缓存获取数据
+    submissions = cache.get(cache_key)
+
+    if submissions is None:
+        # 缓存中没有，从数据库查询：使用select_related预加载topic
+        submissions_queryset = Submission.objects.filter(
+            user_name=user_name
+        ).select_related('topic')  # 预加载关联的topic对象
+
+        # 将查询结果转换为可缓存格式（列表）
+        submissions_list = list(submissions_queryset)  # 此时每个对象已包含topic数据
+
+        # 设置缓存
+        cache_timeout = SubmissionCache.get_cache_timeout()
+        cache.set(cache_key, submissions_list, cache_timeout)
+        submissions = submissions_list  # 赋值给submissions，统一后续逻辑
+
+    cache_status = ''
+
+    context = {
+        'submissions': submissions,
+        'page_title': '提交记录',
+        'cache_status': cache_status,
+        'cache_timeout': SubmissionCache.get_cache_timeout()
+    }
+    return render(request, 'CheckObjection/submission_list.html', context)
+
+@login_required
+def query_contest_topic_submission_list(request, user_name):
+    """显示查询单个比赛题目的所有提交记录"""
+    cache_key = f"user_submissions_{user_name}"
+
+    # 尝试从缓存获取数据
+    submissions = cache.get(cache_key)
+
+    if submissions is None:
+        # 缓存中没有，从数据库查询：使用select_related预加载topic
+        submissions_queryset = Submission.objects.filter(
+            user_name=user_name
+        ).select_related('topic')  # 预加载关联的topic对象
+
+        # 将查询结果转换为可缓存格式（列表）
+        submissions_list = list(submissions_queryset)  # 此时每个对象已包含topic数据
+
+        # 设置缓存
+        cache_timeout = SubmissionCache.get_cache_timeout()
+        cache.set(cache_key, submissions_list, cache_timeout)
+        submissions = submissions_list  # 赋值给submissions，统一后续逻辑
+
+    cache_status = ''
+
+    context = {
+        'submissions': submissions,
+        'page_title': '提交记录',
+        'cache_status': cache_status,
+        'cache_timeout': SubmissionCache.get_cache_timeout()
+    }
+    return render(request, 'CheckObjection/submission_list.html', context)

@@ -2,6 +2,42 @@
 {% block head %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* 错误相关的样式 */
+        .errorlist {
+            color: #dc3545;
+            list-style: none;
+            padding: 5px 0;
+            margin: 0;
+            font-size: 0.875rem;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-top: 5px;
+        }
+
+        .errorlist.nonfield {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+
+        .form-group.has-error .form-control {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+
+        .field-error {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 5px;
+            display: block;
+        }
+
+        /* 原有的完整样式 */
         .register-container {
             display: flex;
             justify-content: center;
@@ -113,14 +149,6 @@
             margin-top: 5px;
         }
 
-        .errorlist {
-            color: #dc3545;
-            list-style: none;
-            padding: 5px 0;
-            margin: 0;
-            font-size: 0.875rem;
-        }
-
         .captcha-container {
             display: flex;
             gap: 10px;
@@ -163,26 +191,23 @@
             color: var(--primary);
         }
 
-        .terms-agreement {
+        .remember-forgot {
             display: flex;
-            align-items: flex-start;
-            gap: 8px;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
-            font-size: 0.9rem;
         }
 
-        .terms-agreement label {
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .remember-me label {
             margin: 0;
-            line-height: 1.4;
-        }
-
-        .terms-link {
-            color: var(--primary);
-            text-decoration: none;
-        }
-
-        .terms-link:hover {
-            text-decoration: underline;
+            font-size: 0.9rem;
+            color: var(--dark);
         }
 
         .btn-register {
@@ -312,6 +337,18 @@
                 width: 100%;
             }
         }
+
+        /* 确保表单元素正确显示 */
+        input[type="checkbox"] {
+            margin: 0;
+            width: 16px;
+            height: 16px;
+        }
+
+        /* 非字段错误容器 */
+        .non-field-errors {
+            margin-bottom: 20px;
+        }
     </style>
 {% endblock head %}
 
@@ -326,53 +363,70 @@
             <form class="register-form" id="register-form" method="post">
                 {% csrf_token %}
 
+                <!-- 显示非字段错误 -->
+                {% if form.non_field_errors %}
+                <div class="non-field-errors">
+                    {% for error in form.non_field_errors %}
+                    <div class="errorlist nonfield">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
                 <!-- 用户名字段 -->
-                <div class="form-group">
+                <div class="form-group {% if form.username.errors %}has-error{% endif %}">
                     <label for="{{ form.username.id_for_label }}">用户名</label>
                     <div class="input-with-icon">
                         <i class="fas fa-user input-icon"></i>
-                        {{ form.username.errors }}
                         {{ form.username }}
                     </div>
+                    {% if form.username.errors %}
+                    <div class="errorlist">
+                        {% for error in form.username.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
 
-                <!-- 邮箱字段 -->
-{#                <div class="form-group">#}
-{#                    <label for="{{ form.email.id_for_label }}">电子邮箱</label>#}
-{#                    <div class="input-with-icon">#}
-{#                        <i class="fas fa-envelope input-icon"></i>#}
-{#                        {{ form.email.errors }}#}
-{#                        {{ form.email }}#}
-{#                    </div>#}
-{#                </div>#}
-
                 <!-- 密码字段 -->
-                <div class="form-group">
+                <div class="form-group {% if form.password.errors %}has-error{% endif %}">
                     <label for="{{ form.password.id_for_label }}">密码</label>
                     <div class="input-with-icon">
                         <i class="fas fa-lock input-icon"></i>
-                        {{ form.password.errors }}
                         {{ form.password }}
                     </div>
+                    {% if form.password.errors %}
+                    <div class="errorlist">
+                        {% for error in form.password.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="password-hint">密码至少6位</div>
                 </div>
 
                 <!-- 确认密码字段 -->
-                <div class="form-group">
-                    <label for="{{ form.password.id_for_label }}">确认密码</label>
+                <div class="form-group {% if form.confirm_password.errors %}has-error{% endif %}">
+                    <label for="{{ form.confirm_password.id_for_label }}">确认密码</label>
                     <div class="input-with-icon">
                         <i class="fas fa-lock input-icon"></i>
-                        {{ form.confirm_password.errors }}
                         {{ form.confirm_password }}
                     </div>
+                    {% if form.confirm_password.errors %}
+                    <div class="errorlist">
+                        {% for error in form.confirm_password.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
 
                 <!-- 验证码字段 -->
-                <div class="form-group">
-                    <label for="{{ form.captcha.id_for_label }}">验证码(不论大小写)</label>
+                <div class="form-group {% if form.captcha.errors %}has-error{% endif %}">
+                    <label for="{{ form.captcha.id_for_label }}">验证码(不区分大小写)</label>
                     <div class="captcha-container">
                         <div class="input-with-icon captcha-input">
                             <i class="fas fa-shield-alt input-icon"></i>
-                            {{ form.captcha.errors }}
                             {{ form.captcha }}
                         </div>
                         <div class="captcha-display">
@@ -382,19 +436,18 @@
                             </div>
                         </div>
                     </div>
+                    {% if form.captcha.errors %}
+                    <div class="errorlist">
+                        {% for error in form.captcha.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
 
-                <!-- 同意条款 -->
-{#                <div class="terms-agreement">#}
-{#                    {{ form.agree_terms.errors }}#}
-{#                    {{ form.agree_terms }}#}
-{#                    <label for="{{ form.agree_terms.id_for_label }}">#}
-{#                        我已阅读并同意 <a href="#" class="terms-link">服务条款</a> 和 <a href="#" class="terms-link">隐私政策</a>#}
-{#                    </label>#}
-{#                </div>#}
+                <!-- 记住我 -->
                 <div class="remember-forgot">
                     <div class="remember-me">
-                        {{ form.remember.errors }}
                         {{ form.remember }}
                         <label for="{{ form.remember.id_for_label }}">记住我</label>
                     </div>
@@ -408,22 +461,6 @@
             <div class="register-footer">
                 <p>已有账号? <a href="{% url 'CheckObjectionApp:CheckObjectionApp_login' %}" class="login-link">立即登录</a></p>
             </div>
-
-            <!-- 第三方注册 -->
-{#            <div class="social-register">#}
-{#                <div class="social-register-title">或使用以下方式注册</div>#}
-{#                <div class="social-buttons">#}
-{#                    <div class="social-btn">#}
-{#                        <i class="fab fa-google"></i>#}
-{#                    </div>#}
-{#                    <div class="social-btn">#}
-{#                        <i class="fab fa-github"></i>#}
-{#                    </div>#}
-{#                    <div class="social-btn">#}
-{#                        <i class="fab fa-weixin"></i>#}
-{#                    </div>#}
-{#                </div>#}
-{#            </div>#}
         </div>
     </div>
 
@@ -431,8 +468,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             const captchaImage = document.getElementById('captcha-image');
             const refreshCaptcha = document.getElementById('refresh-captcha');
-            const passwordInput = document.getElementById('{{ form.password1.id_for_label }}');
-            const passwordStrength = document.getElementById('password-strength');
+            const passwordInput = document.getElementById('{{ form.password.id_for_label }}');
+            const confirmPasswordInput = document.getElementById('{{ form.confirm_password.id_for_label }}');
             const registerForm = document.getElementById('register-form');
 
             // 刷新验证码
@@ -442,34 +479,15 @@
                 captchaImage.src = currentSrc + separator + 't=' + new Date().getTime();
             }
 
-            // 密码强度检测
-            function checkPasswordStrength(password) {
-                let strength = 0;
-                
-                if (password.length >= 8) strength++;
-                if (/[a-z]/.test(password)) strength++;
-                if (/[A-Z]/.test(password)) strength++;
-                if (/[0-9]/.test(password)) strength++;
-                if (/[^a-zA-Z0-9]/.test(password)) strength++;
-                
-                return strength;
-            }
-
-            // 更新密码强度显示
-            function updatePasswordStrength() {
+            // 实时验证密码一致性
+            function validatePasswordMatch() {
                 const password = passwordInput.value;
-                const strength = checkPasswordStrength(password);
-                
-                passwordStrength.className = 'password-strength';
-                
-                if (password.length > 0) {
-                    if (strength <= 2) {
-                        passwordStrength.classList.add('weak');
-                    } else if (strength <= 4) {
-                        passwordStrength.classList.add('medium');
-                    } else {
-                        passwordStrength.classList.add('strong');
-                    }
+                const confirmPassword = confirmPasswordInput.value;
+
+                if (password && confirmPassword && password !== confirmPassword) {
+                    confirmPasswordInput.setCustomValidity('两次输入的密码不一致');
+                } else {
+                    confirmPasswordInput.setCustomValidity('');
                 }
             }
 
@@ -480,26 +498,29 @@
             refreshCaptcha.addEventListener('click', refreshCaptchaImage);
 
             // 监听密码输入
-            passwordInput.addEventListener('input', updatePasswordStrength);
+            passwordInput.addEventListener('input', validatePasswordMatch);
+            confirmPasswordInput.addEventListener('input', validatePasswordMatch);
 
-            // 表单提交前验证
+            // 表单提交前最后验证
             registerForm.addEventListener('submit', function(e) {
-                const password1 = document.getElementById('{{ form.password1.id_for_label }}').value;
-                const password2 = document.getElementById('{{ form.password2.id_for_label }}').value;
-                const agreeTerms = document.getElementById('{{ form.agree_terms.id_for_label }}');
-                
-                if (password1 !== password2) {
+                // 清除之前的自定义验证信息
+                confirmPasswordInput.setCustomValidity('');
+
+                const password = passwordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+
+                if (password !== confirmPassword) {
                     e.preventDefault();
-                    alert('两次输入的密码不一致，请重新输入');
-                    return false;
-                }
-                
-                if (!agreeTerms.checked) {
-                    e.preventDefault();
-                    alert('请阅读并同意服务条款和隐私政策');
+                    // 可以在这里添加更友好的提示，但Django后端也会验证
                     return false;
                 }
             });
+
+            // 自动聚焦到第一个错误字段
+            const firstErrorField = document.querySelector('.has-error input');
+            if (firstErrorField) {
+                firstErrorField.focus();
+            }
         });
     </script>
 {% endblock main %}

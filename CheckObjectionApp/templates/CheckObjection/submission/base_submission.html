@@ -493,6 +493,7 @@
     <!-- 主内容区域 -->
     <div class="container">
         <div class="main-content">
+        {% block content %}
 
             <!-- 题目信息区域 -->
             <div class="problem-info">
@@ -531,6 +532,8 @@
                     </div>
                 {% endif %}
             </div>
+            {% endblock content %}
+        {% block submission_area %}
 
             <!-- 代码提交区域 -->
             <div class="submission-area">
@@ -619,9 +622,10 @@
                     </div>
                 </div>
             </div>
+            {% endblock submission_area %}
         </div>
     </div>
-
+    {% block javascript %}
     <!-- 引入 Monaco Editor -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
 
@@ -1528,4 +1532,8 @@ int main() {
             }
         });
     </script>
+{% endblock %}
+
+
+
 {% endblock main %}

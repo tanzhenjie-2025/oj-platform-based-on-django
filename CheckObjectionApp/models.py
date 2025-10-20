@@ -135,6 +135,12 @@ class Contest(models.Model):
     def status(self):
         from django.utils import timezone
         now = timezone.now()
+
+        # 先检查start_time或end_time是否未设置（为None）
+        if self.start_time is None or self.end_time is None:
+            return '未设置时间'  # 或其他合理的默认状态
+
+        # 只有当时间字段都有值时，才进行比较
         if now < self.start_time:
             return 'pending'
         elif now > self.end_time:

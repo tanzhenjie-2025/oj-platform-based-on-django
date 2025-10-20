@@ -1,0 +1,135 @@
+{% extends 'CheckObjection/CheckObjectionApp_base.html' %}
+
+{% block head %}
+<style>
+/* 外层容器：限制宽度并居中，让内容集中在中间区域 */
+.contests-container {
+    max-width: 800px; /* 核心：限制最大宽度，避免方块过宽 */
+    margin: 0 auto;  /* 水平居中 */
+    padding: 2rem 1rem; /* 左右留白，适配小屏幕 */
+}
+
+/* 比赛项基础样式：宽度适应容器，避免全屏拉伸 */
+.contest-item {
+    display: block;
+    width: 100%; /* 基于父容器宽度，不再全屏 */
+    padding: 2rem; /* 增加内边距，让内容更舒展 */
+    margin-bottom: 1.5rem; /* 增大间距，减少拥挤感 */
+    border-radius: 10px;
+    background-color: #ffffff;
+    border: 1px solid #f0f0f0; /* 浅灰边框，减少生硬感 */
+    text-decoration: none;
+    color: #333;
+    transition: all 0.3s ease;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02); /* 基础阴影，增加层次感 */
+}
+
+/* 鼠标悬停高亮：增强色彩对比和立体感 */
+.contest-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(74, 144, 226, 0.18); /* 加深阴影，强化"亮起" */
+    border-color: #90caf9; /* 亮蓝色边框，更显活跃 */
+    background-color: #f8fcff; /* 极浅蓝背景，比之前更柔和 */
+}
+
+/* 标题样式：放大并增强对比 */
+.contest-item h3 {
+    margin: 0 0 1rem 0;
+    color: #1a237e; /* 深蓝主色，比之前更深，增强识别度 */
+    font-size: 1.5rem; /* 放大标题，突出重点 */
+    transition: color 0.3s ease;
+}
+
+/* 悬停时标题颜色强化 */
+.contest-item:hover h3 {
+    color: #0d47a1; /* 更深的蓝色，形成层次 */
+    font-weight: 700;
+}
+
+/* 时间文本样式：调整大小和颜色 */
+.contest-item p {
+    margin: 0 0 1.2rem 0;
+    color: #555; /* 比之前稍深，提升可读性 */
+    font-size: 1rem; /* 放大时间文本 */
+    line-height: 1.5; /* 增加行高，避免拥挤 */
+}
+
+/* 悬停时时间文本颜色加深 */
+.contest-item:hover p {
+    color: #222;
+}
+
+/* 状态徽章：强化色彩区分 */
+.status-badge {
+    display: inline-block;
+    padding: 0.4rem 1.2rem; /* 增大徽章面积 */
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+/* 不同状态的徽章颜色强化（增加饱和度） */
+.status-badge.running {
+    background-color: #bbdefb; /* 亮蓝背景 */
+    color: #0d47a1; /* 深蓝文字 */
+}
+.status-badge.upcoming {
+    background-color: #c8e6c9; /* 亮绿背景 */
+    color: #1b5e20; /* 深绿文字 */
+}
+.status-badge.ended {
+    background-color: #e0e0e0; /* 浅灰背景 */
+    color: #424242; /* 深灰文字 */
+}
+
+/* 悬停时徽章效果增强 */
+.contest-item:hover .status-badge {
+    transform: scale(1.08);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+
+/* 空状态样式：与整体风格统一 */
+.no-contests {
+    max-width: 800px;
+    margin: 2rem auto;
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #888;
+    background-color: #fafafa;
+    border-radius: 10px;
+    border: 1px dashed #e0e0e0; /* 虚线边框，区分空状态 */
+}
+
+/* 响应式调整：小屏幕自适应 */
+@media (max-width: 600px) {
+    .contests-container {
+        padding: 1.5rem 0.8rem;
+    }
+    .contest-item {
+        padding: 1.5rem;
+        margin-bottom: 1.2rem;
+    }
+    .contest-item h3 {
+        font-size: 1.3rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block main %}
+<div class="contests-container"> <!-- 新增外层容器，控制整体居中 -->
+    {% for contest in object_list %}
+    <a href="{% url 'CheckObjectionApp:contest_detail' contest.id %}" class="contest-item">
+        <h3>{{ contest.title }}</h3>
+        <p>时间: {{ contest.start_time }} - {{ contest.end_time }}</p>
+        <span class="status-badge {{ contest.status }}">{{ contest.get_status_display }}</span>
+    </a>
+    {% empty %}
+    <div class="no-contests">
+        <p>暂无比赛数据</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
