@@ -21,6 +21,7 @@ class topic(models.Model):
         verbose_name_plural = '题目信息模型'
         ordering = ['-pub_time']
 
+# todo 重构为题解 修改view
 class answer(models.Model):
     topic_id = models.BigIntegerField(verbose_name='问题题号')
     content = models.TextField(verbose_name='回答内容')
@@ -35,7 +36,7 @@ class answer(models.Model):
         verbose_name_plural = '用户回答模型'
         ordering = ['-pub_time']
 
-
+# todo 重构时要修改view视图中的保存逻辑
 class UserProfile(models.Model):
     user_id = models.BigIntegerField(verbose_name='id号')
     finish = models.BigIntegerField(default=0,verbose_name='完成数量')
@@ -72,6 +73,7 @@ from django.db import models
 import uuid
 
 
+# todo 修改判题逻辑的保存
 class Submission(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(

@@ -2,95 +2,218 @@
 
 {% block head %}
 <style>
-/* 外层容器：限制宽度并居中，让内容集中在中间区域 */
-.contests-container {
-    max-width: 800px; /* 核心：限制最大宽度，避免方块过宽 */
-    margin: 0 auto;  /* 水平居中 */
-    padding: 2rem 1rem; /* 左右留白，适配小屏幕 */
+/* 原有样式保持不变，添加新的说明卡片样式 */
+.instruction-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
-/* 比赛项基础样式：宽度适应容器，避免全屏拉伸 */
+.instruction-card h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.2rem;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+    padding-bottom: 0.5rem;
+}
+
+.instruction-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.instruction-steps li {
+    margin-bottom: 0.8rem;
+    padding-left: 1.5rem;
+    position: relative;
+    line-height: 1.4;
+}
+
+.instruction-steps li:before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.instruction-note {
+    margin-top: 1rem;
+    padding: 0.8rem;
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    border-left: 3px solid #ffd700;
+}
+
+/* 原有样式保持不变 */
+.main-container {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    gap: 2rem;
+}
+
+.contests-container {
+    flex: 1;
+    max-width: 800px;
+}
+
+.sidebar {
+    width: 300px;
+    flex-shrink: 0;
+}
+
+.sidebar-card {
+    background-color: #ffffff;
+    border: 1px solid #f0f0f0;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    margin-bottom: 1.5rem;
+}
+
+.sidebar-card h3 {
+    margin: 0 0 1rem 0;
+    color: #1a237e;
+    font-size: 1.2rem;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 0.5rem;
+}
+
+.submission-link {
+    display: block;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.5rem;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #495057;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.submission-link:hover {
+    background-color: #e9ecef;
+    border-color: #90caf9;
+    color: #1a237e;
+    transform: translateX(5px);
+}
+
+.submission-link i {
+    margin-right: 0.5rem;
+    color: #6c757d;
+}
+
+.quick-actions {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.quick-actions li {
+    margin-bottom: 0.8rem;
+}
+
+.quick-actions a {
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #495057;
+    transition: all 0.2s ease;
+}
+
+.quick-actions a:hover {
+    background-color: #e3f2fd;
+    color: #1a237e;
+}
+
+.quick-actions .icon {
+    margin-right: 0.5rem;
+    width: 20px;
+    text-align: center;
+}
+
 .contest-item {
     display: block;
-    width: 100%; /* 基于父容器宽度，不再全屏 */
-    padding: 2rem; /* 增加内边距，让内容更舒展 */
-    margin-bottom: 1.5rem; /* 增大间距，减少拥挤感 */
+    width: 100%;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
     border-radius: 10px;
     background-color: #ffffff;
-    border: 1px solid #f0f0f0; /* 浅灰边框，减少生硬感 */
+    border: 1px solid #f0f0f0;
     text-decoration: none;
     color: #333;
     transition: all 0.3s ease;
     text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02); /* 基础阴影，增加层次感 */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
-/* 鼠标悬停高亮：增强色彩对比和立体感 */
 .contest-item:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(74, 144, 226, 0.18); /* 加深阴影，强化"亮起" */
-    border-color: #90caf9; /* 亮蓝色边框，更显活跃 */
-    background-color: #f8fcff; /* 极浅蓝背景，比之前更柔和 */
+    box-shadow: 0 8px 20px rgba(74, 144, 226, 0.18);
+    border-color: #90caf9;
+    background-color: #f8fcff;
 }
 
-/* 标题样式：放大并增强对比 */
 .contest-item h3 {
     margin: 0 0 1rem 0;
-    color: #1a237e; /* 深蓝主色，比之前更深，增强识别度 */
-    font-size: 1.5rem; /* 放大标题，突出重点 */
+    color: #1a237e;
+    font-size: 1.5rem;
     transition: color 0.3s ease;
 }
 
-/* 悬停时标题颜色强化 */
 .contest-item:hover h3 {
-    color: #0d47a1; /* 更深的蓝色，形成层次 */
+    color: #0d47a1;
     font-weight: 700;
 }
 
-/* 时间文本样式：调整大小和颜色 */
 .contest-item p {
     margin: 0 0 1.2rem 0;
-    color: #555; /* 比之前稍深，提升可读性 */
-    font-size: 1rem; /* 放大时间文本 */
-    line-height: 1.5; /* 增加行高，避免拥挤 */
+    color: #555;
+    font-size: 1rem;
+    line-height: 1.5;
 }
 
-/* 悬停时时间文本颜色加深 */
 .contest-item:hover p {
     color: #222;
 }
 
-/* 状态徽章：强化色彩区分 */
 .status-badge {
     display: inline-block;
-    padding: 0.4rem 1.2rem; /* 增大徽章面积 */
+    padding: 0.4rem 1.2rem;
     border-radius: 6px;
     font-size: 0.9rem;
     font-weight: 600;
     transition: all 0.3s ease;
 }
 
-/* 不同状态的徽章颜色强化（增加饱和度） */
 .status-badge.running {
-    background-color: #bbdefb; /* 亮蓝背景 */
-    color: #0d47a1; /* 深蓝文字 */
+    background-color: #bbdefb;
+    color: #0d47a1;
 }
 .status-badge.upcoming {
-    background-color: #c8e6c9; /* 亮绿背景 */
-    color: #1b5e20; /* 深绿文字 */
+    background-color: #c8e6c9;
+    color: #1b5e20;
 }
 .status-badge.ended {
-    background-color: #e0e0e0; /* 浅灰背景 */
-    color: #424242; /* 深灰文字 */
+    background-color: #e0e0e0;
+    color: #424242;
 }
 
-/* 悬停时徽章效果增强 */
 .contest-item:hover .status-badge {
     transform: scale(1.08);
     box-shadow: 0 3px 10px rgba(0,0,0,0.08);
 }
 
-/* 空状态样式：与整体风格统一 */
 .no-contests {
     max-width: 800px;
     margin: 2rem auto;
@@ -99,37 +222,133 @@
     color: #888;
     background-color: #fafafa;
     border-radius: 10px;
-    border: 1px dashed #e0e0e0; /* 虚线边框，区分空状态 */
+    border: 1px dashed #e0e0e0;
 }
 
-/* 响应式调整：小屏幕自适应 */
-@media (max-width: 600px) {
-    .contests-container {
-        padding: 1.5rem 0.8rem;
+@media (max-width: 900px) {
+    .main-container {
+        flex-direction: column;
     }
+
+    .sidebar {
+        width: 100%;
+        order: 2;
+    }
+
+    .contests-container {
+        order: 1;
+        max-width: 100%;
+    }
+
+    .sidebar-content {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .sidebar-card {
+        flex: 1;
+        min-width: 250px;
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .main-container {
+        padding: 1.5rem 0.8rem;
+        gap: 1.5rem;
+    }
+
     .contest-item {
         padding: 1.5rem;
         margin-bottom: 1.2rem;
     }
+
     .contest-item h3 {
         font-size: 1.3rem;
+    }
+
+    .sidebar-content {
+        flex-direction: column;
+    }
+
+    .sidebar-card {
+        min-width: 100%;
     }
 }
 </style>
 {% endblock %}
 
 {% block main %}
-<div class="contests-container"> <!-- 新增外层容器，控制整体居中 -->
-    {% for contest in object_list %}
-    <a href="{% url 'CheckObjectionApp:contest_detail' contest.id %}" class="contest-item">
-        <h3>{{ contest.title }}</h3>
-        <p>时间: {{ contest.start_time }} - {{ contest.end_time }}</p>
-        <span class="status-badge {{ contest.status }}">{{ contest.get_status_display }}</span>
-    </a>
-    {% empty %}
-    <div class="no-contests">
-        <p>暂无比赛数据</p>
+<div class="main-container">
+    <!-- 左侧比赛列表 -->
+    <div class="contests-container">
+        {% for contest in object_list %}
+        <a href="{% url 'CheckObjectionApp:contest_detail' contest.id %}" class="contest-item">
+            <h3>{{ contest.title }}</h3>
+            <p>比赛id: {{ contest.id }}</p>
+            <p>时间: {{ contest.start_time }} - {{ contest.end_time }}</p>
+            <span class="status-badge {{ contest.status }}">{{ contest.get_status_display }}</span>
+        </a>
+        {% empty %}
+        <div class="no-contests">
+            <p>暂无比赛数据</p>
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
+
+    <!-- 右侧侧边栏 -->
+    <div class="sidebar">
+        <!-- 新增：报名操作说明卡片 -->
+        <div class="instruction-card">
+            <h3>📝 比赛报名指南</h3>
+            <ul class="instruction-steps">
+                <li>点击左侧任意比赛卡片进入比赛详情页</li>
+                <li>在比赛详情页点击"立即报名"按钮</li>
+                <li>阅读并同意比赛规则</li>
+                <li>确认报名信息并提交</li>
+            </ul>
+            <div class="instruction-note">
+                <strong>温馨提示：</strong>请在比赛开始前完成报名，报名成功后即可参与比赛。
+            </div>
+        </div>
+
+        <div class="sidebar-card">
+            <h3>我的竞赛提交</h3>
+            {% if user.is_staff %}
+                <a href="{% url 'CheckObjectionApp:contest_submission_list' %}" class="submission-link">
+                <i>📋</i> 查看所有提交记录
+            </a>
+            {% endif %}
+            <a href="{% url 'CheckObjectionApp:contest_submission_list' %}" class="submission-link">
+                <i>🏆</i> 比赛提交记录
+            </a>
+        </div>
+
+        <div class="sidebar-card">
+            <h3>快速操作</h3>
+            <ul class="quick-actions">
+                <li>
+                    <span class="icon">📤</span>
+                    <span>提交代码</span>
+                </li>
+                <li>
+                    <span class="icon">📚</span>
+                    <span>题目列表</span>
+                </li>
+                <li>
+                    <span class="icon">🏅</span>
+                    <span>排行榜</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-card">
+            <h3>统计信息</h3>
+            <p>今日提交: <strong>{{ today_submissions_count }}</strong></p>
+            <p>通过率: <strong>{{ acceptance_rate }}%</strong></p>
+            <p>参与比赛: <strong>{{ participated_contests_count }}</strong></p>
+        </div>
+    </div>
 </div>
 {% endblock %}

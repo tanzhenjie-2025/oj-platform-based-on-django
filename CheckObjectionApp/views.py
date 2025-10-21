@@ -132,7 +132,7 @@ def base(request):
     return render(request,'CheckObjection/CheckObjectionApp_base.html')
 
 
-# todo 下面这段代码的逻辑不知道在写什么，有空重构
+# todo 下面这段代码的逻辑不知道在写什么，有空重构 改造成写题解好了 有助于加深思考
 @require_http_methods(['GET', 'POST'])
 @login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
 def detail(request, topic_id):
@@ -502,6 +502,8 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from .models import TestCase, topic
 from mycelery.sms.tasks import submit_code_task, process_test_run
+
+# 日常提交判题
 @method_decorator(csrf_exempt, name='dispatch')
 class JudgeCodeView(View):
     def post(self, request):
@@ -545,9 +547,7 @@ class JudgeCodeView(View):
                     })
             else:
                 # 正式提交 - 异步处理
-
                 task = submit_code_task.delay(submission_data)
-
                 # 立即返回任务ID，前端可以轮询结果
                 return JsonResponse({
                     "success": True,
@@ -991,7 +991,8 @@ class ContestListView(ListView):
             queryset = queryset.filter(end_time__lt=timezone.now())
         return queryset
 
-
+# todo 1 传递比赛信息 传递提交信息
+# todo 1 传递比赛信息 传递提交信息
 class ContestDetailView(LoginRequiredMixin, DetailView):
     model = Contest
     template_name = 'CheckObjection/contest/contest_detail.html'
@@ -1008,6 +1009,14 @@ class ContestDetailView(LoginRequiredMixin, DetailView):
         contest_topics = contest.contest_topics.select_related('topic').all()
         context['contest_topics'] = contest_topics
 
+        # 初始化统计数据
+        problem_scores = []
+        problem_submissions_stats = []
+        total_score = 0
+        total_ac_count = 0
+        total_submission_count = 0
+        solved_problems = set()
+
         # 获取当前用户的提交统计
         if hasattr(self.request.user, 'id'):
             participant = ContestParticipant.objects.filter(
@@ -1019,20 +1028,92 @@ class ContestDetailView(LoginRequiredMixin, DetailView):
                     participant=participant
                 ).select_related('submission')
 
+                # 按题目分组统计
                 problem_status = {}
                 for submission in submissions:
                     topic_id = submission.submission.topic_id
                     if topic_id not in problem_status:
                         problem_status[topic_id] = {
                             'solved': False,
-                            'submissions': []
+                            'submissions': [],
+                            'ac_count': 0,
+                            'total_count': 0
                         }
 
                     problem_status[topic_id]['submissions'].append(submission)
+                    problem_status[topic_id]['total_count'] += 1
+
                     if submission.submission.overall_result == 'AC':
                         problem_status[topic_id]['solved'] = True
+                        problem_status[topic_id]['ac_count'] += 1
 
                 context['problem_status'] = problem_status
+
+                # 构建得分情况和提交统计
+                for contest_topic in contest_topics:
+                    topic_id = contest_topic.topic.id
+                    status = problem_status.get(topic_id, {})
+
+                    # 得分情况
+                    if status.get('solved', False):
+                        score = contest_topic.score
+                        total_score += score
+                        solved_problems.add(topic_id)
+                        score_status = f"{score}分（已得）"
+                        score_color = "#4caf50"
+                    else:
+                        score = 0
+                        score_status = f"{contest_topic.score}分（未得）"
+                        score_color = "#f44336"
+
+                    problem_scores.append({
+                        'order': contest_topic.order,
+                        'title': f"题目{contest_topic.order}",
+                        'score_status': score_status,
+                        'color': score_color,
+                        'score': score,
+                        'full_score': contest_topic.score
+                    })
+
+                    # 提交情况
+                    total_count = status.get('total_count', 0)
+                    ac_count = status.get('ac_count', 0)
+                    total_submission_count += total_count
+
+                    if ac_count > 0:
+                        submission_status = f"{total_count}次（AC）"
+                        submission_color = "#4caf50"
+                        total_ac_count += 1
+                    elif total_count > 0:
+                        submission_status = f"{total_count}次（WA）"
+                        submission_color = "#f44336"
+                    else:
+                        submission_status = "0次"
+                        submission_color = "#9e9e9e"
+
+                    problem_submissions_stats.append({
+                        'order': contest_topic.order,
+                        'title': f"题目{contest_topic.order}",
+                        'submission_status': submission_status,
+                        'color': submission_color,
+                        'total_count': total_count,
+                        'ac_count': ac_count
+                    })
+
+        # 计算AC率
+        ac_rate = 0
+        if contest_topics:
+            ac_rate = round((total_ac_count / len(contest_topics)) * 100, 1)
+
+        # 添加到context
+        context['problem_scores'] = problem_scores
+        context['problem_submissions_stats'] = problem_submissions_stats
+        context['total_score'] = total_score
+        context['contest_total_score'] = sum(topic.score for topic in contest_topics)
+        context['ac_rate'] = ac_rate
+        context['total_ac_count'] = total_ac_count
+        context['total_problems'] = len(contest_topics)
+        context['solved_problems'] = solved_problems
 
         return context
 
@@ -1057,15 +1138,110 @@ class ContestRankView(LoginRequiredMixin, DetailView):
 
         return context
 
+# 比赛提交界面 todo 2 加载时要有比赛资料 还要改造比赛提交界面 传递比赛 id
+@require_http_methods(['GET', 'POST'])
+@login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
+def contest_submit_code(request, contest_id,contest_topic_id):
+    if request.method == 'GET':
+        topic_content = topic.objects.get(id=contest_topic_id)
+        user = request.user
+        context = {
+            'topic_content': topic_content,
+            'user': user,
+            'contest_id': contest_id,
+            'contest_topic_id': contest_topic_id,
+        }
+        return render(request, 'CheckObjection/submission/contest_submission.html',
+                      context=context)
+
+# 比赛提交判题 todo 没做完 记得重启异步任务
+@method_decorator(csrf_exempt, name='dispatch')
+class JudgeContestCodeView(View):
+    def post(self, request):
+        """
+        判题接口 - 使用Celery异步处理
+        """
+        try:
+            contest = True
+            data = json.loads(request.body)
+            source_code = data.get('source_code', '')
+            language_id = data.get('language_id', 71)
+            topic_id = data.get('topic_id', '')
+            user_name = data.get('user_name', '')
+            notes = data.get('notes', '')
+            is_test = data.get('is_test', False)
+            # 生成唯一的提交ID
+            submission_id = str(uuid.uuid4())
+            submission_data = {
+                'contest': contest,
+                'source_code': source_code,
+                'language_id': language_id,
+                'topic_id': topic_id,
+                'user_name': user_name,
+                'notes': notes,
+                'submission_id': submission_id,
+                'is_test': is_test
+            }
+            # 判断是否测试运行
+            if is_test:
+                # 测试运行 - 同步处理以便快速返回
+                result = process_test_run.delay(submission_data)
+                try:
+                    # 等待任务完成，设置超时时间
+                    task_result = result.get(timeout=30)
+                    return JsonResponse(task_result)
+                except Exception as e:
+                    return JsonResponse({
+                        "success": False,
+                        "error": f"测试运行超时或失败: {str(e)}",
+                        "is_test_run": True
+                    })
+            else:
+                # 正式提交 - 异步处理
+                task = submit_code_task.delay(submission_data)
+                # 立即返回任务ID，前端可以轮询结果
+                return JsonResponse({
+                    "success": True,
+                    "message": "代码已提交，正在处理中...",
+                    "task_id": task.id,
+                    "submission_id": submission_id,
+                    "status": "PENDING"
+                })
+
+        except Exception as e:
+            return JsonResponse({
+                "success": False,
+                "error": f"处理请求时出错: {str(e)}"
+            })
+
 # todo 下面五个函数没写完
 # 以下为比赛代码提交记录展示
 @login_required
 def contest_submission_list(request):
-    """显示全部比赛用户的所有提交记录"""
-    submissions = Submission.objects.all()
+    """显示全部比赛的所有提交记录（管理员视图）"""
+
+    # 检查用户权限，如果是管理员则显示所有提交
+    if request.user.is_staff:
+        contest_submissions = ContestSubmission.objects.all().select_related(
+            'contest',
+            'submission',
+            'submission__topic',
+            'participant__user'
+        ).order_by('-submitted_at')
+    else:
+        # 普通用户只能看到自己的提交
+        contest_submissions = ContestSubmission.objects.filter(
+            participant__user=request.user
+        ).select_related(
+            'contest',
+            'submission',
+            'submission__topic',
+            'participant'
+        ).order_by('-submitted_at')
+
     context = {
-        'submissions': submissions,
-        'page_title': '全部提交记录'
+        'submissions': contest_submissions,
+        'page_title': '比赛提交记录'
     }
     return render(request, 'CheckObjection/submission_list.html', context)
 
@@ -1184,3 +1360,111 @@ def query_contest_topic_submission_list(request, user_name):
         'cache_timeout': SubmissionCache.get_cache_timeout()
     }
     return render(request, 'CheckObjection/submission_list.html', context)
+
+
+# 批量导入题目
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+import json
+from .models import topic, TestCase
+
+
+@require_http_methods(["GET", "POST"])
+def batch_import_testcases(request):
+    if request.method == "GET":
+        # 获取所有题目用于下拉选择
+        topics = topic.objects.all().values('id', 'title')
+        return render(request, 'CheckObjection/batch_import_testcases.html', {'topics': topics})
+
+    elif request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            topic_id = data.get('topic_id')
+            testcases_text = data.get('testcases_text')
+
+            if not topic_id or not testcases_text:
+                return JsonResponse({'success': False, 'error': '题目ID和测试案例内容不能为空'})
+
+            # 获取题目对象
+            topic_obj = get_object_or_404(topic, id=topic_id)
+
+            # 解析测试案例文本
+            testcases = parse_testcases_text(testcases_text)
+
+            # 创建测试案例对象
+            created_count = 0
+            for i, testcase in enumerate(testcases):
+                TestCase.objects.create(
+                    titleSlug=topic_obj,
+                    input_data=testcase['input'],
+                    expected_output=testcase['output'],
+                    order=i,
+                    is_sample=testcase.get('is_sample', False),
+                    score=testcase.get('score', 10)
+                )
+                created_count += 1
+            print('创建了 %d 个测试案例' % created_count)
+
+            return JsonResponse({
+                'success': True,
+                'message': f'成功导入 {created_count} 个测试案例'
+            })
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+
+def parse_testcases_text(text):
+    """
+    解析测试案例文本格式
+    支持多种格式：
+    格式1：输入和输出用分隔符分开
+    格式2：JSON格式
+    """
+    testcases = []
+
+    # 尝试解析为JSON格式
+    try:
+        data = json.loads(text)
+        if isinstance(data, list):
+            return data
+    except:
+        pass
+
+    # 解析文本格式
+    lines = text.strip().split('\n')
+    current_testcase = {'input': '', 'output': ''}
+    current_section = 'input'
+
+    for line in lines:
+        line = line.strip()
+
+        if line.startswith('===') or line.startswith('---'):
+            # 分隔符，切换到输出部分
+            current_section = 'output'
+        elif line.startswith('***') or line.startswith('###'):
+            # 测试案例结束分隔符
+            if current_testcase['input'] and current_testcase['output']:
+                testcases.append(current_testcase)
+            current_testcase = {'input': '', 'output': ''}
+            current_section = 'input'
+        else:
+            # 添加到当前部分
+            if current_section == 'input':
+                if current_testcase['input']:
+                    current_testcase['input'] += '\n' + line
+                else:
+                    current_testcase['input'] = line
+            else:
+                if current_testcase['output']:
+                    current_testcase['output'] += '\n' + line
+                else:
+                    current_testcase['output'] = line
+
+    # 添加最后一个测试案例
+    if current_testcase['input'] and current_testcase['output']:
+        testcases.append(current_testcase)
+
+    return testcases

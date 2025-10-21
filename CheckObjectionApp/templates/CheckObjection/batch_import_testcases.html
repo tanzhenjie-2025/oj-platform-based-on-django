@@ -1,0 +1,391 @@
+{% extends 'CheckObjection/CheckObjectionApp_base.html' %}
+
+{% block main %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- 主卡片 -->
+            <div class="card shadow-lg border-0">
+                <!-- 卡片头部 -->
+                <div class="card-header bg-primary text-white py-4">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-file-import fa-2x me-3"></i>
+                        <div>
+                            <h2 class="h3 mb-1 fw-bold">批量导入测试案例</h2>
+                            <p class="mb-0 opacity-75">快速导入多个测试案例，支持文本和JSON格式</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 卡片主体 -->
+                <div class="card-body p-5">
+                    <form id="importForm">
+                        {% csrf_token %}
+
+                        <!-- 题目选择 -->
+                        <div class="mb-4">
+                            <label for="topicSelect" class="form-label fw-bold fs-5 text-dark mb-3">
+                                <i class="fas fa-tasks me-2 text-primary"></i>选择题目
+                            </label>
+                            <select class="form-select form-select-lg border-2 py-3" id="topicSelect" name="topic_id" required>
+                                <option value="">请选择题目...</option>
+                                {% for topic in topics %}
+                                <option value="{{ topic.id }}">{{ topic.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- 格式说明 -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold fs-5 text-dark mb-3">
+                                <i class="fas fa-info-circle me-2 text-info"></i>测试案例格式说明
+                            </label>
+                            <div class="border-start border-4 border-info bg-light bg-opacity-25 p-4 rounded-end">
+                                <div class="mb-3">
+                                    <h6 class="fw-bold text-dark mb-2">📝 文本格式（推荐）</h6>
+                                    <pre class="bg-dark text-light p-3 rounded fs-6"><code>输入数据1
+===
+期望输出1
+***
+输入数据2
+===
+期望输出2
+***</code></pre>
+                                </div>
+
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-2">🔧 JSON格式</h6>
+                                    <pre class="bg-dark text-light p-3 rounded fs-6"><code>[
+  {
+    "input": "输入1",
+    "output": "输出1",
+    "is_sample": true,
+    "score": 10
+  },
+  {
+    "input": "输入2",
+    "output": "输出2",
+    "is_sample": false,
+    "score": 20
+  }
+]</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 测试案例输入区域 -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <label for="testcasesText" class="form-label fw-bold fs-5 text-dark mb-0">
+                                    <i class="fas fa-code me-2 text-success"></i>测试案例内容
+                                </label>
+                                <span id="testcaseCount" class="badge bg-secondary fs-6">0 个测试案例</span>
+                            </div>
+                            <textarea class="form-control border-2 fs-6" id="testcasesText" name="testcases_text"
+                                     rows="12" placeholder="请输入测试案例内容..."
+                                     style="font-family: 'Courier New', monospace;" required></textarea>
+                        </div>
+
+                        <!-- 格式选择 -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold fs-5 text-dark mb-3">
+                                <i class="fas fa-magic me-2 text-warning"></i>快速格式模板
+                            </label>
+                            <div class="btn-group btn-group-lg w-100" role="group">
+                                <button type="button" class="btn btn-outline-primary py-3 fw-semibold" onclick="loadTemplate('text')">
+                                    <i class="fas fa-align-left me-2"></i>文本格式模板
+                                </button>
+                                <button type="button" class="btn btn-outline-success py-3 fw-semibold" onclick="loadTemplate('json')">
+                                    <i class="fas fa-brackets-curly me-2"></i>JSON格式模板
+                                </button>
+                                <button type="button" class="btn btn-outline-danger py-3 fw-semibold" onclick="clearTextarea()">
+                                    <i class="fas fa-trash me-2"></i>清空内容
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 提交按钮 -->
+                        <div class="d-grid gap-2 mt-5">
+                            <button type="submit" class="btn btn-primary btn-lg py-3 fw-bold fs-5" id="submitBtn">
+                                <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                                <i class="fas fa-upload me-2"></i>导入测试案例
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 结果显示区域 -->
+            <div id="resultAlert" class="alert d-none mt-4 p-4 border-0 shadow-sm fs-5"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加 Font Awesome 图标 -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<script>
+// 加载模板
+function loadTemplate(type) {
+    const textarea = document.getElementById('testcasesText');
+
+    if (type === 'text') {
+        textarea.value = `1 2
+===
+3
+***
+hello world
+===
+HELLO WORLD
+***
+array input
+1 2 3 4 5
+===
+15
+***`;
+    } else if (type === 'json') {
+        textarea.value = `[
+  {
+    "input": "1 2",
+    "output": "3",
+    "is_sample": true,
+    "score": 10
+  },
+  {
+    "input": "hello world",
+    "output": "HELLO WORLD",
+    "is_sample": false,
+    "score": 10
+  },
+  {
+    "input": "array input\\\\n1 2 3 4 5",
+    "output": "15",
+    "is_sample": false,
+    "score": 20
+  }
+]`;
+    }
+
+    // 更新计数
+    updateTestCaseCount();
+}
+
+// 清空文本区域
+function clearTextarea() {
+    document.getElementById('testcasesText').value = '';
+    updateTestCaseCount();
+}
+
+// 更新测试案例计数
+function updateTestCaseCount() {
+    const content = document.getElementById('testcasesText').value.trim();
+    const countElement = document.getElementById('testcaseCount');
+
+    if (!content) {
+        countElement.textContent = '0 个测试案例';
+        countElement.className = 'badge bg-secondary fs-6';
+        return;
+    }
+
+    let count = 0;
+
+    // 检查是否为JSON格式
+    if (content.trim().startsWith('[')) {
+        try {
+            const data = JSON.parse(content);
+            count = Array.isArray(data) ? data.length : 0;
+        } catch (e) {
+            // 如果不是有效的JSON，回退到文本格式计数
+            count = content.split('***').filter(s => s.trim()).length;
+        }
+    } else {
+        // 文本格式计数
+        count = content.split('***').filter(s => s.trim()).length;
+    }
+
+    countElement.textContent = `${count} 个测试案例`;
+
+    // 根据数量改变颜色
+    if (count === 0) {
+        countElement.className = 'badge bg-secondary fs-6';
+    } else if (count <= 5) {
+        countElement.className = 'badge bg-success fs-6';
+    } else if (count <= 20) {
+        countElement.className = 'badge bg-info fs-6';
+    } else {
+        countElement.className = 'badge bg-warning fs-6';
+    }
+}
+
+// 表单提交处理
+document.getElementById('importForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const submitBtn = document.getElementById('submitBtn');
+    const spinner = submitBtn.querySelector('.spinner-border');
+    const resultAlert = document.getElementById('resultAlert');
+
+    // 显示加载状态
+    submitBtn.disabled = true;
+    spinner.classList.remove('d-none');
+    resultAlert.classList.add('d-none');
+
+    try {
+        const formData = {
+            topic_id: document.getElementById('topicSelect').value,
+            testcases_text: document.getElementById('testcasesText').value
+        };
+
+        const response = await fetch('{% url "CheckObjectionApp:batch_import_testcases" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        // 显示结果
+        resultAlert.classList.remove('d-none');
+        if (data.success) {
+            resultAlert.className = 'alert alert-success d-flex align-items-center border-0 shadow-sm fs-5';
+            resultAlert.innerHTML = `
+                <i class="fas fa-check-circle fa-2x me-3 text-success"></i>
+                <div>
+                    <h5 class="alert-heading fw-bold mb-2">导入成功！</h5>
+                    <p class="mb-0">${data.message}</p>
+                </div>
+            `;
+            // 清空表单
+            document.getElementById('importForm').reset();
+            updateTestCaseCount();
+        } else {
+            resultAlert.className = 'alert alert-danger d-flex align-items-center border-0 shadow-sm fs-5';
+            resultAlert.innerHTML = `
+                <i class="fas fa-exclamation-triangle fa-2x me-3 text-danger"></i>
+                <div>
+                    <h5 class="alert-heading fw-bold mb-2">导入失败！</h5>
+                    <p class="mb-0">${data.error}</p>
+                </div>
+            `;
+        }
+
+    } catch (error) {
+        resultAlert.classList.remove('d-none');
+        resultAlert.className = 'alert alert-danger d-flex align-items-center border-0 shadow-sm fs-5';
+        resultAlert.innerHTML = `
+            <i class="fas fa-exclamation-triangle fa-2x me-3 text-danger"></i>
+            <div>
+                <h5 class="alert-heading fw-bold mb-2">请求失败！</h5>
+                <p class="mb-0">${error.message}</p>
+            </div>
+        `;
+    } finally {
+        // 恢复按钮状态
+        submitBtn.disabled = false;
+        spinner.classList.add('d-none');
+
+        // 滚动到结果区域
+        resultAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+});
+
+// 实时统计测试案例数量
+document.getElementById('testcasesText').addEventListener('input', updateTestCaseCount);
+
+// 页面加载时初始化计数
+document.addEventListener('DOMContentLoaded', updateTestCaseCount);
+</script>
+
+<style>
+.card {
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.card-header {
+    border-bottom: none;
+    border-radius: 1rem 1rem 0 0 !important;
+}
+
+.form-select, .form-control {
+    border-radius: 0.75rem;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    transform: translateY(-2px);
+}
+
+.btn {
+    border-radius: 0.75rem;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-group .btn {
+    border-radius: 0.5rem;
+    margin: 0 2px;
+}
+
+.alert {
+    border-radius: 1rem;
+}
+
+.badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+}
+
+pre {
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 2rem !important;
+    }
+
+    .btn-group {
+        flex-direction: column;
+    }
+
+    .btn-group .btn {
+        margin: 2px 0;
+        border-radius: 0.5rem;
+    }
+}
+
+/* 自定义滚动条 */
+.form-control::-webkit-scrollbar {
+    width: 8px;
+}
+
+.form-control::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 0 0.75rem 0.75rem 0;
+}
+
+.form-control::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.form-control::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+</style>
+{% endblock %}

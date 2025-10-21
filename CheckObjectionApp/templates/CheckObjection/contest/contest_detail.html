@@ -2,28 +2,27 @@
 
 {% block main%}
 <style>
-/* 页面整体容器 */
+/* 保持原有的CSS样式不变 */
 .page-container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 25px 20px;
-    background-color: #fafafa; /* 页面背景色，与内容区区分 */
-    border-radius: 12px; /* 整体圆角，弱化生硬感 */
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* 轻微外阴影，增加层次 */
+    background-color: #fafafa;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
-/* 比赛标题（最上方） */
 .contest-title {
     font-size: 2.2rem;
     text-align: center;
     margin: 0 0 30px;
-    color: #2c3e50; /* 更深的标题色，增强对比 */
+    color: #2c3e50;
     font-weight: 700;
     padding-bottom: 15px;
-    border-bottom: 2px solid #3498db; /* 蓝色下划线，增加活力 */
+    border-bottom: 2px solid #3498db;
     position: relative;
 }
-/* 标题装饰点 */
+
 .contest-title::after {
     content: '';
     position: absolute;
@@ -36,28 +35,22 @@
     border-radius: 2px;
 }
 
-/* 三栏内容容器 */
 .three-columns {
     display: flex;
-    gap: 25px; /* 加大间距，避免拥挤 */
+    gap: 25px;
     align-items: flex-start;
 }
 
-/* 左侧得分区域 */
 .score-section {
-    width: 220px; /* 略宽，增加呼吸感 */
+    width: 220px;
     padding: 20px 25px;
     background-color: #fff;
     border-radius: 10px;
     border: 1px solid #e6e6e6;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.04); /* 侧边栏阴影，增强层次 */
+    box-shadow: 0 3px 8px rgba(0,0,0,0.04);
     transition: transform 0.3s ease;
 }
-.score-section:hover {
-    transform: translateY(-3px); /* 轻微上浮，增加交互感 */
-}
 
-/* 右侧提交区域 */
 .submission-section {
     width: 220px;
     padding: 20px 25px;
@@ -67,27 +60,21 @@
     box-shadow: 0 3px 8px rgba(0,0,0,0.04);
     transition: transform 0.3s ease;
 }
-.submission-section:hover {
-    transform: translateY(-3px);
-}
 
-/* 中间题目区域 */
 .middle-container {
     flex: 1;
-    padding: 10px; /* 增加内边距，与侧边栏平衡 */
+    padding: 10px;
 }
 
-/* 题目列表容器 */
 .contest-problems {
     width: 100%;
-    max-width: 650px; /* 加宽中间区域，视觉更协调 */
+    max-width: 650px;
     margin: 0 auto;
 }
 
-/* 题目项样式 */
 .problem-item {
     padding: 18px 25px;
-    margin: 15px 0; /* 加大间距，避免紧凑 */
+    margin: 15px 0;
     border-radius: 10px;
     border: 1px solid #e0e0e0;
     background-color: #fff;
@@ -100,34 +87,31 @@
     box-shadow: 0 2px 5px rgba(0,0,0,0.02);
 }
 
-/* 悬停高亮效果（强化） */
 .problem-item:hover {
     background-color: #f0f7ff;
     border-color: #64b5f6;
-    box-shadow: 0 5px 15px rgba(100, 181, 246, 0.2); /* 更强阴影 */
+    box-shadow: 0 5px 15px rgba(100, 181, 246, 0.2);
     transform: translateY(-2px);
 }
 
-/* 已解决题目样式（强化） */
 .problem-item.solved {
     background-color: #f6ffed;
     border-color: #81c784;
-    border-left: 5px solid #4caf50; /* 左侧标记线，增强区分 */
+    border-left: 5px solid #4caf50;
 }
+
 .problem-item.solved:hover {
     background-color: #e8f5e9;
     border-color: #66bb6a;
     box-shadow: 0 5px 15px rgba(102, 187, 106, 0.2);
 }
 
-/* 链接样式修正 */
 .problem-link {
     text-decoration: none;
     color: inherit;
     display: block;
 }
 
-/* 侧边栏标题样式（强化） */
 .sidebar-title {
     font-size: 1.3rem;
     color: #2c3e50;
@@ -138,29 +122,29 @@
     align-items: center;
     gap: 8px;
 }
-/* 侧边栏标题图标（增加视觉元素） */
+
 .sidebar-title::before {
-    content: '📊'; /* 用emoji代替图标，简化实现 */
+    content: '📊';
     font-size: 1.2em;
 }
+
 .submission-section .sidebar-title::before {
     content: '📝';
 }
 
-/* 侧边栏内容项样式（增加变化） */
 .sidebar-item {
     padding: 10px 0;
     border-bottom: 1px dashed #f0f0f0;
     font-size: 0.98rem;
     display: flex;
-    justify-content: space-between; /* 左右对齐，更规整 */
+    justify-content: space-between;
     transition: color 0.2s ease;
 }
+
 .sidebar-item:hover {
-    color: #3498db; /* 悬停变色，增加交互 */
+    color: #3498db;
 }
 
-/* 得分/提交统计样式（强化突出） */
 .score-section .sidebar-item:last-child,
 .submission-section .sidebar-item:last-child {
     margin-top: 20px;
@@ -171,11 +155,11 @@
     text-align: center;
     justify-content: center;
 }
+
 .submission-section .sidebar-item:last-child {
     background-color: #e8f5e9;
 }
 
-/* 响应式调整 */
 @media (max-width: 992px) {
     .three-columns {
         flex-direction: column;
@@ -198,77 +182,74 @@
     <!-- 比赛名称 -->
     <h1 class="contest-title">{{ contest.title }}</h1>
 
+    <!-- 描述信息 -->
+    <div><p>比赛ID: {{ contest.id }}</p></div>
+    <div><p>比赛状态: {{ contest.status }}</p></div>
+    {% if contest.description %}
+    <div><p>比赛描述: {{ contest.description }}</p></div>
+    {% endif %}
+
     <!-- 三栏内容 -->
     <div class="three-columns">
-         <!-- 中间题目区域 -->
+        <!-- 左侧题目区域 -->
         <div class="middle-container">
             <div class="contest-problems">
                 {% for contest_topic in contest_topics %}
-                    <a href="{% url 'CheckObjectionApp:CheckObjectionApp_detail' contest_topic.topic.id %}" class="problem-link">
-                        <div class="problem-item {% if problem_status %}solved{% endif %}">
+                    <a href="{% url 'CheckObjectionApp:contest_submit_code' contest_id=contest.id contest_topic_id=contest_topic.topic.id %}" class="problem-link">
+                        <div class="problem-item {% if contest_topic.topic.id in solved_problems %}solved{% endif %}">
                             <span>{{ contest_topic.order }}. {{ contest_topic.topic.title }}</span>
                             <span>分值: {{ contest_topic.score }}</span>
                         </div>
                     </a>
+                {% empty %}
+                    <div class="problem-item">
+                        <span>暂无题目</span>
+                    </div>
                 {% endfor %}
             </div>
         </div>
 
-        <!-- 左侧得分区域 -->
+        <!-- 中间得分区域 -->
         <div class="score-section">
             <h3 class="sidebar-title">得分情况</h3>
+            {% for item in problem_scores %}
             <div class="sidebar-item">
-                <span>题目1</span>
-                <span style="color: #4caf50;">100分（已得）</span>
+                <span>{{ item.title }}</span>
+                <span style="color: {{ item.color }};">
+                    {{ item.score_status }}
+                </span>
             </div>
+            {% empty %}
             <div class="sidebar-item">
-                <span>题目2</span>
-                <span style="color: #f44336;">150分（未得）</span>
+                <span>暂无得分数据</span>
             </div>
-            <div class="sidebar-item">
-                <span>题目3</span>
-                <span style="color: #ff9800;">200分（80%）</span>
-            </div>
-            <div class="sidebar-item">
-                <span>题目4</span>
-                <span style="color: #f44336;">120分（未得）</span>
-            </div>
-            <div class="sidebar-item">
-                <span>题目5</span>
-                <span style="color: #4caf50;">180分（已得）</span>
-            </div>
+            {% endfor %}
             <div class="sidebar-item" style="font-weight: bold; color: #1976d2;">
-                总得分: 480/750
+                总得分: {{ total_score }}/{{ contest_total_score }}
             </div>
         </div>
 
-
-
         <!-- 右侧提交区域 -->
         <div class="submission-section">
-            <h3 class="sidebar-title">提交情况</h3>
+            <h3 class="sidebar-title">
+                <a href="{% url 'CheckObjectionApp:query_submission_list' user_name=user.username %}?contest={{ contest.id }}">
+                    提交情况
+                </a>
+            </h3>
+            {% for item in problem_submissions_stats %}
             <div class="sidebar-item">
-                <span>题目1</span>
-                <span style="color: #4caf50;">3次（AC）</span>
+                <span>{{ item.title }}</span>
+                <span style="color: {{ item.color }};">
+                    {{ item.submission_status }}
+                </span>
             </div>
+            {% empty %}
             <div class="sidebar-item">
-                <span>题目2</span>
-                <span style="color: #f44336;">5次（WA）</span>
+                <span>暂无提交数据</span>
             </div>
-            <div class="sidebar-item">
-                <span>题目3</span>
-                <span style="color: #ff9800;">2次（部分AC）</span>
-            </div>
-            <div class="sidebar-item">
-                <span>题目4</span>
-                <span style="color: #9e9e9e;">0次</span>
-            </div>
-            <div class="sidebar-item">
-                <span>题目5</span>
-                <span style="color: #4caf50;">1次（AC）</span>
-            </div>
+            {% endfor %}
             <div class="sidebar-item" style="font-weight: bold; color: #388e3c;">
-                AC率: 40% (2/5)
+                AC率: {{ ac_rate }}% ({{ total_ac_count }}/{{ total_problems }})
             </div>
         </div>
     </div>

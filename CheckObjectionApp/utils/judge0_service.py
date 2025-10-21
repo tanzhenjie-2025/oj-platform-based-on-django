@@ -4,6 +4,7 @@ import json
 from django.conf import settings
 
 
+
 class Judge0Service:
     def __init__(self):
         # 从settings获取Judge0配置
