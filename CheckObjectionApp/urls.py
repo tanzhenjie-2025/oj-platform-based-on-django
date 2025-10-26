@@ -15,7 +15,7 @@ urlpatterns = [
     # path('detail/proxy-submit-code', views.quick_judge_example, name='proxy_submit_code'),
     # 提交日常判题的api
     path('detail/proxy-submit-code/', JudgeCodeView.as_view(), name='proxy_submit_code'),
-    # 提交内部算法判题的api todo 没做完 不知道为什么提交搜索的测试案例为0 忘记启动docker了
+    # 提交内部算法判题的api
     path('contest/<contest_id>/proxy-submit-code-contest/', JudgeContestCodeView.as_view(), name='proxy_submit_code_contest'),
 
     path('api/', include(router.urls)),

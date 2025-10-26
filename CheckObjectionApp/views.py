@@ -24,9 +24,6 @@ from .models import answer, Contest, ContestParticipant, ContestSubmission, Cont
 from .forms import LoginForm, RegisterForm
 from .models import UserProfile
 from django.db.models import F
-# TODO 生产环境时打开csrf验证
-from django.views.decorators.csrf import csrf_exempt
-
 from CheckObjectionApp.serializers import topicSerializer
 from CheckObjectionApp.serializers import topicModelSerializer
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin
@@ -198,7 +195,6 @@ from django.http import HttpResponse
 
 
 @require_http_methods(['GET', 'POST'])
-@csrf_exempt
 def CheckObjection_login(request):
     if request.method == 'GET':
         form = LoginForm()
@@ -1258,8 +1254,6 @@ class JudgeContestCodeView(View):
                 "error": f"处理请求时出错: {str(e)}"
             })
 
-# todo 下面五个函数没写完
-# todo 已经修改完
 # 以下为比赛代码提交记录展示
 @login_required
 def contest_submission_list(request):
@@ -1322,7 +1316,6 @@ def contest_submission_list(request):
     return render(request, 'CheckObjection/submission_list.html', context)
 
 
-# todo 已经修改完
 @login_required
 def my_contest_submission_list(request):
     """显示我的所有比赛提交记录（带缓存）"""
@@ -1380,7 +1373,6 @@ def my_contest_submission_list(request):
     }
     return render(request, 'CheckObjection/submission_list.html', context)
 
-# todo 已经修改完
 @login_required
 def query_contest_submission_list(request, user_name, contest_id):
     """显示查询单个用户在指定比赛中的所有提交记录"""
@@ -1451,7 +1443,6 @@ def query_contest_submission_list(request, user_name, contest_id):
     return render(request, 'CheckObjection/submission_list.html', context)
 
 
-# todo 已经修改完
 @login_required
 def query_contest_topic_submission_list(request, contest_id, topic_id):
     """显示查询单个比赛题目的所有提交记录(管理员视图）"""
