@@ -15,8 +15,8 @@ urlpatterns = [
     # path('detail/proxy-submit-code', views.quick_judge_example, name='proxy_submit_code'),
     # 提交日常判题的api
     path('detail/proxy-submit-code/', JudgeCodeView.as_view(), name='proxy_submit_code'),
-    # 提交内部算法判题的api
-    path('detail/proxy-submit-code-contest/', JudgeContestCodeView.as_view(), name='proxy_submit_code_contest'),
+    # 提交内部算法判题的api todo 没做完 不知道为什么提交搜索的测试案例为0 忘记启动docker了
+    path('contest/<contest_id>/proxy-submit-code-contest/', JudgeContestCodeView.as_view(), name='proxy_submit_code_contest'),
 
     path('api/', include(router.urls)),
     path('task-status/<str:task_id>/', TaskStatusView.as_view(), name='task_status'),
@@ -28,8 +28,10 @@ urlpatterns = [
     path('submission/<uuid:pk>/', views.submission_detail, name='submission_detail'),
     # 我的所有提交
     path('my_submission', views.my_submission_list, name='my_submission_list'),
-
+    # 根据用户名查询提交
     path('query_submission_list/<user_name>',views.query_submission_list,name='query_submission_list'),
+
+    path('query_contest_submission_list/<contest_id>/<user_name>',views.query_contest_submission_list,name='query_contest_submission_list'),
     path("index", views.index, name="CheckObjectionApp_index"),
     path("base", views.base, name="CheckObjectionApp_base"),
     # 日常答题界面
@@ -62,14 +64,22 @@ urlpatterns = [
     # path("get",views.topicModel_get.as_view({"get":"get"}), name="CheckObjection_get"),
     # 显示 比赛的列表 所有比赛均在此处显示
     path('contest/', views.ContestListView.as_view(), name='contest_list'),
+    # 比赛报名界面
+    path('contest_register/<contest_id>',views.contest_register, name='contest_register'),
     # 显示 具体某场比赛的详情 列出比赛的题目
     path('contest/<int:pk>/', views.ContestDetailView.as_view(), name='contest_detail'),
     # 显示 某场比赛的排名
     path('contest/<int:pk>/rank/', views.ContestRankView.as_view(), name='contest_rank'),
+    # 显示我的全部比赛提交记录
+    path('my_contest_submission', views.my_contest_submission_list, name='my_contest_submission_list'),
     # path('contest/<int:pk>/register/', views.contest_register, name='contest_register'),
     # path('contest/<int:contest_id>/problem/<int:problem_id>/', views.contest_problem, name='contest_problem'),
-#     批量导入题目api
-path('batch-import-testcases/', views.batch_import_testcases, name='batch_import_testcases'),
+    # 比赛排行路由及视图
+    path('contest_rank_list/', views.contest_rank_list, name='contest_rank_list'),
+    path('contest_rank_detail/<int:contest_id>/', views.contest_rank_detail, name='contest_rank_detail'),
+
+    # 批量导入题目api
+    path('batch-import-testcases/', views.batch_import_testcases, name='batch_import_testcases'),
 
     path("t1", views.topicModel_get.as_view()),
     path("t2", views.topicAPIGenericAPIView.as_view()),
@@ -78,6 +88,7 @@ path('batch-import-testcases/', views.batch_import_testcases, name='batch_import
     path('topic/<int:pk>/', views.Topic.as_view(), name='topic-detail'),
     path("get1", views.get1, name="CheckObjection_get1"),
     path('s1', views.topicAPIView.as_view()),
+    path('try', views.try1, name='try1')
     # path("CheckObjectionApp_pub", views.CheckObjectionApp_pub, name="CheckObjectionApp_pub"),
     # path("send_email_captcha", views.send_email_captcha, name="send_email_captcha"),
     # path("CheckObjectionApp_register", views.CheckObjectionApp_register, name="CheckObjectionApp_register"),

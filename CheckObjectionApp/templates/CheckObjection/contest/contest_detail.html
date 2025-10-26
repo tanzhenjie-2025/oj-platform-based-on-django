@@ -1,257 +1,361 @@
 {% extends "CheckObjection/CheckObjectionApp_base.html" %}
+{% block body %}
+{% endblock %}
+{% block main %}
+    <style>
+        /* 保持原有的CSS样式不变 */
+        /* 新增：全局跳转链接去下划线 + 颜色继承 */
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
 
-{% block main%}
-<style>
-/* 保持原有的CSS样式不变 */
-.page-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 25px 20px;
-    background-color: #fafafa;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-}
+        .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 25px 20px;
+            background-color: #fafafa;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
 
-.contest-title {
-    font-size: 2.2rem;
-    text-align: center;
-    margin: 0 0 30px;
-    color: #2c3e50;
-    font-weight: 700;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #3498db;
-    position: relative;
-}
+        .contest-title {
+            font-size: 2.2rem;
+            text-align: center;
+            margin: 0 0 30px;
+            color: #2c3e50;
+            font-weight: 700;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+            position: relative;
+        }
 
-.contest-title::after {
-    content: '';
-    position: absolute;
-    width: 60px;
-    height: 4px;
-    background-color: #3498db;
-    bottom: -2px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-radius: 2px;
-}
+        .contest-title::after {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 4px;
+            background-color: #3498db;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
 
-.three-columns {
-    display: flex;
-    gap: 25px;
-    align-items: flex-start;
-}
+        .three-columns {
+            display: flex;
+            gap: 25px;
+            align-items: flex-start;
+        }
 
-.score-section {
-    width: 220px;
-    padding: 20px 25px;
-    background-color: #fff;
-    border-radius: 10px;
-    border: 1px solid #e6e6e6;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.04);
-    transition: transform 0.3s ease;
-}
+        .score-section {
+            width: 220px;
+            padding: 20px 25px;
+            background-color: #fff;
+            border-radius: 10px;
+            border: 1px solid #e6e6e6;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+            transition: transform 0.3s ease;
+        }
 
-.submission-section {
-    width: 220px;
-    padding: 20px 25px;
-    background-color: #fff;
-    border-radius: 10px;
-    border: 1px solid #e6e6e6;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.04);
-    transition: transform 0.3s ease;
-}
+        .submission-section {
+            width: 220px;
+            padding: 20px 25px;
+            background-color: #fff;
+            border-radius: 10px;
+            border: 1px solid #e6e6e6;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+            transition: transform 0.3s ease;
+        }
 
-.middle-container {
-    flex: 1;
-    padding: 10px;
-}
+        .middle-container {
+            flex: 1;
+            padding: 10px;
+        }
 
-.contest-problems {
-    width: 100%;
-    max-width: 650px;
-    margin: 0 auto;
-}
+        .contest-problems {
+            width: 100%;
+            max-width: 650px;
+            margin: 0 auto;
+        }
 
-.problem-item {
-    padding: 18px 25px;
-    margin: 15px 0;
-    border-radius: 10px;
-    border: 1px solid #e0e0e0;
-    background-color: #fff;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    font-size: 1.1rem;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-}
+        .problem-item {
+            padding: 18px 25px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            background-color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-size: 1.1rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        }
 
-.problem-item:hover {
-    background-color: #f0f7ff;
-    border-color: #64b5f6;
-    box-shadow: 0 5px 15px rgba(100, 181, 246, 0.2);
-    transform: translateY(-2px);
-}
+        .problem-item:hover {
+            background-color: #f0f7ff;
+            border-color: #64b5f6;
+            box-shadow: 0 5px 15px rgba(100, 181, 246, 0.2);
+            transform: translateY(-2px);
+        }
 
-.problem-item.solved {
-    background-color: #f6ffed;
-    border-color: #81c784;
-    border-left: 5px solid #4caf50;
-}
+        .problem-item.solved {
+            background-color: #f6ffed;
+            border-color: #81c784;
+            border-left: 5px solid #4caf50;
+        }
 
-.problem-item.solved:hover {
-    background-color: #e8f5e9;
-    border-color: #66bb6a;
-    box-shadow: 0 5px 15px rgba(102, 187, 106, 0.2);
-}
+        .problem-item.solved:hover {
+            background-color: #e8f5e9;
+            border-color: #66bb6a;
+            box-shadow: 0 5px 15px rgba(102, 187, 106, 0.2);
+        }
 
-.problem-link {
-    text-decoration: none;
-    color: inherit;
-    display: block;
-}
+        .problem-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
 
-.sidebar-title {
-    font-size: 1.3rem;
-    color: #2c3e50;
-    margin: 0 0 18px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #f0f0f0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
+        .sidebar-title {
+            font-size: 1.3rem;
+            color: #2c3e50;
+            margin: 0 0 18px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-.sidebar-title::before {
-    content: '📊';
-    font-size: 1.2em;
-}
+        .sidebar-title::before {
+            content: '📊';
+            font-size: 1.2em;
+        }
 
-.submission-section .sidebar-title::before {
-    content: '📝';
-}
+        .submission-section .sidebar-title::before {
+            content: '📝';
+        }
 
-.sidebar-item {
-    padding: 10px 0;
-    border-bottom: 1px dashed #f0f0f0;
-    font-size: 0.98rem;
-    display: flex;
-    justify-content: space-between;
-    transition: color 0.2s ease;
-}
+        /* 修改：适配a标签的条目样式，实现整区域点击 */
+        .sidebar-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px dashed #f0f0f0;
+            font-size: 0.98rem;
+            transition: color 0.2s ease;
+            cursor: pointer;
+        }
 
-.sidebar-item:hover {
-    color: #3498db;
-}
+        .sidebar-item:hover {
+            color: #3498db;
+        }
 
-.score-section .sidebar-item:last-child,
-.submission-section .sidebar-item:last-child {
-    margin-top: 20px;
-    padding: 12px;
-    background-color: #f0f7ff;
-    border-radius: 6px;
-    border: none;
-    text-align: center;
-    justify-content: center;
-}
+        .score-section .sidebar-item:last-child,
+        .submission-section .sidebar-item:last-child {
+            margin-top: 20px;
+            padding: 12px;
+            background-color: #f0f7ff;
+            border-radius: 6px;
+            border: none;
+            text-align: center;
+            justify-content: center;
+        }
 
-.submission-section .sidebar-item:last-child {
-    background-color: #e8f5e9;
-}
+        .submission-section .sidebar-item:last-child {
+            background-color: #e8f5e9;
+        }
 
-@media (max-width: 992px) {
-    .three-columns {
-        flex-direction: column;
-    }
-    .score-section, .submission-section {
-        width: 100%;
-        margin-bottom: 20px;
-    }
-    .contest-title {
-        font-size: 1.8rem;
-    }
-    .problem-item {
-        font-size: 1rem;
-        padding: 15px 20px;
-    }
-}
-</style>
+        @media (max-width: 992px) {
+            .three-columns {
+                flex-direction: column;
+            }
 
-<div class="page-container">
-    <!-- 比赛名称 -->
-    <h1 class="contest-title">{{ contest.title }}</h1>
+            .score-section, .submission-section {
+                width: 100%;
+                margin-bottom: 20px;
+            }
 
-    <!-- 描述信息 -->
-    <div><p>比赛ID: {{ contest.id }}</p></div>
-    <div><p>比赛状态: {{ contest.status }}</p></div>
-    {% if contest.description %}
-    <div><p>比赛描述: {{ contest.description }}</p></div>
-    {% endif %}
+            .contest-title {
+                font-size: 1.8rem;
+            }
 
-    <!-- 三栏内容 -->
-    <div class="three-columns">
-        <!-- 左侧题目区域 -->
-        <div class="middle-container">
-            <div class="contest-problems">
-                {% for contest_topic in contest_topics %}
-                    <a href="{% url 'CheckObjectionApp:contest_submit_code' contest_id=contest.id contest_topic_id=contest_topic.topic.id %}" class="problem-link">
-                        <div class="problem-item {% if contest_topic.topic.id in solved_problems %}solved{% endif %}">
-                            <span>{{ contest_topic.order }}. {{ contest_topic.topic.title }}</span>
-                            <span>分值: {{ contest_topic.score }}</span>
+            .problem-item {
+                font-size: 1rem;
+                padding: 15px 20px;
+            }
+        }
+
+        .ranking-section {
+            width: 220px;
+            padding: 20px 25px;
+            background-color: #fff;
+            border-radius: 10px;
+            border: 1px solid #e6e6e6;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+            transition: transform 0.3s ease;
+        }
+
+        /* 排名区域不需要最后一个项目的特殊样式 */
+        .ranking-section .sidebar-item:last-child {
+            margin-top: 0;
+            padding: 10px 0;
+            background-color: transparent;
+            border-radius: 0;
+            text-align: left;
+            justify-content: space-between;
+            border-bottom: 1px dashed #f0f0f0;
+        }
+
+        /* 在媒体查询中也添加对应的样式 */
+        @media (max-width: 992px) {
+            .ranking-section {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+        }
+
+        /* 新增：排行榜按钮样式 */
+        .rank-button {
+            display: block; /* 独占一行，确保长方形形态 */
+            width: 100%;
+            padding: 12px 0; /* 上下内边距，控制高度 */
+            margin-top: 20px; /* 与上方排名数据保持间距 */
+            background-color: #3498db; /* 蓝色系，与现有交互元素风格统一 */
+            color: #fff; /* 白色文字 */
+            text-align: center;
+            border-radius: 6px; /* 圆角，与其他模块一致 */
+            text-decoration: none; /* 去除链接下划线 */
+            font-weight: bold;
+            transition: background-color 0.3s ease; /*  hover过渡效果 */
+        }
+
+        /* 新增：排行榜按钮hover效果 */
+        .rank-button:hover {
+            background-color: #2980b9; /*  hover时加深颜色 */
+            color: #fff; /* 保持文字白色 */
+        }
+    </style>
+
+    <div class="page-container">
+        <a href="{% url 'CheckObjectionApp:contest_list' %}">返回比赛列表</a>
+        <!-- 比赛名称 -->
+        <h1 class="contest-title">{{ contest.title }}</h1>
+
+        <!-- 描述信息 -->
+        <div><p>比赛ID: {{ contest.id }}</p></div>
+        <div><p>比赛状态: {{ contest.status }}</p></div>
+        {% if contest.description %}
+            <div><p>比赛描述: {{ contest.description }}</p></div>
+        {% endif %}
+
+        <!-- 三栏内容 -->
+        <div class="three-columns">
+            <!-- 左侧题目区域 -->
+            <div class="middle-container">
+                <div class="contest-problems">
+                    {% for contest_topic in contest_topics %}
+                        <a href="{% url 'CheckObjectionApp:contest_submit_code' contest_id=contest.id contest_topic_id=contest_topic.topic.id %}"
+                           class="problem-link">
+                            <div class="problem-item {% if contest_topic.topic.id in solved_problems %}solved{% endif %}">
+                                <span>{{ contest_topic.order }}. {{ contest_topic.topic.title }}</span>
+                                <span>分值: {{ contest_topic.score }}</span>
+                            </div>
+                        </a>
+                    {% empty %}
+                        <div class="problem-item">
+                            <span>暂无题目</span>
                         </div>
-                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 中间得分区域 -->
+            <div class="score-section">
+                <h3 class="sidebar-title">得分情况</h3>
+                {% for item in problem_scores %}
+                    <div class="sidebar-item">
+                        <span>{{ item.title }}</span>
+                        <span style="color: {{ item.color }};">
+                            {{ item.score_status }}
+                        </span>
+                    </div>
                 {% empty %}
-                    <div class="problem-item">
-                        <span>暂无题目</span>
+                    <div class="sidebar-item">
+                        <span>暂无得分数据</span>
                     </div>
                 {% endfor %}
+                <div class="sidebar-item" style="font-weight: bold; color: #1976d2;">
+                    总得分: {{ total_score }}/{{ contest_total_score }}
+                </div>
             </div>
-        </div>
 
-        <!-- 中间得分区域 -->
-        <div class="score-section">
-            <h3 class="sidebar-title">得分情况</h3>
-            {% for item in problem_scores %}
-            <div class="sidebar-item">
-                <span>{{ item.title }}</span>
-                <span style="color: {{ item.color }};">
-                    {{ item.score_status }}
-                </span>
+            <!-- 右侧提交区域：修改为a标签包裹，实现整区域点击 -->
+            <div class="submission-section">
+                <h3 class="sidebar-title">
+                    <a href="{% url 'CheckObjectionApp:query_contest_submission_list' user_name=user.username contest_id=contest.id %}">
+                        提交情况
+                    </a>
+                </h3>
+                {% for item in problem_submissions_stats %}
+                    <!-- 关键修改：将div改为a标签，href指向该题目的提交列表 -->
+                    <a href="{% url 'CheckObjectionApp:query_contest_submission_list' user_name=user.username contest_id=contest.id%}"
+                       class="sidebar-item">
+                        <span>{{ item.title }}</span>
+                        <span style="color: {{ item.color }};">
+                            {{ item.submission_status }}
+                        </span>
+                    </a>
+                {% empty %}
+                    <div class="sidebar-item">
+                        <span>暂无提交数据</span>
+                    </div>
+                {% endfor %}
+                <div class="sidebar-item" style="font-weight: bold; color: #388e3c;">
+                    AC率: {{ ac_rate }}% ({{ total_ac_count }}/{{ total_problems }})
+                </div>
             </div>
-            {% empty %}
-            <div class="sidebar-item">
-                <span>暂无得分数据</span>
-            </div>
-            {% endfor %}
-            <div class="sidebar-item" style="font-weight: bold; color: #1976d2;">
-                总得分: {{ total_score }}/{{ contest_total_score }}
-            </div>
-        </div>
 
-        <!-- 右侧提交区域 -->
-        <div class="submission-section">
-            <h3 class="sidebar-title">
-                <a href="{% url 'CheckObjectionApp:query_submission_list' user_name=user.username %}?contest={{ contest.id }}">
-                    提交情况
+            <!-- 排名部分：修改为a标签包裹 + 前三名加奖杯 -->
+            <div class="ranking-section">
+                <h3 class="sidebar-title">
+                    <a href="{% url 'CheckObjectionApp:contest_rank_detail' contest_id=contest.id %}">
+                        🏆 排名
+                    </a>
+                </h3>
+                {% if top_three_ac_counts %}
+                    {% for rank_data in top_three_ac_counts %}
+                        <!-- 关键修改：a标签包裹整区域 + 根据排名加奖杯 -->
+                        <a href="{% url 'CheckObjectionApp:contest_rank_detail' contest_id=contest.id %}#{{ rank_data.username }}"
+                           class="sidebar-item">
+                            <!-- 前三名添加对应奖杯emoji -->
+                            <span>
+                                {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% endif %}
+                                第{{ forloop.counter }}名: {{ rank_data.username }}
+                            </span>
+                            <span style="color: #4caf50; font-weight: bold;">
+                                {{ rank_data.ac_count }}题
+                            </span>
+                        </a>
+                    {% endfor %}
+                {% else %}
+                    <div class="sidebar-item">
+                        <span>暂无排名数据</span>
+                    </div>
+                {% endif %}
+
+                <!-- 排行榜按钮 -->
+                <a href="{% url 'CheckObjectionApp:contest_rank_detail' contest_id=contest.id %}"
+                   class="rank-button">
+                    排行榜
                 </a>
-            </h3>
-            {% for item in problem_submissions_stats %}
-            <div class="sidebar-item">
-                <span>{{ item.title }}</span>
-                <span style="color: {{ item.color }};">
-                    {{ item.submission_status }}
-                </span>
-            </div>
-            {% empty %}
-            <div class="sidebar-item">
-                <span>暂无提交数据</span>
-            </div>
-            {% endfor %}
-            <div class="sidebar-item" style="font-weight: bold; color: #388e3c;">
-                AC率: {{ ac_rate }}% ({{ total_ac_count }}/{{ total_problems }})
             </div>
         </div>
     </div>
-</div>
+{% endblock %}
+{% block footer %}
 {% endblock %}

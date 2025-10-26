@@ -2,7 +2,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError
 from django.shortcuts import render,redirect,reverse
 import string
-from django.http.response import JsonResponse
+from django.http.response import JsonResponse, HttpResponseForbidden
 # Create your views here.
 import random
 from django.core.mail import send_mail
@@ -20,7 +20,7 @@ from rest_framework.views import APIView
 
 from CheckObjection.settings import DB_QUERY_KEY, CACHE_KEY_HIT
 from .code import check_code
-from .models import answer, Contest, ContestParticipant, ContestSubmission
+from .models import answer, Contest, ContestParticipant, ContestSubmission, ContestTopic
 from .forms import LoginForm, RegisterForm
 from .models import UserProfile
 from django.db.models import F
@@ -511,6 +511,7 @@ class JudgeCodeView(View):
         判题接口 - 使用Celery异步处理
         """
         try:
+            user_id = request.user.id
             data = json.loads(request.body)
 
             source_code = data.get('source_code', '')
@@ -523,6 +524,7 @@ class JudgeCodeView(View):
             submission_id = str(uuid.uuid4())
 
             submission_data = {
+                'user_id': user_id,
                 'source_code': source_code,
                 'language_id': language_id,
                 'topic_id': topic_id,
@@ -714,7 +716,7 @@ def submission_list(request):
     return render(request, 'CheckObjection/submission_list.html', context)
 
 
-@login_required
+# @login_required
 def submission_detail(request, pk):
     """显示单个提交记录的详细信息"""
     submission = get_object_or_404(Submission, pk=pk)
@@ -1043,7 +1045,7 @@ class ContestDetailView(LoginRequiredMixin, DetailView):
                     problem_status[topic_id]['submissions'].append(submission)
                     problem_status[topic_id]['total_count'] += 1
 
-                    if submission.submission.overall_result == 'AC':
+                    if submission.submission.overall_result == 'Accepted':
                         problem_status[topic_id]['solved'] = True
                         problem_status[topic_id]['ac_count'] += 1
 
@@ -1105,6 +1107,10 @@ class ContestDetailView(LoginRequiredMixin, DetailView):
         if contest_topics:
             ac_rate = round((total_ac_count / len(contest_topics)) * 100, 1)
 
+        # 新增：获取前三名的答对题目数目
+        top_three_ac_counts = self.get_top_three_ac_counts(contest)
+        context['top_three_ac_counts'] = top_three_ac_counts
+
         # 添加到context
         context['problem_scores'] = problem_scores
         context['problem_submissions_stats'] = problem_submissions_stats
@@ -1116,6 +1122,42 @@ class ContestDetailView(LoginRequiredMixin, DetailView):
         context['solved_problems'] = solved_problems
 
         return context
+
+    def get_top_three_ac_counts(self, contest):
+        """
+        获取前三名用户的答对题目数目
+        """
+        # 获取所有参与者
+        participants = ContestParticipant.objects.filter(
+            contest=contest,
+            is_disqualified=False
+        ).select_related('user')
+
+        top_three_data = []
+
+        for participant in participants:
+            # 获取该参与者的所有AC提交
+            ac_submissions = ContestSubmission.objects.filter(
+                participant=participant,
+                submission__overall_result='Accepted'
+            ).select_related('submission')
+
+            # 统计不同题目的AC数量（去重，同一题目多次AC只算一次）
+            solved_problems = set()
+            for submission in ac_submissions:
+                solved_problems.add(submission.submission.topic_id)
+
+            ac_count = len(solved_problems)
+
+            top_three_data.append({
+                'user': participant.user,
+                'ac_count': ac_count,
+                'username': participant.user.username
+            })
+
+        # 按AC数量降序排序，取前三名
+        top_three_data.sort(key=lambda x: x['ac_count'], reverse=True)
+        return top_three_data[:3]
 
 
 class ContestRankView(LoginRequiredMixin, DetailView):
@@ -1157,12 +1199,13 @@ def contest_submit_code(request, contest_id,contest_topic_id):
 # 比赛提交判题 todo 没做完 记得重启异步任务
 @method_decorator(csrf_exempt, name='dispatch')
 class JudgeContestCodeView(View):
-    def post(self, request):
+    def post(self, request,contest_id):
         """
         判题接口 - 使用Celery异步处理
         """
         try:
-            contest = True
+            user_id = request.user.id
+
             data = json.loads(request.body)
             source_code = data.get('source_code', '')
             language_id = data.get('language_id', 71)
@@ -1173,7 +1216,8 @@ class JudgeContestCodeView(View):
             # 生成唯一的提交ID
             submission_id = str(uuid.uuid4())
             submission_data = {
-                'contest': contest,
+                'user_id': user_id,
+                'contest_id': contest_id,
                 'source_code': source_code,
                 'language_id': language_id,
                 'topic_id': topic_id,
@@ -1215,6 +1259,7 @@ class JudgeContestCodeView(View):
             })
 
 # todo 下面五个函数没写完
+# todo 已经修改完
 # 以下为比赛代码提交记录展示
 @login_required
 def contest_submission_list(request):
@@ -1224,7 +1269,7 @@ def contest_submission_list(request):
     if request.user.is_staff:
         contest_submissions = ContestSubmission.objects.all().select_related(
             'contest',
-            'submission',
+            'submission',  # 关联到Submission模型
             'submission__topic',
             'participant__user'
         ).order_by('-submitted_at')
@@ -1234,147 +1279,263 @@ def contest_submission_list(request):
             participant__user=request.user
         ).select_related(
             'contest',
-            'submission',
+            'submission',  # 关联到Submission模型
             'submission__topic',
-            'participant'
+            'participant__user'  # 修正：应该是participant__user而不是participant
         ).order_by('-submitted_at')
 
+    # 准备前端需要的数据
+    submission_data = []
+    for contest_sub in contest_submissions:
+        # 获取关联的Submission对象
+        submission = contest_sub.submission
+
+        # 构建前端需要的数据结构
+        submission_info = {
+            # ContestSubmission信息
+            'contest_submission_id': contest_sub.id,
+            'submitted_at': contest_sub.submitted_at,
+
+            # Submission信息
+            'id': submission.id,
+            'user_name': submission.user_name,
+            'topic_id': submission.topic.id if submission.topic else None,
+            'topic': submission.topic,  # 直接传递topic对象
+            'language_id': submission.language_id,
+            'status': submission.status,
+            'overall_result': submission.overall_result,
+            'created_at': submission.created_at,
+            'updated_at': submission.updated_at,
+
+            # 其他相关信息
+            'contest': contest_sub.contest,
+            'participant': contest_sub.participant,
+        }
+        submission_data.append(submission_info)
+
+
     context = {
-        'submissions': contest_submissions,
-        'page_title': '比赛提交记录'
+        'submissions': submission_data,  # 传递处理后的数据
+        'page_title': '比赛提交记录',
+        'from': 'contest_submission_list',
     }
     return render(request, 'CheckObjection/submission_list.html', context)
 
-@login_required
-def contest_submission_detail(request, pk):
-    """显示单个提交记录的详细信息"""
-    submission = get_object_or_404(Submission, pk=pk)
-    context = {
-        'submission': submission,
-        'page_title': f'提交详情 - {submission.topic_id}'
-    }
-    return render(request, 'CheckObjection/submission_detail.html', context)
 
+# todo 已经修改完
 @login_required
 def my_contest_submission_list(request):
     """显示我的所有比赛提交记录（带缓存）"""
     user_name = request.user.username
-    """显示查询用户的所有提交记录"""
-    cache_key = f"user_submissions_{user_name}"
+    cache_key = f"user_contest_submissions_{user_name}"
 
     # 尝试从缓存获取数据
     submissions = cache.get(cache_key)
-
     if submissions is None:
-        # 缓存中没有，从数据库查询：使用select_related预加载topic
-        submissions_queryset = Submission.objects.filter(
-            user_name=user_name
-        ).select_related('topic')  # 预加载关联的topic对象
+        # 缓存中没有，从数据库查询：查询比赛相关的提交记录
+        contest_submissions_queryset = ContestSubmission.objects.filter(
+            participant__user=request.user
+        ).select_related(
+            'submission__topic',  # 预加载提交的题目
+            'contest',  # 预加载比赛信息
+            'participant'  # 预加载参与者信息
+        ).order_by('-submitted_at')
 
-        # 将查询结果转换为可缓存格式（列表）
-        submissions_list = list(submissions_queryset)  # 此时每个对象已包含topic数据
+        # 将查询结果转换为包含所需数据的字典列表
+        submissions_data = []
+        for contest_submission in contest_submissions_queryset:
+            submission = contest_submission.submission
+            submissions_data.append({
+                'id': submission.id,
+                'user_name': submission.user_name,
+                'topic_id': submission.topic.id if submission.topic else None,
+                'topic': {
+                    'id': submission.topic.id if submission.topic else None,
+                    'title': submission.topic.title if submission.topic else '未知题目'
+                },
+                'language_id': submission.language_id,
+                'status': submission.status,
+                'overall_result': submission.overall_result,
+                'created_at': submission.created_at,
+                'submitted_at': contest_submission.submitted_at,
+                # 保留原始对象引用以便其他可能需要的数据
+                'contest_submission': contest_submission,
+                'submission_obj': submission
+            })
 
         # 设置缓存
-        cache_timeout = SubmissionCache.get_cache_timeout()
-        cache.set(cache_key, submissions_list, cache_timeout)
-        submissions = submissions_list  # 赋值给submissions，统一后续逻辑
+        cache_timeout = 300  # 5分钟缓存，可以根据需要调整
+        cache.set(cache_key, submissions_data, cache_timeout)
+        submissions = submissions_data
 
-        cache_status = DB_QUERY_KEY
+        cache_status = '数据库查询'
+    else:
+        cache_status = '缓存命中'
+
+    context = {
+        'submissions': submissions,
+        'page_title': '比赛提交记录',
+        'cache_status': cache_status,
+        'cache_timeout': 300
+    }
+    return render(request, 'CheckObjection/submission_list.html', context)
+
+# todo 已经修改完
+@login_required
+def query_contest_submission_list(request, user_name, contest_id):
+    """显示查询单个用户在指定比赛中的所有提交记录"""
+    cache_key = f"contest_{contest_id}_user_{user_name}_submissions"
+    # 尝试从缓存获取数据
+    submissions = cache.get(cache_key)
+    if submissions is None:
+        try:
+            # 获取比赛对象
+            contest = Contest.objects.get(id=contest_id)
+
+            # 获取用户在指定比赛中的所有提交记录
+            contest_submissions_queryset = ContestSubmission.objects.filter(
+                contest_id=contest_id,
+                participant__user__username=user_name
+            ).select_related(
+                'submission',  # 预加载submission对象
+                'submission__topic',  # 预加载submission的topic对象
+                'participant'  # 预加载participant对象
+            ).order_by('-submitted_at')
+
+            # 处理数据，将需要的信息提取出来
+            processed_submissions = []
+            for contest_submission in contest_submissions_queryset:
+                submission = contest_submission.submission
+                processed_submissions.append({
+                    'contest_submission_id': contest_submission.id,
+                    'id': submission.id,  # 添加submission的id
+                    'user_name': submission.user_name,
+                    'topic_id': submission.topic.id if submission.topic else None,
+                    'topic': {
+                        'id': submission.topic.id if submission.topic else None,
+                        'title': submission.topic.title if submission.topic else '未知题目'
+                    },
+                    'language_id': submission.language_id,
+                    'status': submission.status,
+                    'overall_result': submission.overall_result,
+                    'created_at': submission.created_at,
+                    'submitted_at': contest_submission.submitted_at,
+                    # 保留原始对象引用以便其他用途
+                    'original_submission': submission,
+                    'original_contest_submission': contest_submission
+                })
+
+            # 设置缓存
+            cache_timeout = SubmissionCache.get_cache_timeout()
+            cache.set(cache_key, processed_submissions, cache_timeout)
+            submissions = processed_submissions
+
+            cache_status = '数据库查询'
+
+        except Contest.DoesNotExist:
+            # 比赛不存在
+            submissions = []
+            cache_status = '比赛不存在'
 
     else:
-        cache_status = CACHE_KEY_HIT
-
-    if cache_status == DB_QUERY_KEY:
-        cache_status = ''
-
-    print(submissions)
+        cache_status = '缓存命中'
 
     context = {
         'submissions': submissions,
-        'page_title': '提交记录',
+        'page_title': f'比赛提交记录 - 用户: {user_name}',
         'cache_status': cache_status,
-        'cache_timeout': SubmissionCache.get_cache_timeout()
+        'cache_timeout': SubmissionCache.get_cache_timeout(),
+        'contest_id': contest_id,
+        'user_name': user_name
     }
     return render(request, 'CheckObjection/submission_list.html', context)
 
+
+# todo 已经修改完
 @login_required
-def query_contest_submission_list(request, user_name):
-    """显示查询单个用户的所有比赛提交记录"""
-    cache_key = f"user_submissions_{user_name}"
+def query_contest_topic_submission_list(request, contest_id, topic_id):
+    """显示查询单个比赛题目的所有提交记录(管理员视图）"""
+    try:
+        # 获取比赛和题目信息
+        contest = Contest.objects.get(id=contest_id)
+        contest_topic = ContestTopic.objects.get(contest=contest, topic_id=topic_id)
 
-    # 尝试从缓存获取数据
-    submissions = cache.get(cache_key)
+        # 构建缓存键
+        cache_key = f"contest_{contest_id}_topic_{topic_id}_submissions"
 
-    if submissions is None:
-        # 缓存中没有，从数据库查询：使用select_related预加载topic
-        submissions_queryset = Submission.objects.filter(
-            user_name=user_name
-        ).select_related('topic')  # 预加载关联的topic对象
+        # 尝试从缓存获取数据
+        submissions = cache.get(cache_key)
 
-        # 将查询结果转换为可缓存格式（列表）
-        submissions_list = list(submissions_queryset)  # 此时每个对象已包含topic数据
+        if submissions is None:
+            # 缓存中没有，从数据库查询
+            # 通过ContestSubmission获取该比赛该题目的所有提交
+            contest_submissions = ContestSubmission.objects.filter(
+                contest=contest,
+                submission__topic_id=topic_id
+            ).select_related(
+                'submission',
+                'submission__topic',
+                'participant',
+                'participant__user'
+            ).order_by('-submitted_at')
 
-        # 设置缓存
-        cache_timeout = SubmissionCache.get_cache_timeout()
-        cache.set(cache_key, submissions_list, cache_timeout)
-        submissions = submissions_list  # 赋值给submissions，统一后续逻辑
+            # 构建包含详细信息的提交列表
+            submissions_list = []
+            for cs in contest_submissions:
+                submission_data = {
+                    'id': cs.submission.id,
+                    'user_name': cs.submission.user_name,
+                    'participant': cs.participant,
+                    'source_code': cs.submission.source_code,
+                    'language_id': cs.submission.language_id,
+                    'status': cs.submission.status,
+                    'overall_result': cs.submission.overall_result,
+                    'results': cs.submission.results,
+                    'notes': cs.submission.notes,
+                    'created_at': cs.submission.created_at,
+                    'updated_at': cs.submission.updated_at,
+                    'topic': cs.submission.topic,
+                    'submitted_at': cs.submitted_at,
+                    'contest': contest
+                }
+                submissions_list.append(submission_data)
 
-    cache_status = ''
+            # 设置缓存
+            cache_timeout = 300  # 5分钟缓存，可以根据需要调整
+            cache.set(cache_key, submissions_list, cache_timeout)
+            submissions = submissions_list
 
-    context = {
-        'submissions': submissions,
-        'page_title': '提交记录',
-        'cache_status': cache_status,
-        'cache_timeout': SubmissionCache.get_cache_timeout()
-    }
-    return render(request, 'CheckObjection/submission_list.html', context)
+        cache_status = '缓存命中' if cache.get(cache_key) else '缓存未命中'
 
-@login_required
-def query_contest_topic_submission_list(request, user_name):
-    """显示查询单个比赛题目的所有提交记录"""
-    cache_key = f"user_submissions_{user_name}"
+        context = {
+            'submissions': submissions,
+            'contest': contest,
+            'topic': contest_topic.topic,
+            'page_title': f'{contest.title} - {contest_topic.topic.title} 提交记录',
+            'cache_status': cache_status,
+            'cache_timeout': 300
+        }
+        return render(request, 'CheckObjection/submission_list.html', context)
 
-    # 尝试从缓存获取数据
-    submissions = cache.get(cache_key)
-
-    if submissions is None:
-        # 缓存中没有，从数据库查询：使用select_related预加载topic
-        submissions_queryset = Submission.objects.filter(
-            user_name=user_name
-        ).select_related('topic')  # 预加载关联的topic对象
-
-        # 将查询结果转换为可缓存格式（列表）
-        submissions_list = list(submissions_queryset)  # 此时每个对象已包含topic数据
-
-        # 设置缓存
-        cache_timeout = SubmissionCache.get_cache_timeout()
-        cache.set(cache_key, submissions_list, cache_timeout)
-        submissions = submissions_list  # 赋值给submissions，统一后续逻辑
-
-    cache_status = ''
-
-    context = {
-        'submissions': submissions,
-        'page_title': '提交记录',
-        'cache_status': cache_status,
-        'cache_timeout': SubmissionCache.get_cache_timeout()
-    }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    except Contest.DoesNotExist:
+        return render(request, 'CheckObjection/CheckObjection_noPower.html', {'error_message': '比赛不存在'})
+    except ContestTopic.DoesNotExist:
+        return render(request, 'CheckObjection/CheckObjection_noPower.html', {'error_message': '该题目不在比赛中或不存在'})
 
 
 # 批量导入题目
+import re
+import json
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-import json
 from .models import topic, TestCase
 
 
 @require_http_methods(["GET", "POST"])
 def batch_import_testcases(request):
     if request.method == "GET":
-        # 获取所有题目用于下拉选择
         topics = topic.objects.all().values('id', 'title')
         return render(request, 'CheckObjection/batch_import_testcases.html', {'topics': topics})
 
@@ -1387,13 +1548,14 @@ def batch_import_testcases(request):
             if not topic_id or not testcases_text:
                 return JsonResponse({'success': False, 'error': '题目ID和测试案例内容不能为空'})
 
-            # 获取题目对象
             topic_obj = get_object_or_404(topic, id=topic_id)
 
             # 解析测试案例文本
             testcases = parse_testcases_text(testcases_text)
+            if not testcases:
+                return JsonResponse({'success': False, 'error': '未找到有效的测试案例格式'})
 
-            # 创建测试案例对象
+            # 批量创建测试案例
             created_count = 0
             for i, testcase in enumerate(testcases):
                 TestCase.objects.create(
@@ -1405,51 +1567,104 @@ def batch_import_testcases(request):
                     score=testcase.get('score', 10)
                 )
                 created_count += 1
-            print('创建了 %d 个测试案例' % created_count)
 
             return JsonResponse({
                 'success': True,
-                'message': f'成功导入 {created_count} 个测试案例'
+                'message': f'成功导入 {created_count} 个测试案例',
+                'count': created_count
             })
 
+        except json.JSONDecodeError as e:
+            return JsonResponse({'success': False, 'error': f'JSON解析错误: {str(e)}'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
 
-
 def parse_testcases_text(text):
     """
-    解析测试案例文本格式
-    支持多种格式：
-    格式1：输入和输出用分隔符分开
-    格式2：JSON格式
+    智能解析测试案例文本格式
+    支持：
+    1. 纯JSON数组格式
+    2. 包含JSON数组的混合文本（自动提取JSON部分）
+    3. 传统的分隔符格式
     """
-    testcases = []
+    text = text.strip()
 
-    # 尝试解析为JSON格式
+    # 方法1: 尝试直接解析为JSON
     try:
         data = json.loads(text)
         if isinstance(data, list):
-            return data
-    except:
+            return validate_testcases(data)
+    except json.JSONDecodeError:
         pass
 
-    # 解析文本格式
+    # 方法2: 尝试从文本中提取JSON数组
+    json_match = extract_json_array(text)
+    if json_match:
+        try:
+            data = json.loads(json_match)
+            if isinstance(data, list):
+                return validate_testcases(data)
+        except json.JSONDecodeError:
+            pass
+
+    # 方法3: 传统的分隔符格式
+    return parse_legacy_format(text)
+
+
+def extract_json_array(text):
+    """
+    从混合文本中提取JSON数组部分
+    """
+    # 查找最外层的 JSON 数组
+    bracket_count = 0
+    start_index = -1
+    json_chars = []
+
+    for i, char in enumerate(text):
+        if char == '[':
+            if bracket_count == 0:
+                start_index = i
+            bracket_count += 1
+            json_chars.append(char)
+        elif char == ']':
+            bracket_count -= 1
+            json_chars.append(char)
+            if bracket_count == 0 and start_index != -1:
+                # 找到完整的JSON数组
+                return ''.join(json_chars)
+        elif start_index != -1:
+            json_chars.append(char)
+
+    return None
+
+
+def parse_legacy_format(text):
+    """
+    解析传统的分隔符格式
+    """
+    testcases = []
     lines = text.strip().split('\n')
-    current_testcase = {'input': '', 'output': ''}
+    current_testcase = {'input': '', 'output': '', 'is_sample': False, 'score': 10}
     current_section = 'input'
+    section_found = False
 
     for line in lines:
         line = line.strip()
 
-        if line.startswith('===') or line.startswith('---'):
-            # 分隔符，切换到输出部分
+        if not line:
+            continue
+
+        # 检测分隔符
+        if re.match(r'^={3,}$|^-{3,}$', line):  # === 或 ---
             current_section = 'output'
-        elif line.startswith('***') or line.startswith('###'):
-            # 测试案例结束分隔符
+            section_found = True
+        elif re.match(r'^\*{3,}$|^#{3,}$', line):  # *** 或 ###
+            # 结束当前测试案例
             if current_testcase['input'] and current_testcase['output']:
                 testcases.append(current_testcase)
-            current_testcase = {'input': '', 'output': ''}
+            current_testcase = {'input': '', 'output': '', 'is_sample': False, 'score': 10}
             current_section = 'input'
+            section_found = False
         else:
             # 添加到当前部分
             if current_section == 'input':
@@ -1463,8 +1678,503 @@ def parse_testcases_text(text):
                 else:
                     current_testcase['output'] = line
 
-    # 添加最后一个测试案例
+    # 添加最后一个测试案例（如果没有明确的分隔符结束）
     if current_testcase['input'] and current_testcase['output']:
         testcases.append(current_testcase)
+    elif current_testcase['input'] and not section_found:
+        # 如果只有输入没有输出分隔符，尝试智能分割
+        testcases = parse_smart_format(text)
 
     return testcases
+
+
+def parse_smart_format(text):
+    """
+    智能解析格式：自动检测输入输出模式
+    """
+    testcases = []
+    blocks = re.split(r'\n\s*\*{3,}\s*\n', text)  # 按 *** 分割测试案例
+
+    for block in blocks:
+        block = block.strip()
+        if not block:
+            continue
+
+        # 尝试按 === 分割输入输出
+        parts = re.split(r'\n\s*={3,}\s*\n', block)
+        if len(parts) >= 2:
+            testcase = {
+                'input': parts[0].strip(),
+                'output': parts[1].strip(),
+                'is_sample': False,
+                'score': 10
+            }
+            testcases.append(testcase)
+
+    return testcases
+
+
+def validate_testcases(testcases):
+    """
+    验证测试案例数据的完整性
+    """
+    validated = []
+    for i, testcase in enumerate(testcases):
+        if not isinstance(testcase, dict):
+            continue
+
+        # 确保必需的字段存在
+        if 'input' not in testcase or 'output' not in testcase:
+            continue
+
+        validated.append({
+            'input': str(testcase['input']),
+            'output': str(testcase['output']),
+            'is_sample': testcase.get('is_sample', False),
+            'score': testcase.get('score', 10)
+        })
+
+    return validated
+
+# 点击报名参加比赛
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.utils import timezone
+from .models import Contest, ContestParticipant
+
+
+# 比赛报名视图
+@login_required  # 确保用户已登录
+def contest_register(request, contest_id):
+    # 获取比赛对象，不存在则返回404
+    contest = get_object_or_404(Contest, id=contest_id)
+
+    # GET请求：显示报名页面
+    if request.method == 'GET':
+        return render(request, 'CheckObjection/contest/contest_register.html', {
+            'contest': contest
+        })
+
+    # POST请求：处理报名逻辑
+    if request.method == 'POST':
+        # 1. 检查比赛是否允许报名
+        if not contest.allow_register:
+            messages.error(request, "该比赛不允许报名")
+            return redirect('CheckObjectionApp:contest_detail', pk=contest_id)  # 假设存在比赛详情页路由
+
+        # 2. 检查比赛状态（已结束的比赛不能报名）
+        if contest.status == 'ended':
+            messages.error(request, "比赛已结束，无法报名")
+            return redirect('CheckObjectionApp:contest_detail', pk=contest_id)
+
+        # 3. 检查是否已报名
+        if ContestParticipant.objects.filter(contest=contest, user=request.user).exists():
+            messages.warning(request, "您已报名该比赛，无需重复报名")
+            return redirect('CheckObjectionApp:contest_detail', pk=contest_id)
+
+        # 4. 验证比赛密码（如果设置了密码）
+        if contest.password:
+            input_password = request.POST.get('password', '').strip()
+            if input_password != contest.password:
+                messages.error(request, "比赛密码错误")
+                return render(request, 'CheckObjection/contest/contest_register.html', {
+                    'contest': contest
+                })
+
+        # 5. 创建报名记录
+        ContestParticipant.objects.create(
+            contest=contest,
+            user=request.user
+        )
+
+        messages.success(request, "报名成功！请准时参加比赛")
+        return redirect('CheckObjectionApp:contest_detail', pk=contest_id)  # 跳转到比赛详情页
+
+
+# 补充：建议新增比赛详情页视图（用于跳转）
+# def contest_detail(request, contest_id):
+#     contest = get_object_or_404(Contest, id=contest_id)
+#     # 可以添加更多比赛详情相关逻辑
+#     return render(request, 'CheckObjection/contest/contest_detail.html', {
+#         'contest': contest
+#     })
+
+
+from django.db.models import Count, Q, Case, When, IntegerField
+from django.utils import timezone
+from django.shortcuts import get_object_or_404
+
+
+def contest_detail(request, contest_id):
+    contest = get_object_or_404(Contest, id=contest_id)
+
+    # 检查用户是否已报名
+    is_registered = ContestParticipant.objects.filter(
+        contest=contest,
+        user=request.user
+    ).exists()
+
+    # 获取比赛题目
+    contest_topics = ContestTopic.objects.filter(contest=contest).select_related('topic')
+
+    # 获取当前用户在该比赛中的提交统计
+    if request.user.is_authenticated and is_registered:
+        participant = ContestParticipant.objects.get(contest=contest, user=request.user)
+
+        # 获取已解决的题目ID
+        solved_submissions = ContestSubmission.objects.filter(
+            participant=participant,
+            submission__status='Accepted'
+        ).values_list('submission__topic_id', flat=True).distinct()
+
+        solved_problems = list(solved_submissions)
+
+        # 计算得分情况
+        problem_scores = []
+        total_score = 0
+        contest_total_score = 0
+
+        for contest_topic in contest_topics:
+            # 获取该题目的最佳提交（分数最高）
+            best_submission = ContestSubmission.objects.filter(
+                participant=participant,
+                submission__topic=contest_topic.topic,
+                submission__status='Accepted'
+            ).order_by('-submission__overall_result').first()
+
+            if best_submission:
+                score = contest_topic.score
+                status = f"{score}分"
+                color = "#4caf50"  # 绿色
+            else:
+                # 检查是否有提交但未通过
+                has_attempts = ContestSubmission.objects.filter(
+                    participant=participant,
+                    submission__topic=contest_topic.topic
+                ).exists()
+
+                if has_attempts:
+                    score = 0
+                    status = "0分"
+                    color = "#f44336"  # 红色
+                else:
+                    score = 0
+                    status = "未提交"
+                    color = "#757575"  # 灰色
+
+            total_score += score
+            contest_total_score += contest_topic.score
+
+            problem_scores.append({
+                'title': f"{contest_topic.order}. {contest_topic.topic.title}",
+                'score': score,
+                'score_status': status,
+                'color': color
+            })
+
+        # 计算提交情况
+        problem_submissions_stats = []
+        total_ac_count = 0
+
+        for contest_topic in contest_topics:
+            # 统计该题目的提交情况
+            submissions_count = ContestSubmission.objects.filter(
+                participant=participant,
+                submission__topic=contest_topic.topic
+            ).count()
+
+            ac_count = ContestSubmission.objects.filter(
+                participant=participant,
+                submission__topic=contest_topic.topic,
+                submission__status='Accepted'
+            ).count()
+
+            if ac_count > 0:
+                status = f"{ac_count}/{submissions_count}"
+                color = "#4caf50"  # 绿色
+                total_ac_count += 1
+            elif submissions_count > 0:
+                status = f"0/{submissions_count}"
+                color = "#f44336"  # 红色
+            else:
+                status = "未提交"
+                color = "#757575"  # 灰色
+
+            problem_submissions_stats.append({
+                'title': f"{contest_topic.order}. {contest_topic.topic.title}",
+                'submissions_count': submissions_count,
+                'ac_count': ac_count,
+                'submission_status': status,
+                'color': color
+            })
+
+        # 计算AC率
+        ac_rate = round((total_ac_count / len(contest_topics)) * 100, 2) if contest_topics else 0
+
+        # 获取排名数据（前4名）
+        rankings = get_contest_rankings(contest, limit=4)
+
+    else:
+        # 用户未登录或未报名，显示空数据
+        solved_problems = []
+        problem_scores = []
+        problem_submissions_stats = []
+        total_score = 0
+        contest_total_score = sum(ct.score for ct in contest_topics)
+        ac_rate = 0
+        total_ac_count = 0
+        rankings = []
+
+    context = {
+        'contest': contest,
+        'contest_topics': contest_topics,
+        'is_registered': is_registered,
+        'solved_problems': solved_problems,
+        'problem_scores': problem_scores,
+        'total_score': total_score,
+        'contest_total_score': contest_total_score,
+        'problem_submissions_stats': problem_submissions_stats,
+        'ac_rate': ac_rate,
+        'total_ac_count': total_ac_count,
+        'rankings': rankings,
+    }
+
+    return render(request, 'CheckObjection/contest/contest_detail.html', context)
+
+
+def get_contest_rankings(contest, limit=None):
+    """获取比赛排名数据"""
+    participants = ContestParticipant.objects.filter(contest=contest, is_disqualified=False)
+
+    rankings = []
+    for participant in participants:
+        # 计算每个参与者的总得分和AC数量
+        total_score = 0
+        ac_count = 0
+
+        # 获取参与者的所有AC提交（按题目分组，取每个题目的最佳提交）
+        for contest_topic in contest.contest_topics.all():
+            best_submission = ContestSubmission.objects.filter(
+                participant=participant,
+                submission__topic=contest_topic.topic,
+                submission__status='Accepted'
+            ).order_by('-submitted_at').first()
+
+            if best_submission:
+                total_score += contest_topic.score
+                ac_count += 1
+
+        rankings.append({
+            'user_name': participant.user.username,
+            'total_score': total_score,
+            'ac_count': ac_count,
+            'participant': participant
+        })
+
+    # 按得分和AC数量排序
+    rankings.sort(key=lambda x: (-x['total_score'], -x['ac_count']))
+
+    # 添加排名
+    for i, rank in enumerate(rankings):
+        rank['rank'] = i + 1
+
+    return rankings[:limit] if limit else rankings
+
+
+# def submission_detail(request, submission_id):
+#     """提交详情页面"""
+#     submission = get_object_or_404(Submission, id=submission_id)
+#
+#     # 检查用户权限（只能查看自己的提交或管理员）
+#     if not request.user.is_staff and submission.user != request.user:
+#         return HttpResponseForbidden("无权查看此提交")
+#
+#     context = {
+#         'submission': submission,
+#         'page_title': f"提交详情 - {submission.id}",
+#     }
+
+    # return render(request, 'CheckObjection/submission_detail.html', context)
+
+
+# def contest_submission_list(request, contest_id, user_name=None):
+#     """比赛提交列表"""
+#     contest = get_object_or_404(Contest, id=contest_id)
+#
+#     # 如果指定了用户名，则显示该用户的提交，否则显示当前用户的提交
+#     if user_name and request.user.is_staff:
+#         target_user = get_object_or_404(User, username=user_name)
+#     else:
+#         target_user = request.user
+#
+#     # 获取参与者和提交记录
+#     participant = get_object_or_404(ContestParticipant, contest=contest, user=target_user)
+#     submissions = ContestSubmission.objects.filter(
+#         participant=participant
+#     ).select_related('submission', 'submission__topic').order_by('-submitted_at')
+#
+#     context = {
+#         'contest': contest,
+#         'submissions': submissions,
+#         'target_user': target_user,
+#     }
+#
+#     return render(request, 'CheckObjection/submission_list.html', context)
+
+
+def global_ranking(request):
+    """全局排名页面"""
+    # 获取所有用户的AC题目数量统计
+    from django.db.models import Count
+
+    user_stats = Submission.objects.filter(
+        status='Accepted'
+    ).values(
+        'user_name'
+    ).annotate(
+        solved_count=Count('topic', distinct=True)
+    ).order_by('-solved_count')
+
+    # 添加排名
+    rankings = []
+    for i, stat in enumerate(user_stats):
+        rankings.append({
+            'rank': i + 1,
+            'user_name': stat['user_name'],
+            'solved_count': stat['solved_count']
+        })
+
+    context = {
+        'rankings': rankings,
+        'total_users': len(rankings)
+    }
+
+    return render(request, 'CheckObjection/CheckObjection_ranking.html', context)
+
+
+def contest_ranking(request, contest_id):
+    """比赛排名页面"""
+    contest = get_object_or_404(Contest, id=contest_id)
+    rankings = get_contest_rankings(contest)  # 获取所有排名
+
+    context = {
+        'contest': contest,
+        'rankings': rankings,
+        'total_users': len(rankings)
+    }
+
+    return render(request, 'CheckObjection/CheckObjection_ranking.html', context)
+def try1(request):
+    return render(request, 'CheckObjection/try.html')
+
+# 以下是实现比赛排行的代码
+
+from django.shortcuts import render, get_object_or_404
+from django.db.models import Count, Case, When, IntegerField, F, Q
+from django.db import models
+from .models import Contest, ContestParticipant, ContestSubmission, Submission
+
+
+def contest_rank_list(request):
+    """
+    展示所有比赛列表
+    """
+    contests = Contest.objects.all().order_by('-start_time')
+
+    # 为每个比赛添加统计信息
+    for contest in contests:
+        contest.participant_count = contest.participants.count()
+        contest.topic_count = contest.contest_topics.count()
+
+    context = {
+        'contests': contests
+    }
+    return render(request, 'CheckObjection/contest/rank/rank_list.html', context)
+
+
+def contest_rank_detail(request, contest_id):
+    """
+    展示具体比赛的排名详情
+    """
+    contest = get_object_or_404(Contest, id=contest_id)
+
+    # 获取比赛的所有题目
+    contest_topics = contest.contest_topics.select_related('topic').order_by('order')
+
+    # 获取所有参赛者
+    participants = contest.participants.filter(is_disqualified=False).select_related('user')
+
+    # 构建排名数据
+    rank_data = []
+
+    for participant in participants:
+        user = participant.user
+
+        # 获取该用户在比赛中的所有提交
+        contest_submissions = ContestSubmission.objects.filter(
+            contest=contest,
+            participant=participant
+        ).select_related('submission', 'submission__topic')
+
+        # 统计每个题目的最佳提交
+        topic_results = {}
+        total_accepted = 0
+        total_penalty = 0
+
+        for topic in contest_topics:
+            # 获取该题目所有提交
+            topic_submissions = contest_submissions.filter(
+                submission__topic=topic.topic
+            ).order_by('submitted_at')
+
+            first_ac_time = None
+            wrong_count = 0
+            is_accepted = False
+
+            for cs in topic_submissions:
+                submission = cs.submission
+                if submission.status == 'AC' and not is_accepted:
+                    is_accepted = True
+                    first_ac_time = cs.submitted_at
+                    # 计算罚时（分钟）
+                    if first_ac_time and contest.start_time:
+                        time_diff = first_ac_time - contest.start_time
+                        penalty_minutes = time_diff.total_seconds() / 60
+                        total_penalty += penalty_minutes + (wrong_count * contest.penalty_time)
+                elif submission.status != 'AC':
+                    wrong_count += 1
+
+            topic_results[topic.topic.id] = {
+                'is_accepted': is_accepted,
+                'wrong_count': wrong_count,
+                'first_ac_time': first_ac_time,
+                'topic_order': topic.order
+            }
+
+            if is_accepted:
+                total_accepted += 1
+
+        rank_data.append({
+            'user': user,
+            'username': user.username,
+            'total_accepted': total_accepted,
+            'total_penalty': total_penalty,
+            'topic_results': topic_results,
+            'participant': participant
+        })
+
+    # 按完成题目数量降序，罚时升序排序
+    rank_data.sort(key=lambda x: (-x['total_accepted'], x['total_penalty']))
+
+    # 添加排名
+    for i, data in enumerate(rank_data):
+        data['rank'] = i + 1
+
+    context = {
+        'contest': contest,
+        'contest_topics': contest_topics,
+        'rank_data': rank_data,
+    }
+
+    return render(request, 'CheckObjection/contest/rank/rank_detail.html', context)

@@ -1,4 +1,4 @@
-broker_url =     'redis://:MONKEY20041218@192.168.231.100:6379/15'
+broker_url = 'redis://:MONKEY20041218@192.168.231.100:6379/15'
 result_backend = 'redis://:MONKEY20041218@192.168.231.100:6379/14'
 
 # CELERY_BROKER_URL = 'redis://:123456@192.168.231.100:6379/15'

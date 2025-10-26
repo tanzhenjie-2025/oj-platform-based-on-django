@@ -189,7 +189,7 @@ class ContestParticipant(models.Model):
 # 比赛提交记录
 class ContestSubmission(models.Model):
     contest = models.ForeignKey(Contest, on_delete=models.CASCADE)
-    submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name='contest_submissions')
     participant = models.ForeignKey(ContestParticipant, on_delete=models.CASCADE)
     submitted_at = models.DateTimeField(auto_now_add=True)
 

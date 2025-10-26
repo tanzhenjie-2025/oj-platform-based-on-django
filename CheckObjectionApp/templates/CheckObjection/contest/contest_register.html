@@ -1,0 +1,502 @@
+{% extends 'CheckObjection/CheckObjectionApp_base.html'%}
+{% block body %}
+{% endblock %}
+{% block title %}
+    {{ contest.title }} - 报名
+{% endblock %}
+
+{% block head %}
+<style>
+    /* 保留原有所有样式 */
+    .competition-container {
+        background: linear-gradient(135deg, #6e8efb, #a777e3);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 40px 20px;
+        color: #333;
+    }
+
+    .competition-card {
+        max-width: 1000px;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        position: relative;
+        margin: 20px 0;
+    }
+
+    .competition-header {
+        background: linear-gradient(to right, #4a54e1, #6e8efb);
+        color: white;
+        padding: 40px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .competition-header::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,255,255,0.1)"/></svg>');
+        background-size: cover;
+        transform: rotate(15deg);
+    }
+
+    .competition-header h1 {
+        font-size: 2.8rem;
+        margin-bottom: 15px;
+        position: relative;
+        z-index: 1;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+        font-weight: 700;
+    }
+
+    .competition-header p {
+        font-size: 1.3rem;
+        opacity: 0.95;
+        position: relative;
+        z-index: 1;
+        font-weight: 300;
+    }
+
+    .competition-content {
+        padding: 50px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 40px;
+        align-items: start;
+    }
+
+    .info-section {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .info-section h2 {
+        color: #4a54e1;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 3px solid #eaeaea;
+        font-size: 1.8rem;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .details {
+        background: #f8f9ff;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid #4a54e1;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .detail-item {
+        display: flex;
+        margin-bottom: 20px;
+        align-items: flex-start;
+    }
+
+    .detail-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .detail-item i {
+        width: 40px;
+        height: 40px;
+        background: #e6e9ff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 20px;
+        color: #4a54e1;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .detail-item strong {
+        display: block;
+        margin-bottom: 5px;
+        color: #4a54e1;
+        font-size: 1.1rem;
+    }
+
+    .detail-item p {
+        color: #666;
+        line-height: 1.5;
+    }
+
+    .rules {
+        background: #f8f9ff;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid #6e8efb;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .rules ul {
+        list-style-type: none;
+        padding-left: 0;
+    }
+
+    .rules li {
+        margin-bottom: 15px;
+        padding-left: 30px;
+        position: relative;
+        line-height: 1.6;
+        color: #555;
+    }
+
+    .rules li::before {
+        content: "✓";
+        color: #4a54e1;
+        font-size: 1.2rem;
+        font-weight: bold;
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+
+    /* 报名表单样式 */
+    .registration-form {
+        background: #f8f9ff;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        border: 2px solid #e6e9ff;
+        max-width: 800px;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: #4a54e1;
+        font-size: 1.1rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 14px 18px;
+        border: 2px solid #e1e5f1;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .form-control:focus {
+        border-color: #4a54e1;
+        box-shadow: 0 0 0 3px rgba(74, 84, 225, 0.15);
+        outline: none;
+        transform: translateY(-2px);
+    }
+
+    .bottom-register-section {
+        padding: 30px 50px;
+        text-align: center;
+        background: #f8f9ff;
+        border-top: 1px solid #eaeaea;
+    }
+
+    .bottom-register-container {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .btn-register {
+        display: block;
+        width: 100%;
+        padding: 18px;
+        background: linear-gradient(to right, #4a54e1, #6e8efb);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 25px rgba(74, 84, 225, 0.4);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-register:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(74, 84, 225, 0.6);
+    }
+
+    .btn-register:active {
+        transform: translateY(0);
+    }
+
+    .btn-register::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        transition: all 0.5s ease;
+        transform: translate(-50%, -50%);
+    }
+
+    .btn-register:hover::after {
+        width: 300px;
+        height: 300px;
+    }
+
+    .competition-footer {
+        text-align: center;
+        padding: 30px;
+        background: #f1f3ff;
+        color: #6c757d;
+        font-size: 1rem;
+        border-top: 1px solid #eaeaea;
+    }
+
+    .decoration {
+        position: absolute;
+        z-index: 0;
+    }
+
+    .decoration-1 {
+        top: 10%;
+        left: 5%;
+        width: 80px;
+        height: 80px;
+        background: rgba(110, 142, 251, 0.15);
+        border-radius: 50%;
+    }
+
+    .decoration-2 {
+        bottom: 15%;
+        right: 7%;
+        width: 60px;
+        height: 60px;
+        background: rgba(167, 119, 227, 0.15);
+        border-radius: 50%;
+    }
+
+    .decoration-3 {
+        top: 20%;
+        right: 10%;
+        width: 40px;
+        height: 40px;
+        background: rgba(74, 84, 225, 0.2);
+        border-radius: 50%;
+    }
+
+    /* 新增返回按钮基础样式，与页面风格协调 */
+    .back-link {
+        display: inline-block;
+        margin: 15px 0 0 20px;
+        color: #4a54e1;
+        font-size: 1rem;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .back-link:hover {
+        color: #6e8efb;
+        text-decoration: underline;
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 968px) {
+        .competition-content {
+            grid-template-columns: 1fr;
+            gap: 30px;
+            padding: 40px 30px;
+        }
+
+        .competition-header {
+            padding: 30px 25px;
+        }
+
+        .competition-header h1 {
+            font-size: 2.3rem;
+        }
+
+        .bottom-register-section {
+            padding: 30px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .competition-container {
+            padding: 20px 15px;
+        }
+
+        .competition-content {
+            padding: 30px 20px;
+            gap: 25px;
+        }
+
+        .competition-header h1 {
+            font-size: 2rem;
+        }
+
+        .competition-header p {
+            font-size: 1.1rem;
+        }
+
+        .info-section h2 {
+            font-size: 1.6rem;
+        }
+
+        .details,
+        .rules,
+        .registration-form {
+            padding: 20px;
+        }
+
+        .bottom-register-section {
+            padding: 25px 20px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .competition-header {
+            padding: 25px 20px;
+        }
+
+        .competition-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .detail-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .detail-item i {
+            margin-bottom: 10px;
+            margin-right: 0;
+        }
+
+        .bottom-register-section {
+            padding: 20px 15px;
+        }
+
+        .back-link {
+            margin: 10px 0 0 15px;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block main %}
+<div class="competition-container">
+    <div class="competition-card">
+        <!-- 核心修改：将固定跳转链接改为返回上一步功能 -->
+        <button onclick="window.history.back()" class="btn btn-outline-secondary mb-4 mr-2">
+                    ← 返回上一步
+                </button>
+
+        <div class="competition-header">
+            <h1>{{ contest.title }}</h1>
+            <p>{{ contest.description|truncatechars:100 }}</p>
+            <div class="decoration decoration-1"></div>
+            <div class="decoration decoration-2"></div>
+            <div class="decoration decoration-3"></div>
+        </div>
+
+        <div class="competition-content">
+            <div class="info-section">
+                <div class="details-section">
+                    <h2>比赛详情</h2>
+                    <div class="details">
+                        <div class="detail-item">
+                            <i>📅</i>
+                            <div>
+                                <strong>开始时间</strong>
+                                <p>{{ contest.start_time|date:"Y年m月d日 H:i" }}</p>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <i>⏰</i>
+                            <div>
+                                <strong>结束时间</strong>
+                                <p>{{ contest.end_time|date:"Y年m月d日 H:i" }}</p>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <i>🔒</i>
+                            <div>
+                                <strong>比赛状态</strong>
+                                <p>
+                                    {% if contest.status == 'pending' %}未开始
+                                    {% elif contest.status == 'running' %}进行中
+                                    {% else %}已结束{% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rules-section">
+                    <h2>比赛规则</h2>
+                    <div class="rules">
+                        <ul>
+                            <li>错误提交罚时：{{ contest.penalty_time }}分钟</li>
+                            <li>{% if contest.ranking_frozen %}封榜时间：{{ contest.frozen_time|date:"Y年m月d日 H:i" }}{% else %}不启用封榜{% endif %}</li>
+                            <li>参赛者需独立完成所有题目，禁止抄袭和作弊行为</li>
+                            <li>比赛期间不得与其他人交流或寻求外部帮助</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <!-- 密码输入框（仅当比赛设置了密码时显示） -->
+                {% if contest.password %}
+                <div class="form-group">
+                    <label for="password">比赛密码</label>
+                    <input type="password" name="password" id="password" class="form-control"
+                           placeholder="请输入比赛密码" required>
+                </div>
+                {% endif %}
+
+                <div class="bottom-register-section">
+                    <div class="bottom-register-container">
+                        <button type="submit" class="btn-register"
+                                {% if not contest.allow_register or contest.status == 'ended' %}disabled{% endif %}>
+                            {% if not contest.allow_register %}不允许报名{% elif contest.status == 'ended' %}比赛已结束{% else %}立即报名参赛{% endif %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="competition-footer">
+            主办方：{{ contest.created_by.username }} | 发布时间：{{ contest.created_at|date:"Y年m月d日" }}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -202,24 +202,79 @@
             font-weight: 600;
             font-size: 0.9em;
         }
+        /* 新增面包屑悬浮样式 */
+.breadcrumb-container {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    padding: 15px 0;
+    margin: -15px 0 20px 0;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.breadcrumb {
+    background: transparent !important;
+    box-shadow: none !important;
+    margin-bottom: 0;
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+/* 确保主要内容不会被遮挡 */
+.container {
+    position: relative;
+}
+
+/* 平滑滚动效果 */
+html {
+    scroll-behavior: smooth;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .breadcrumb-container {
+        padding: 10px 0;
+        margin: -10px 0 15px 0;
+    }
+
+    .breadcrumb {
+        padding: 8px 15px;
+        font-size: 0.9em;
+    }
+}
     </style>
 </head>
 {% endblock %}
 {% block main %}
 <body style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); min-height: 100vh;">
     <div class="container py-4">
+        <!-- 悬浮面包屑导航 -->
+        <div class="breadcrumb-container">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="#" onclick="window.history.back()" style="text-decoration: none; color: #64748b;">
+                            <i class="fas fa-arrow-left"></i> 返回上一步
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="#" style="text-decoration: none; color: #64748b;">
+                            <i class="fas fa-list"></i> 提交记录
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        <i class="fas fa-search"></i> 提交详情
+                    </li>
+                </ol>
+            </nav>
+        </div>
+
         <div class="row">
             <div class="col-12">
-                <!-- 面包屑导航 -->
-                <nav aria-label="breadcrumb" class="mb-4">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item">
-                            <a href="#" style="text-decoration: none; color: #64748b;">📊 提交记录</a>
-                        </li>
-                        <li class="breadcrumb-item active">🔍 提交详情</li>
-                    </ol>
-                </nav>
-
                 <!-- 页面标题 -->
                 <div class="text-center mb-5">
                     <h1 class="display-5 fw-bold" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">

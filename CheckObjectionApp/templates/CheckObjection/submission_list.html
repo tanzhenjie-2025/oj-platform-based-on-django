@@ -103,6 +103,11 @@
     <div class="container mt-4">
         <div class="row">
             <div class="col-12">
+                <!-- 新增返回按钮 -->
+                <button onclick="window.history.back()" class="btn btn-outline-secondary mb-4 mr-2">
+                    ← 返回上一步
+                </button>
+
                 <h1 class="mb-4 text-gradient"
                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
                     {{ page_title|default:"提交记录" }}
@@ -261,15 +266,18 @@
 
                                     <!-- 操作 -->
                                     <td>
-                                        {% if submission.id %}
-                                            <a href="{% url 'CheckObjectionApp:submission_detail' pk=submission.id %}"
+                                        {% if submission.submission %}
+                                            {# 这是 ContestSubmission 对象 #}
+                                            <a href="{% url 'CheckObjectionApp:submission_detail' pk=submission.submission.id %}"
                                                class="btn btn-sm btn-outline-primary rounded-pill px-3">
                                                 查看详情
                                             </a>
                                         {% else %}
-                                            <button class="btn btn-sm btn-outline-secondary rounded-pill" disabled>
-                                                无效记录
-                                            </button>
+                                            {# 这是 Submission 对象 #}
+                                            <a href="{% url 'CheckObjectionApp:submission_detail' pk=submission.id %}"
+                                               class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                                查看详情
+                                            </a>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -280,13 +288,17 @@
 
                     <div class="cache-info">
                         <small class="text-muted">
-                            {% if cache_status %}
+                        {% if from %}
+                            数据来源: 比赛数据库，缓存未启用
+                        {% else %}
+                            {% if cache_status == '缓存命中' %}
                                 数据来源: {{ cache_status }} |
                                 缓存持续时间: {{ cache_timeout }}秒 |
-                                <a href="{% url 'CheckObjectionApp:clear_my_submission_cache' %}">清除我的缓存</a>
+{#                                <a href="{% url 'CheckObjectionApp:clear_my_submission_cache' %}">清除我的缓存</a>#}
                             {% else %}
                                 数据来源: 数据库，缓存未启用
                             {% endif %}
+                        {% endif %}
                         </small>
                     </div>
 

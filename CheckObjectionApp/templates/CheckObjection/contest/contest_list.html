@@ -214,6 +214,65 @@
     box-shadow: 0 3px 10px rgba(0,0,0,0.08);
 }
 
+/* 添加在现有CSS中，可以放在 .contest-item 样式附近 */
+
+.participate-text {
+    display: block; /* 改为块级元素 */
+    width: fit-content; /* 宽度自适应内容 */
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0.8rem 1.5rem;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.participate-text:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.contest-item:hover .participate-text {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
+    background: linear-gradient(135deg, #ff8e8e 0%, #ff7b47 100%);
+}
+
+.contest-item:hover .participate-text:before {
+    left: 100%;
+}
+
+/* 如果想要更醒目的闪烁效果，可以添加这个动画 */
+@keyframes pulse-glow {
+    0% {
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(255, 107, 107, 0.8);
+    }
+    100% {
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+    }
+}
+
+.participate-text {
+    animation: pulse-glow 2s infinite;
+}
+
 .no-contests {
     max-width: 800px;
     margin: 2rem auto;
@@ -284,12 +343,14 @@
     <!-- 左侧比赛列表 -->
     <div class="contests-container">
         {% for contest in object_list %}
-        <a href="{% url 'CheckObjectionApp:contest_detail' contest.id %}" class="contest-item">
+        <a href="{% url 'CheckObjectionApp:contest_register' contest.id %}" class="contest-item">
             <h3>{{ contest.title }}</h3>
             <p>比赛id: {{ contest.id }}</p>
             <p>时间: {{ contest.start_time }} - {{ contest.end_time }}</p>
+            <div class="participate-text">🎯 点击参与比赛 🚀</div>
             <span class="status-badge {{ contest.status }}">{{ contest.get_status_display }}</span>
         </a>
+
         {% empty %}
         <div class="no-contests">
             <p>暂无比赛数据</p>
@@ -320,7 +381,7 @@
                 <i>📋</i> 查看所有提交记录
             </a>
             {% endif %}
-            <a href="{% url 'CheckObjectionApp:contest_submission_list' %}" class="submission-link">
+            <a href="{% url 'CheckObjectionApp:my_contest_submission_list' %}" class="submission-link">
                 <i>🏆</i> 比赛提交记录
             </a>
         </div>
@@ -329,25 +390,9 @@
             <h3>快速操作</h3>
             <ul class="quick-actions">
                 <li>
-                    <span class="icon">📤</span>
-                    <span>提交代码</span>
-                </li>
-                <li>
-                    <span class="icon">📚</span>
-                    <span>题目列表</span>
-                </li>
-                <li>
-                    <span class="icon">🏅</span>
-                    <span>排行榜</span>
+                    <span><a href="{% url 'CheckObjectionApp:contest_rank_list' %}"><span class="icon">🏅</span>排行榜</a></span>
                 </li>
             </ul>
-        </div>
-
-        <div class="sidebar-card">
-            <h3>统计信息</h3>
-            <p>今日提交: <strong>{{ today_submissions_count }}</strong></p>
-            <p>通过率: <strong>{{ acceptance_rate }}%</strong></p>
-            <p>参与比赛: <strong>{{ participated_contests_count }}</strong></p>
         </div>
     </div>
 </div>

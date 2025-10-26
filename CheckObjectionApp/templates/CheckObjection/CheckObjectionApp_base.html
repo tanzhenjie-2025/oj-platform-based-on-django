@@ -357,6 +357,7 @@
     </style>
     {% block head %}{% endblock %}
 </head>
+{% block body %}
 <body>
 <!-- 导航栏 -->
 <header id="main-header">
@@ -408,12 +409,14 @@
         </div>
     </div>
 </header>
+{% endblock %}
 
 <!-- 主内容区域 -->
 <main>
     {% block main %}{% endblock %}
 </main>
 
+{% block footer %}
 <!-- 页脚 -->
 <footer>
     <div class="container">
@@ -444,6 +447,7 @@
         </div>
     </div>
 </footer>
+{% endblock %}
 
 <script>
     // 导航栏滚动效果

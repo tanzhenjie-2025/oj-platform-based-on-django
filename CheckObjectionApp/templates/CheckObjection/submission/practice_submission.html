@@ -1,10 +1,13 @@
 {% extends 'CheckObjection/submission/base_submission.html' %}
 {% block content %}
+
     <!-- 题目信息区域 -->
     <div class="problem-info">
         <div class="problem-header">
             <h2 class="problem-title">{{ topic_content.title }}</h2>
+
             <div class="problem-meta">
+
                         <span class="tag tag-difficulty">
                             {% if topic_content.level == 0 %}
                                 <i class="fas fa-star"></i> 简单
