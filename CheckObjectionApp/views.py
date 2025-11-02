@@ -12,28 +12,25 @@ from django.views.decorators.http import require_http_methods,require_POST,requi
 from django.contrib.auth import get_user_model, login, logout, authenticate
 from django.urls.base import reverse_lazy
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
-from rest_framework import generics, status
-from rest_framework.generics import GenericAPIView
-from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from CheckObjection import settings
 from CheckObjection.settings import DB_QUERY_KEY, CACHE_KEY_HIT
+from mycelery.sms.tasks import submit_code_task
+from . import constants
 from .code import check_code
 from .models import answer, Contest, ContestParticipant, ContestSubmission, ContestTopic
 from .forms import LoginForm, RegisterForm
-from .models import UserProfile
-from django.db.models import F
+
 from CheckObjectionApp.serializers import topicSerializer
 from CheckObjectionApp.serializers import topicModelSerializer
-from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin
 
 User = get_user_model()
 from .models import topic
 from rest_framework import mixins
 from rest_framework.generics import GenericAPIView
-from rest_framework.response import Response
 
+from .constants import CACHE_TIMEOUT, COLOR_CODES, JUDGE_CONFIG, CAPTCHA_CONFIG, DEFAULT_VALUES
 
 def redirect_root(request):
     """ 重定向到主页 """
@@ -94,11 +91,6 @@ class topicAPIGenericAPIView(GenericAPIView):
         return JsonResponse(serializer.data,
                             json_dumps_params={'ensure_ascii': False, 'indent': 2},
                             safe=False)
-    # def get(self, request):
-    #     serializer = self.get_serializer(self.get_queryset(), many=True)
-    #     return JsonResponse(serializer.data,
-    #                         json_dumps_params={'ensure_ascii': False, 'indent': 2},
-    #                         safe=False)
 
 def get1(request):
     topic_one = topic.objects.first()
@@ -164,7 +156,7 @@ def detail(request, topic_id):
         return render(request, 'CheckObjection/submission/practice_submission.html',
                       context={'topic_content': topic_content, 'user': user})
 @require_http_methods(['GET', 'POST'])
-@login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
+@login_required(login_url=reverse_lazy(settings.LOGIN_URL))
 def design(request):
     if not request.user.is_staff:
         return redirect("CheckObjectionApp:CheckObjection_noPower")
@@ -179,7 +171,7 @@ def design(request):
         return render(request,'CheckObjection/CheckObjection_design.html')
 
 @require_http_methods(['GET', 'POST'])
-@login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
+@login_required(login_url=reverse_lazy(settings.LOGIN_URL))
 def show(request):
 
     if not request.user.is_staff:
@@ -355,7 +347,7 @@ def changePassword(request):
 
     if request.method == "GET":
         user = request.user
-        return render(request, 'CheckObjection/CheckObjection_changeName.html', context={'user': user})
+        return render(request, 'CheckObjection/changeName.html', context={'user': user})
 
 
 @require_http_methods(['GET', 'POST'])
@@ -386,27 +378,12 @@ def changeName(request):
             'location': getattr(user, 'location', '') or '暂无',
             'website': getattr(user, 'website', '') or '暂无',
         }
-        return render(request, 'CheckObjection/CheckObjection_changeName.html',
+        return render(request, 'CheckObjection/changeName.html',
                       context={'user': user, 'user_info': user_info})
-# @require_GET
-# @login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
-# def CheckObjection_search(request):
-#     """搜索模块 会按下面的url格式传参"""
-#     #/search?q=xxx
-#     q = request.GET.get('q')
-#     topics = topic.objects.filter(Q(title__icontains=q)|Q(content__icontains=q)).all()
-#     user = request.user
-#     return render(request,'CheckObjection/CheckObjection_Index.html', context={"topics": topics,'user':user})
+
 
 # 以下是搜索模块
-from django.core.cache import cache
 from django.views.decorators.http import require_GET
-from django.shortcuts import render
-from django.db.models import Q
-from .models import topic
-import json
-from datetime import timedelta
-
 
 @require_GET
 @login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
@@ -490,21 +467,19 @@ def CheckObjection_filter(request):
     return render(request, 'CheckObjection/CheckObjection_Index.html', context={"topics": topics})
 
 # 以下为判题模块
-import json
 import uuid
-from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views import View
-from .models import TestCase, topic
-from mycelery.sms.tasks import submit_code_task, process_test_run
+# 直接导入任务函数，而不是Celery任务
+
 
 # 日常提交判题
 @method_decorator(csrf_exempt, name='dispatch')
 class JudgeCodeView(View):
     def post(self, request):
         """
-        判题接口 - 使用Celery异步处理
+        判题接口 - 改为同步处理
         """
         try:
             user_id = request.user.id
@@ -530,60 +505,24 @@ class JudgeCodeView(View):
                 'is_test': is_test
             }
 
-            if is_test:
-                # 测试运行 - 同步处理以便快速返回
-                result = process_test_run.delay(submission_data)
-                try:
-                    # 等待任务完成，设置超时时间
-                    task_result = result.get(timeout=30)
-                    return JsonResponse(task_result)
-                except Exception as e:
-                    return JsonResponse({
-                        "success": False,
-                        "error": f"测试运行超时或失败: {str(e)}",
-                        "is_test_run": True
-                    })
-            else:
-                # 正式提交 - 异步处理
-                task = submit_code_task.delay(submission_data)
-                # 立即返回任务ID，前端可以轮询结果
-                return JsonResponse({
-                    "success": True,
-                    "message": "代码已提交，正在处理中...",
-                    "task_id": task.id,
-                    "submission_id": submission_id,
-                    "status": "PENDING"
-                })
+
+
+            # 正式提交 - 直接同步调用
+            task_result = submit_code_task(submission_data)
+            # 直接返回结果，不再返回任务ID
+            return JsonResponse({
+                "success": True,
+                "message": "代码处理完成",
+                "submission_id": submission_id,
+                "status": "COMPLETED",
+                "result": task_result  # 包含详细结果
+            })
 
         except Exception as e:
             return JsonResponse({
                 "success": False,
                 "error": f"处理请求时出错: {str(e)}"
             })
-
-
-@method_decorator(csrf_exempt, name='dispatch')
-class TaskStatusView(View):
-    """
-    查询任务状态的接口
-    """
-    def get(self, request, task_id):
-        from celery.result import AsyncResult
-        from mycelery.sms.tasks import submit_code_task
-
-        task_result = AsyncResult(task_id, app=submit_code_task.app)
-        response_data = {
-            'task_id': task_id,
-            'status': task_result.status,
-        }
-
-        if task_result.ready():
-            if task_result.successful():
-                response_data['result'] = task_result.result
-            else:
-                response_data['error'] = str(task_result.result)
-
-        return JsonResponse(response_data)
 
 # 以下是增加测试用例的代码
 from rest_framework import viewsets, status
@@ -951,17 +890,26 @@ def ranking_view(request):
 
 from io import BytesIO
 
+
 def image_code(request):
     "生成图片验证码"
-    #调用pillow函数，生成图片
-    img,code_string = check_code()
+    # 调用pillow函数，生成图片
+    img, code_string = check_code()
     print(code_string)
+
+    # 将验证码存入session
     request.session['captcha'] = code_string
     # 给Session设置60s超时
-    request.session.set_expiry(60)
+    request.session.set_expiry(CAPTCHA_CONFIG['SESSION_EXPIRY'])
+
+    # 将图片保存到内存流中
     stream = BytesIO()
     img.save(stream, 'png')
-    return HttpResponse(stream.getvalue())
+
+    # 将流的位置重置到开头
+    stream.seek(0)
+    # 返回图片响应，指定内容类型为image/png
+    return HttpResponse(stream.getvalue(), content_type='image/png')
 
 # 以下是比赛模块
 # views/contest_views.py
@@ -1178,7 +1126,7 @@ class ContestRankView(LoginRequiredMixin, DetailView):
 
 # 比赛提交界面 todo 2 加载时要有比赛资料 还要改造比赛提交界面 传递比赛 id
 @require_http_methods(['GET', 'POST'])
-@login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
+@login_required(login_url=reverse_lazy(settings.LOGIN_URL))
 def contest_submit_code(request, contest_id,contest_topic_id):
     if request.method == 'GET':
         topic_content = topic.objects.get(id=contest_topic_id)
@@ -1192,19 +1140,19 @@ def contest_submit_code(request, contest_id,contest_topic_id):
         return render(request, 'CheckObjection/submission/contest_submission.html',
                       context=context)
 
-# 比赛提交判题 todo 没做完 记得重启异步任务
+# 比赛提交判题
 @method_decorator(csrf_exempt, name='dispatch')
 class JudgeContestCodeView(View):
     def post(self, request,contest_id):
         """
-        判题接口 - 使用Celery异步处理
+        判题接口 - 同步处理
         """
         try:
             user_id = request.user.id
 
             data = json.loads(request.body)
             source_code = data.get('source_code', '')
-            language_id = data.get('language_id', 71)
+            language_id = data.get('language_id', JUDGE_CONFIG['DEFAULT_LANGUAGE_ID'])
             topic_id = data.get('topic_id', '')
             user_name = data.get('user_name', '')
             notes = data.get('notes', '')
@@ -1222,31 +1170,18 @@ class JudgeContestCodeView(View):
                 'submission_id': submission_id,
                 'is_test': is_test
             }
-            # 判断是否测试运行
-            if is_test:
-                # 测试运行 - 同步处理以便快速返回
-                result = process_test_run.delay(submission_data)
-                try:
-                    # 等待任务完成，设置超时时间
-                    task_result = result.get(timeout=30)
-                    return JsonResponse(task_result)
-                except Exception as e:
-                    return JsonResponse({
-                        "success": False,
-                        "error": f"测试运行超时或失败: {str(e)}",
-                        "is_test_run": True
-                    })
-            else:
-                # 正式提交 - 异步处理
-                task = submit_code_task.delay(submission_data)
-                # 立即返回任务ID，前端可以轮询结果
-                return JsonResponse({
-                    "success": True,
-                    "message": "代码已提交，正在处理中...",
-                    "task_id": task.id,
-                    "submission_id": submission_id,
-                    "status": "PENDING"
-                })
+
+
+             # 正式提交 - 直接同步调用
+            task_result = submit_code_task(submission_data)
+            # 直接返回结果
+            return JsonResponse({
+                "success": True,
+                "message": "代码处理完成",
+                "submission_id": submission_id,
+                "status": "COMPLETED",
+                "result": task_result  # 包含详细结果
+            })
 
         except Exception as e:
             return JsonResponse({
@@ -2056,11 +1991,8 @@ def contest_ranking(request, contest_id):
     }
 
     return render(request, 'CheckObjection/CheckObjection_ranking.html', context)
-def try1(request):
-    return render(request, 'CheckObjection/try.html')
 
 # 以下是实现比赛排行的代码
-
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Count, Case, When, IntegerField, F, Q
 from django.db import models
@@ -2086,7 +2018,7 @@ def contest_rank_list(request):
 
 def contest_rank_detail(request, contest_id):
     """
-    展示具体比赛的排名详情
+    展示具体比赛的排名详情 - 生产版本
     """
     contest = get_object_or_404(Contest, id=contest_id)
 
@@ -2106,45 +2038,60 @@ def contest_rank_detail(request, contest_id):
         contest_submissions = ContestSubmission.objects.filter(
             contest=contest,
             participant=participant
-        ).select_related('submission', 'submission__topic')
+        ).select_related('submission', 'submission__topic').order_by('submitted_at')
 
         # 统计每个题目的最佳提交
         topic_results = {}
         total_accepted = 0
         total_penalty = 0
 
-        for topic in contest_topics:
-            # 获取该题目所有提交
-            topic_submissions = contest_submissions.filter(
-                submission__topic=topic.topic
-            ).order_by('submitted_at')
+        # 按题目分组处理提交
+        for contest_topic in contest_topics:
+            topic = contest_topic.topic
+
+            # 获取该题目的所有提交
+            topic_submissions = [
+                cs for cs in contest_submissions
+                if cs.submission.topic_id == topic.id
+            ]
 
             first_ac_time = None
             wrong_count = 0
             is_accepted = False
+            penalty_minutes = 0
 
+            # 遍历该题目的所有提交
             for cs in topic_submissions:
                 submission = cs.submission
-                if submission.status == 'AC' and not is_accepted:
+                # 关键修改：使用 overall_result 字段来判断是否通过
+                is_ac = submission.overall_result == 'Accepted'
+
+                if is_ac and not is_accepted:
+                    # 第一次AC
                     is_accepted = True
                     first_ac_time = cs.submitted_at
-                    # 计算罚时（分钟）
+
+                    # 计算该题目的罚时
                     if first_ac_time and contest.start_time:
                         time_diff = first_ac_time - contest.start_time
                         penalty_minutes = time_diff.total_seconds() / 60
-                        total_penalty += penalty_minutes + (wrong_count * contest.penalty_time)
-                elif submission.status != 'AC':
+                elif not is_ac and not is_accepted:
+                    # 在第一次AC之前的错误提交
                     wrong_count += 1
 
-            topic_results[topic.topic.id] = {
+            # 存储该题目的结果
+            topic_results[topic.id] = {
                 'is_accepted': is_accepted,
                 'wrong_count': wrong_count,
                 'first_ac_time': first_ac_time,
-                'topic_order': topic.order
+                'topic_order': contest_topic.order
             }
 
+            # 如果该题目通过，累加通过数和罚时
             if is_accepted:
                 total_accepted += 1
+                topic_total_penalty = penalty_minutes + (wrong_count * contest.penalty_time)
+                total_penalty += topic_total_penalty
 
         rank_data.append({
             'user': user,
@@ -2158,9 +2105,16 @@ def contest_rank_detail(request, contest_id):
     # 按完成题目数量降序，罚时升序排序
     rank_data.sort(key=lambda x: (-x['total_accepted'], x['total_penalty']))
 
-    # 添加排名
+    # 添加排名（处理并列排名）
+    current_rank = 1
     for i, data in enumerate(rank_data):
-        data['rank'] = i + 1
+        if i > 0 and (rank_data[i - 1]['total_accepted'] == data['total_accepted'] and
+                      rank_data[i - 1]['total_penalty'] == data['total_penalty']):
+            # 与前一名成绩相同，则排名相同
+            data['rank'] = rank_data[i - 1]['rank']
+        else:
+            data['rank'] = current_rank
+        current_rank += 1
 
     context = {
         'contest': contest,

@@ -1,5 +1,5 @@
-broker_url = 'redis://:MONKEY20041218@192.168.231.100:6379/15'
-result_backend = 'redis://:MONKEY20041218@192.168.231.100:6379/14'
 
-# CELERY_BROKER_URL = 'redis://:123456@192.168.231.100:6379/15'
-# CELERY_RESULT_BACKEND = 'redis://:123456@192.168.231.100:6379/15'
+from django.conf import settings
+
+broker_url = getattr(settings, 'CELERY_BROKER_URL')
+result_backend = getattr(settings, 'CELERY_RESULT_BACKEND')

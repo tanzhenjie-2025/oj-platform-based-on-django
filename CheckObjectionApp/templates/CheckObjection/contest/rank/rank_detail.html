@@ -1,10 +1,13 @@
 {% extends "CheckObjection/CheckObjectionApp_base.html" %}
+{% load custom_filters %}  {# 加载自定义过滤器 #}
+
 {% block head %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ contest.title }} - 排名 - OJ平台</title>
     <style>
+        /* 你的CSS样式保持不变 */
         * {
             margin: 0;
             padding: 0;
@@ -184,6 +187,7 @@
     </style>
 </head>
 {% endblock %}
+
 {% block main %}
 <body>
     <div class="container">
@@ -254,10 +258,10 @@
                 </div>
                 <div class="user-cell">{{ data.username }}</div>
                 <div class="score-cell">{{ data.total_accepted }}</div>
-                <div class="penalty-cell">{{ data.total_penalty|floatformat:0 }} min</div>
+                <div class="penalty-cell">{{ data.total_penalty|floatformat:0 }}</div>
 
                 {% for topic in contest_topics %}
-                    {% with topic_result=data.topic_results %}
+                    {% with topic_result=data.topic_results|get_item:topic.topic.id %}
                         <div class="topic-cell
                             {% if topic_result.is_accepted %}accepted
                             {% elif topic_result.wrong_count > 0 %}wrong
@@ -281,25 +285,16 @@
     </div>
 
     <script>
-        // 返回上一步功能
         function goBack() {
             if (document.referrer) {
                 window.history.back();
             } else {
-                // 如果没有上一页，则返回到比赛列表页面作为备用
                 window.location.href = "{% url 'CheckObjectionApp:contest_rank_list' %}";
             }
         }
-
-        // 简单的模板过滤器实现
-        function getItem(obj, key) {
-            return obj ? obj[key] : null;
-        }
-
-        // 为模板添加get_item方法
-        window.getItem = getItem;
     </script>
 </body>
 {% endblock %}
+
 {% block footer %}
 {% endblock %}

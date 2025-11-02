@@ -2,37 +2,14 @@
 
 from CheckObjectionApp.models import TestCase, topic, Contest, ContestTopic, ContestParticipant, ContestSubmission
 from CheckObjectionApp.utils.judge0_service import Judge0Service
-from mycelery.main import app
-import time
 import logging
-import json
-import requests
-from celery import shared_task
-from django.core.cache import cache
-from django.utils import timezone
-from django.db import transaction
+
 
 logging.getLogger("django")
 
-
-@app.task
-def send_sms(mobile):
-    print(f"向手机号%s发送短信成功！" % mobile)
-    time.sleep(5)
-    return "send_sms OK"
-
-
-@app.task
-def send_sms2(mobile):
-    print("向手机号%s发送短信成功！" % mobile)
-    time.sleep(5)
-    return "send_sms2 OK"
-
-# todo 给比赛提交代码逻辑添加有关信息
-@shared_task(bind=True, max_retries=3)
-def submit_code_task(self, submission_data):
+def submit_code_task(submission_data):
     """
-    异步提交代码到Judge0进行判题 - 支持普通提交和比赛提交
+    同步提交代码到Judge0进行判题
     """
     try:
         contest_id = submission_data.get('contest_id', None)
@@ -44,7 +21,7 @@ def submit_code_task(self, submission_data):
         submission_id = submission_data.get('submission_id', '')
         notes = submission_data.get('notes', '')
 
-        # 根据题目ID获取测试用例（使用缓存）
+        # 根据题目ID获取测试用例
         test_cases = get_test_cases_by_topic_with_cache(topic_id)
 
         judge_service = Judge0Service()
@@ -97,7 +74,6 @@ def submit_code_task(self, submission_data):
                 overall_result=overall_result,
                 results=results
             )
-
         # 返回结果
         return {
             "success": True,
@@ -112,67 +88,15 @@ def submit_code_task(self, submission_data):
         }
 
     except Exception as e:
-        # 如果发生异常，重试
-        raise self.retry(countdown=2 ** self.request.retries, exc=e)
-
-
-@shared_task
-def process_test_run(submission_data):
-    """
-    处理测试运行（快速返回，不保存结果）
-    """
-    try:
-        source_code = submission_data.get('source_code', '')
-        language_id = submission_data.get('language_id', 71)
-        topic_id = submission_data.get('topic_id', '')
-
-        # 只获取样例测试用例
-        test_cases = get_sample_test_cases(topic_id)
-
-        judge_service = Judge0Service()
-        results = []
-
-        # 对每个样例测试用例进行判题
-        for i, test_case in enumerate(test_cases):
-            result = judge_service.submit_code(
-                source_code=source_code,
-                language_id=language_id,
-                stdin=test_case["stdin"],
-                expected_output=test_case["expected_output"]
-            )
-
-            detailed_result = {
-                "test_case": i + 1,
-                "input_data": test_case["stdin"],
-                "expected_output": test_case["expected_output"],
-                "user_output": result.get("stdout", ""),
-                "result": result,
-                "is_sample": test_case.get("is_sample", False),
-                "score": test_case.get("score", 0)
-            }
-            results.append(detailed_result)
-
-        overall_result = calculate_overall_result(results)
-
-        return {
-            "success": True,
-            "overall_result": overall_result,
-            "results": results,
-            "is_test_run": True
-        }
-
-    except Exception as e:
         return {
             "success": False,
-            "error": f"测试运行失败: {str(e)}",
-            "is_test_run": True
+            "error": f"提交代码任务失败: {str(e)}"
         }
 
-
-@shared_task
+# 改为普通函数
 def process_contest_submission(contest_id, submission_id, user_id, topic_id):
     """
-    专门处理比赛提交的任务
+    处理比赛提交
     """
     try:
         # 获取提交记录
@@ -194,7 +118,7 @@ def process_contest_submission(contest_id, submission_id, user_id, topic_id):
             "error": f"比赛提交处理失败: {str(e)}"
         }
 
-
+# 其他辅助函数保持不变...
 def save_submission_result(submission_id, user_name, user_id, topic_id, source_code,
                            language_id, results, overall_result, notes):
     """
@@ -228,7 +152,6 @@ def save_submission_result(submission_id, user_name, user_id, topic_id, source_c
         print(f"保存提交结果失败: {str(e)}")
         return None
 
-
 def save_contest_submission_result(contest_id, submission, user_id, topic_id, overall_result, results):
     """
     保存比赛提交相关记录
@@ -248,8 +171,8 @@ def save_contest_submission_result(contest_id, submission, user_id, topic_id, ov
             participant=participant
         )
 
-        # 异步更新比赛排名
-        process_contest_submission.delay(contest_id, submission.id, user_id, topic_id)
+        # 同步更新比赛排名
+        process_contest_submission(contest_id, submission.id, user_id, topic_id)
 
         return contest_submission
     except Exception as e:
@@ -358,7 +281,7 @@ def calculate_overall_result(results):
         return "Wrong Answer"
 
 
-@shared_task
+
 def validate_contest_submission(contest_id, user_id, topic_id):
     """
     验证比赛提交的合法性

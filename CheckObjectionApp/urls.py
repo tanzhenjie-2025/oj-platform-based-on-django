@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter, SimpleRouter
 from CheckObjectionApp import views
-from CheckObjectionApp.views import JudgeCodeView, TaskStatusView, JudgeContestCodeView
+from CheckObjectionApp.views import JudgeCodeView, JudgeContestCodeView
 
 app_name = 'CheckObjectionApp'
 
@@ -19,7 +19,7 @@ urlpatterns = [
     path('contest/<contest_id>/proxy-submit-code-contest/', JudgeContestCodeView.as_view(), name='proxy_submit_code_contest'),
 
     path('api/', include(router.urls)),
-    path('task-status/<str:task_id>/', TaskStatusView.as_view(), name='task_status'),
+
     # 展示所有人的提交（管理员函数）
     path('submission', views.submission_list, name='submission_list'),
     # 展示所有人的比赛提交（管理员函数）
@@ -36,7 +36,7 @@ urlpatterns = [
     path("base", views.base, name="CheckObjectionApp_base"),
     # 日常答题界面
     path("detail/<topic_id>", views.detail, name="CheckObjectionApp_detail"),
-    # 内部算法竞赛界面 todo 修改传递的信息 要比赛的 id
+    # 内部算法竞赛界面
     path("contest/<contest_id>/<contest_topic_id>", views.contest_submit_code, name="contest_submit_code"),
 
     path("design", views.design, name="CheckObjectionApp_design"),
@@ -60,8 +60,7 @@ urlpatterns = [
     # 搜索
     path('CheckObjection_search', views.CheckObjection_search, name='CheckObjection_search'),
     path("CheckObjection_filter", views.CheckObjection_filter, name='CheckObjection_filter'),
-    # path("get",views.topic_get.as_view(),name="CheckObjection_topic_get"),
-    # path("get",views.topicModel_get.as_view({"get":"get"}), name="CheckObjection_get"),
+
     # 显示 比赛的列表 所有比赛均在此处显示
     path('contest/', views.ContestListView.as_view(), name='contest_list'),
     # 比赛报名界面
@@ -72,8 +71,7 @@ urlpatterns = [
     path('contest/<int:pk>/rank/', views.ContestRankView.as_view(), name='contest_rank'),
     # 显示我的全部比赛提交记录
     path('my_contest_submission', views.my_contest_submission_list, name='my_contest_submission_list'),
-    # path('contest/<int:pk>/register/', views.contest_register, name='contest_register'),
-    # path('contest/<int:contest_id>/problem/<int:problem_id>/', views.contest_problem, name='contest_problem'),
+
     # 比赛排行路由及视图
     path('contest_rank_list/', views.contest_rank_list, name='contest_rank_list'),
     path('contest_rank_detail/<int:contest_id>/', views.contest_rank_detail, name='contest_rank_detail'),
@@ -81,26 +79,4 @@ urlpatterns = [
     # 批量导入题目api
     path('batch-import-testcases/', views.batch_import_testcases, name='batch_import_testcases'),
 
-    path("t1", views.topicModel_get.as_view()),
-    path("t2", views.topicAPIGenericAPIView.as_view()),
-    path('get', views.topicAPIView.as_view(), name='CheckObjection_get'),
-    path('topic/', views.Topic.as_view(), name='topic-list'),
-    path('topic/<int:pk>/', views.Topic.as_view(), name='topic-detail'),
-    path("get1", views.get1, name="CheckObjection_get1"),
-    path('s1', views.topicAPIView.as_view()),
-    path('try', views.try1, name='try1')
-    # path("CheckObjectionApp_pub", views.CheckObjectionApp_pub, name="CheckObjectionApp_pub"),
-    # path("send_email_captcha", views.send_email_captcha, name="send_email_captcha"),
-    # path("CheckObjectionApp_register", views.CheckObjectionApp_register, name="CheckObjectionApp_register"),
-    # path("CheckObjectionApp_login", views.CheckObjectionApp_login, name="CheckObjectionApp_login"),
-    # path("CheckObjectionApp_logout", views.CheckObjectionApp_logout, name="CheckObjectionApp_logout"),
-    # path("CheckObjectionApp_detail/<blog_id>", views.CheckObjectionApp_detail, name="CheckObjectionApp_detail"),
-    # path('CheckObjectionApp/comment/pub', views.pub_comment, name='pub_comment'),
-    # path('search', views.search, name='search'),
-    # path('CheckObjectionApp_myself/<user_id>', views.CheckObjectionApp_myself, name='CheckObjectionApp_myself'),
-    # path('CheckObjectionApp_dialogue', views.CheckObjectionApp_dialogue, name='CheckObjectionApp_dialogue'),
-    # path('CheckObjectionApp_informationChange/<user_id>',views.CheckObjectionApp_informationChange,name='CheckObjectionApp_informationChange'),
-    # path('CheckObjectionApp_test', views.CheckObjectionApp_test, name='CheckObjectionApp_test'),
-    # path('CheckObjectionApp_myself_to_myBlogs/<user_id>',views.CheckObjectionApp_myself_to_myBlogs,name='CheckObjectionApp_myself_to_myBlogs'),
-    # path('CheckObjectionApp_test2/<user_id>', views.CheckObjectionApp_test2, name='CheckObjectionApp_test2'),
 ]

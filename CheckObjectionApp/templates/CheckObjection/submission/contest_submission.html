@@ -94,27 +94,15 @@
                 <input name="notes" type="text" id="notes" placeholder="添加关于你解决方案的备注...">
             </div>
 
-            <!-- 提交成功消息 -->
-            <div class="success-message" id="success-message">
-                <i class="fas fa-check-circle"></i>
-                <strong>提交成功！</strong> 代码已提交到服务器，请点击"查看结果"按钮获取执行结果。
-            </div>
-
+            <!-- 加载动画 -->
             <div class="loading" id="loading">
                 <div class="spinner"></div>
                 <p>代码执行中，请稍候...</p>
             </div>
 
             <div class="form-actions">
-                <button type="button" class="btn btn-outline" onclick="runTest()">
-                    <i class="fas fa-play"></i> 测试运行
-                </button>
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-paper-plane"></i> 提交执行
-                </button>
-                <button type="button" class="btn btn-success" id="check-result-btn" style="display: none;"
-                        onclick="checkResult()">
-                    <i class="fas fa-search"></i> 查看结果
                 </button>
             </div>
         </form>
@@ -144,7 +132,6 @@
         let editor = null;
         let currentLanguageId = 71; // Python
         let currentLanguage = 'python';
-        let currentTaskId = null; // 存储当前任务的ID
 
         // 默认代码模板
         const codeTemplates = {
@@ -692,13 +679,212 @@ int main() {
         function clearResults() {
             document.getElementById('result-area').style.display = 'none';
             document.getElementById('result-content').innerHTML = '';
-            document.getElementById('check-result-btn').style.display = 'none';
-            document.getElementById('success-message').style.display = 'none';
-            currentTaskId = null;
         }
 
-        // 测试运行
-        function runTest() {
+
+        // 显示执行结果 - 修复版本
+        function displayResults(data) {
+            console.log('原始返回数据:', data); // 调试信息
+
+            let resultHTML = '';
+
+            // 统一数据结构处理：检查是否有嵌套的 result 字段
+            let resultData = data;
+            if (data.result && typeof data.result === 'object') {
+                // 如果是正式提交，数据在 data.result 中
+                resultData = data.result;
+            }
+
+            // 检查数据结构是否完整
+            if (!resultData || !resultData.results) {
+                resultHTML = `
+                    <div style="text-align: center; padding: 20px; color: #dc3545;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                        <h3>数据格式错误</h3>
+                        <p>无法解析执行结果，请检查后端响应数据</p>
+                        <pre style="text-align: left; background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 10px; font-size: 12px; max-height: 300px; overflow: auto;">${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+
+                const resultContent = document.getElementById('result-content');
+                resultContent.innerHTML = resultHTML;
+                return;
+            }
+
+            // 计算统计数据
+            const totalCases = resultData.results.length;
+            const passedCases = resultData.results.filter(result =>
+                result.result && result.result.status === 'Accepted').length;
+
+            // 获取总体结果
+            const overallResult = resultData.overall_result || calculateOverallResultFromData(resultData);
+
+            // 预先计算动态值
+            const overallBg = overallResult === 'Accepted'
+                ? 'linear-gradient(135deg, #00b09b, #96c93d)'
+                : 'linear-gradient(135deg, #ff416c, #ff4b2b)';
+
+            const overallShadow = overallResult === 'Accepted'
+                ? 'rgba(0, 176, 155, 0.3)'
+                : 'rgba(255, 65, 108, 0.3)';
+
+            const overallBorderColor = overallResult === 'Accepted'
+                ? '#00b09b'
+                : '#ff416c';
+
+            // 统计卡片
+            resultHTML += `
+                <div style="display: flex; gap: 4px; margin: 4px 0; line-height: 1.1;">
+                    <div style="flex: 1; background: linear-gradient(135deg, #00b09b, #96c93d); padding: 3px 0; border-radius: 4px; text-align: center; line-height: 1.1; box-shadow: 0 1px 3px rgba(0, 176, 155, 0.2); border: 1px solid #00b09b;">
+                        <div style="color: white; margin: 0 0 1px 0; font-size: 19px; font-weight: 500; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">通过用例</div>
+                        <div style="font-weight: bold; color: white; margin: 0; font-size: 25px; text-shadow: 0 1px 3px rgba(0,0,0,0.3);">${passedCases}/${totalCases}</div>
+                    </div>
+                    <div style="flex: 1; background: ${overallBg}; padding: 3px 0; border-radius: 4px; text-align: center; line-height: 1.1; box-shadow: 0 1px 3px ${overallShadow}; border: 1px solid ${overallBorderColor};">
+                        <div style="color: white; margin: 0 0 1px 0; font-size: 19px; font-weight: 500; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">总体结果</div>
+                        <div style="font-weight: bold; color: white; margin: 0; font-size: 25px; text-shadow: 0 1px 3px rgba(0,0,0,0.3);">${overallResult}</div>
+                    </div>
+                </div>
+            `;
+
+            // 测试用例详情
+            if (resultData.results && resultData.results.length > 0) {
+                resultHTML += `
+                    <div style="font-weight: bold; margin: 5px 0 2px 0; line-height: 1.2; font-size: 23px; color: white; padding: 3px 6px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 4px; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+                        📊 测试用例详情
+                    </div>`;
+
+                resultData.results.forEach((testCase, index) => {
+                    const result = testCase.result || {};
+                    const status = result.status || 'Unknown';
+
+                    // 状态相关样式
+                    const statusBg = status === 'Accepted'
+                        ? 'linear-gradient(135deg, #00b09b, #96c93d)'
+                        : 'linear-gradient(135deg, #ff416c, #ff4b2b)';
+
+                    const caseBg = status === 'Accepted'
+                        ? 'linear-gradient(135deg, #e8f5e8, #c8e6c9)'
+                        : 'linear-gradient(135deg, #ffeaea, #ffcdd2)';
+
+                    const borderColor = status === 'Accepted' ? '#00c853' : '#ff5252';
+
+                    // 单个用例容器
+                    resultHTML += `
+                        <div style="margin: 2px 0; padding: 3px 5px; border-left: 3px solid ${borderColor}; background: ${caseBg}; border-radius: 4px; line-height: 1.2; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                            <!-- 用例标题栏 -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 0 2px 0; line-height: 1.2;">
+                                <div style="line-height: 1.2; display: flex; align-items: center;">
+                                    <strong style="font-size: 21px; color: #2c3e50;">测试用例 ${testCase.test_case || index + 1}:</strong>
+                                    <span style="background: ${statusBg}; color: white; margin-left: 4px; font-size: 19px; padding: 1px 5px; border-radius: 9px; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">${status}</span>
+                                </div>
+                                <div style="display: flex; gap: 2px; line-height: 1.2;">
+                                    ${testCase.is_sample ? '<span style="padding: 1px 5px; border-radius: 9px; background: linear-gradient(135deg, #3498db, #2980b9); color: white; font-size: 17px; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">📝 样例</span>' : ''}
+                                </div>
+                            </div>
+                    `;
+
+                    // 输入输出信息
+                    resultHTML += `
+                        <div style="margin: 2px 0; line-height: 1.2;">
+                            <div style="margin: 1px 0; line-height: 1.2;">
+                                <strong style="font-size: 19px; color: #34495e;">📥 输入:</strong>
+                                <span style="font-family: monospace; background: #f5f7fa; padding: 1px 4px; border-radius: 3px; font-size: 19px; border: 1px solid #d1d9e6; display: inline-block; margin-left: 2px; word-break: break-all;">${testCase.input_data || '无'}</span>
+                            </div>
+                            <div style="margin: 1px 0; line-height: 1.2;">
+                                <strong style="font-size: 19px; color: #34495e;">🎯 期望输出:</strong>
+                                <span style="font-family: monospace; background: #e0f7fa; padding: 1px 4px; border-radius: 3px; font-size: 19px; border: 1px solid #4dd0e1; display: inline-block; margin-left: 2px; word-break: break-all;">${testCase.expected_output || '无'}</span>
+                            </div>
+                            <div style="margin: 1px 0; line-height: 1.2;">
+                                <strong style="font-size: 19px; color: #34495e;">📤 实际输出:</strong>
+                                <span style="font-family: monospace; background: #f3e5f5; padding: 1px 4px; border-radius: 3px; font-size: 19px; border: 1px solid #ab47bc; display: inline-block; margin-left: 2px; word-break: break-all;">${testCase.user_output || result.stdout || '无输出'}</span>
+                            </div>
+                        </div>
+                    `;
+
+                    // 执行信息
+                    let execInfo = [];
+                    if (result.time) execInfo.push(`⏱️ 执行时间: ${result.time}秒`);
+                    if (result.memory) execInfo.push(`💾 内存使用: ${result.memory}KB`);
+
+                    if (execInfo.length > 0) {
+                        resultHTML += `
+                            <div style="margin: 2px 0; line-height: 1.2; font-size: 19px;">
+                                <span style="background: #ffeaa7; color: #2d3436; padding: 1px 4px; border-radius: 9px; font-weight: 500; margin-right: 2px;">${execInfo.join('</span><span style="background: #a29bfe; color: white; padding: 1px 4px; border-radius: 9px; font-weight: 500; margin-right: 2px;">')}</span>
+                            </div>`;
+                    }
+
+                    // 编译/错误信息
+                    if (result.compile_output) {
+                        resultHTML += `
+                            <div style="margin: 2px 0; line-height: 1.2;">
+                                <strong style="font-size: 19px; color: #e67e22;">🔧 编译信息:</strong>
+                                <div style="font-family: monospace; background: #fff3cd; padding: 2px 4px; border-radius: 3px; font-size: 19px; border: 1px solid #ffc107; margin-top: 1px; color: #856404; word-break: break-all;">
+                                    ${result.compile_output}
+                                </div>
+                            </div>`;
+                    }
+
+                    if (result.stderr) {
+                        resultHTML += `
+                            <div style="margin: 2px 0; line-height: 1.2;">
+                                <strong style="font-size: 19px; color: #e74c3c;">❌ 错误信息:</strong>
+                                <div style="font-family: monospace; background: #f8d7da; padding: 2px 4px; border-radius: 3px; font-size: 19px; border: 1px solid #e74c3c; margin-top: 1px; color: #721c24; word-break: break-all;">
+                                    ${result.stderr}
+                                </div>
+                            </div>`;
+                    }
+
+                    resultHTML += `</div>`;
+                });
+            } else {
+                resultHTML += `
+                    <div style="text-align: center; padding: 20px; color: #6c757d;">
+                        <i class="fas fa-info-circle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                        <h3>无测试用例结果</h3>
+                        <p>没有获取到测试用例的执行结果</p>
+                    </div>
+                `;
+            }
+
+            // 整体容器
+            const resultContent = document.getElementById('result-content');
+            resultContent.innerHTML = resultHTML;
+            resultContent.style.maxHeight = 'none';
+            resultContent.style.overflowY = 'visible';
+            resultContent.style.padding = '5px';
+            resultContent.style.background = '#f5f7fa';
+            resultContent.style.borderRadius = '6px';
+            resultContent.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06)';
+        }
+
+        // 辅助函数：从数据计算总体结果
+        function calculateOverallResultFromData(data) {
+            if (!data.results || data.results.length === 0) {
+                return "No Test Cases";
+            }
+
+            // 检查所有测试用例是否都通过
+            const allPassed = data.results.every(testCase =>
+                testCase.result && testCase.result.status === 'Accepted'
+            );
+
+            if (allPassed) {
+                return "Accepted";
+            } else {
+                // 返回第一个失败的结果状态
+                for (const testCase of data.results) {
+                    if (testCase.result && testCase.result.status !== 'Accepted') {
+                        return testCase.result.status || "Wrong Answer";
+                    }
+                }
+                return "Wrong Answer";
+            }
+        }
+
+        // 表单提交事件 - 修复版本
+        document.getElementById('submission-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
             const code = editor.getValue();
             const loading = document.getElementById('loading');
             const resultArea = document.getElementById('result-area');
@@ -707,10 +893,9 @@ int main() {
             // 显示加载动画
             loading.style.display = 'block';
             resultArea.style.display = 'none';
-            document.getElementById('success-message').style.display = 'none';
 
-            // 发送测试请求
-            fetch('proxy-submit-code/', {
+            // 发送提交请求 - 同步处理
+            fetch('proxy-submit-code-contest/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -718,11 +903,11 @@ int main() {
                 },
                 body: JSON.stringify({
                     source_code: code,
-                    language_id: currentLanguageId,
+                    language_id: document.querySelector('input[name="language_id"]').value,
                     topic_id: document.querySelector('input[name="topic_id"]').value,
                     user_name: document.querySelector('input[name="user_name"]').value,
-                    notes: '测试运行',
-                    is_test: true  // 标记为测试运行
+                    notes: document.querySelector('input[name="notes"]').value,
+                    is_test: false  // 正式提交
                 })
             })
                 .then(response => {
@@ -736,304 +921,41 @@ int main() {
                     loading.style.display = 'none';
                     resultArea.style.display = 'block';
 
+                    console.log('Received data:', data); // 调试信息
+
                     if (data.success) {
-                        displayResults(data);
-                    } else {
-                        resultContent.innerHTML = `<p class="status-error">提交失败: ${data.error}</p>`;
-                    }
-                })
-                .catch(error => {
-                    loading.style.display = 'none';
-                    resultArea.style.display = 'block';
-                    resultContent.innerHTML = `<p class="status-error">请求失败: ${error.message}</p>`;
-                    console.error('Error:', error);
-                });
-        }
-
-        // 显示执行结果
-        function displayResults(data) {
-    let resultHTML = '';
-
-    // 计算统计数据
-    const totalCases = data.results.length;
-    const passedCases = data.results.filter(result =>
-        result.result.status === 'Accepted').length;
-
-    // 预先计算动态值
-    const overallBg = data.overall_result === 'Accepted'
-        ? 'linear-gradient(135deg, #00b09b, #96c93d)'
-        : 'linear-gradient(135deg, #ff416c, #ff4b2b)';
-
-    const overallShadow = data.overall_result === 'Accepted'
-        ? 'rgba(0, 176, 155, 0.3)'
-        : 'rgba(255, 65, 108, 0.3)';
-
-    const overallBorderColor = data.overall_result === 'Accepted'
-        ? '#00b09b'
-        : '#ff416c';
-
-    // 统计卡片 - 进一步压缩
-    resultHTML += `
-        <div style="display: flex; gap: 4px; margin: 4px 0; line-height: 1.1;">
-            <div style="flex: 1; background: linear-gradient(135deg, #00b09b, #96c93d); padding: 3px 0; border-radius: 4px; text-align: center; line-height: 1.1; box-shadow: 0 1px 3px rgba(0, 176, 155, 0.2); border: 1px solid #00b09b;">
-                <div style="color: white; margin: 0 0 1px 0; font-size: 19px; font-weight: 500; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">通过用例</div>
-                <div style="font-weight: bold; color: white; margin: 0; font-size: 25px; text-shadow: 0 1px 3px rgba(0,0,0,0.3);">${passedCases}/${totalCases}</div>
-            </div>
-            <div style="flex: 1; background: ${overallBg}; padding: 3px 0; border-radius: 4px; text-align: center; line-height: 1.1; box-shadow: 0 1px 3px ${overallShadow}; border: 1px solid ${overallBorderColor};">
-                <div style="color: white; margin: 0 0 1px 0; font-size: 19px; font-weight: 500; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">总体结果</div>
-                <div style="font-weight: bold; color: white; margin: 0; font-size: 25px; text-shadow: 0 1px 3px rgba(0,0,0,0.3);">${data.overall_result}</div>
-            </div>
-        </div>
-    `;
-
-    // 测试用例详情 - 压缩间距
-    if (data.results && data.results.length > 0) {
-        resultHTML += `
-            <div style="font-weight: bold; margin: 5px 0 2px 0; line-height: 1.2; font-size: 23px; color: white; padding: 3px 6px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 4px; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
-                📊 测试用例详情
-            </div>`;
-
-        data.results.forEach((testCase, index) => {
-            const result = testCase.result;
-
-            // 状态相关样式
-            const statusBg = result.status === 'Accepted'
-                ? 'linear-gradient(135deg, #00b09b, #96c93d)'
-                : 'linear-gradient(135deg, #ff416c, #ff4b2b)';
-
-            const caseBg = result.status === 'Accepted'
-                ? 'linear-gradient(135deg, #e8f5e8, #c8e6c9)'
-                : 'linear-gradient(135deg, #ffeaea, #ffcdd2)';
-
-            const borderColor = result.status === 'Accepted' ? '#00c853' : '#ff5252';
-
-            // 单个用例容器 - 减小内外边距
-            resultHTML += `
-                <div style="margin: 2px 0; padding: 3px 5px; border-left: 3px solid ${borderColor}; background: ${caseBg}; border-radius: 4px; line-height: 1.2; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                    <!-- 用例标题栏 - 压缩与内容间距 -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 0 2px 0; line-height: 1.2;">
-                        <div style="line-height: 1.2; display: flex; align-items: center;">
-                            <strong style="font-size: 21px; color: #2c3e50;">测试用例 ${testCase.test_case}:</strong>
-                            <span style="background: ${statusBg}; color: white; margin-left: 4px; font-size: 19px; padding: 1px 5px; border-radius: 9px; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">${result.status}</span>
-                        </div>
-                        <div style="display: flex; gap: 2px; line-height: 1.2;">
-                            ${testCase.is_sample ? '<span style="padding: 1px 5px; border-radius: 9px; background: linear-gradient(135deg, #3498db, #2980b9); color: white; font-size: 17px; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">📝 样例</span>' : ''}
-                        </div>
-                    </div>
-            `;
-
-            // 输入输出信息 - 进一步压缩行间距
-            resultHTML += `
-                <div style="margin: 2px 0; line-height: 1.2;">
-                    <div style="margin: 1px 0; line-height: 1.2;">
-                        <strong style="font-size: 19px; color: #34495e;">📥 输入:</strong>
-                        <span style="font-family: monospace; background: #f5f7fa; padding: 1px 4px; border-radius: 3px; font-size: 19px; border: 1px solid #d1d9e6; display: inline-block; margin-left: 2px;">${testCase.input_data || '无'}</span>
-                    </div>
-                    <div style="margin: 1px 0; line-height: 1.2;">
-                        <strong style="font-size: 19px; color: #34495e;">🎯 期望输出:</strong>
-                        <span style="font-family: monospace; background: #e0f7fa; padding: 1px 4px; border-radius: 3px; font-size: 19px; border: 1px solid #4dd0e1; display: inline-block; margin-left: 2px;">${testCase.expected_output || '无'}</span>
-                    </div>
-                    <div style="margin: 1px 0; line-height: 1.2;">
-                        <strong style="font-size: 19px; color: #34495e;">📤 实际输出:</strong>
-                        <span style="font-family: monospace; background: #f3e5f5; padding: 1px 4px; border-radius: 3px; font-size: 19px; border: 1px solid #ab47bc; display: inline-block; margin-left: 2px;">${testCase.user_output || '无输出'}</span>
-                    </div>
-                </div>
-            `;
-
-            // 执行信息 - 减小间距
-            let execInfo = [];
-            if (result.time) execInfo.push(`⏱️ 执行时间: ${result.time}秒`);
-            if (result.memory) execInfo.push(`💾 内存使用: ${result.memory}KB`);
-
-            if (execInfo.length > 0) {
-                resultHTML += `
-                    <div style="margin: 2px 0; line-height: 1.2; font-size: 19px;">
-                        <span style="background: #ffeaa7; color: #2d3436; padding: 1px 4px; border-radius: 9px; font-weight: 500; margin-right: 2px;">${execInfo.join('</span><span style="background: #a29bfe; color: white; padding: 1px 4px; border-radius: 9px; font-weight: 500; margin-right: 2px;">')}</span>
-                    </div>`;
-            }
-
-            // 编译/错误信息 - 压缩留白
-            if (result.compile_output) {
-                resultHTML += `
-                    <div style="margin: 2px 0; line-height: 1.2;">
-                        <strong style="font-size: 19px; color: #e67e22;">🔧 编译信息:</strong>
-                        <div style="font-family: monospace; background: #fff3cd; padding: 2px 4px; border-radius: 3px; font-size: 19px; border: 1px solid #ffc107; margin-top: 1px; color: #856404;">
-                            ${result.compile_output}
-                        </div>
-                    </div>`;
-            }
-
-            if (result.stderr) {
-                resultHTML += `
-                    <div style="margin: 2px 0; line-height: 1.2;">
-                        <strong style="font-size: 19px; color: #e74c3c;">❌ 错误信息:</strong>
-                        <div style="font-family: monospace; background: #f8d7da; padding: 2px 4px; border-radius: 3px; font-size: 19px; border: 1px solid #e74c3c; margin-top: 1px; color: #721c24;">
-                            ${result.stderr}
-                        </div>
-                    </div>`;
-            }
-
-            resultHTML += `</div>`;
-        });
-    }
-
-    // 整体容器 - 减小内边距
-    const resultContent = document.getElementById('result-content');
-    resultContent.innerHTML = resultHTML;
-    resultContent.style.maxHeight = 'none';
-    resultContent.style.overflowY = 'visible';
-    resultContent.style.padding = '5px';  // 进一步减小整体内边距
-    resultContent.style.background = '#f5f7fa';
-    resultContent.style.borderRadius = '6px';
-    resultContent.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06)';
-}
-
-        // 表单提交事件
-        document.getElementById('submission-form').addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            const code = editor.getValue();
-            const loading = document.getElementById('loading');
-            const resultArea = document.getElementById('result-area');
-            const resultContent = document.getElementById('result-content');
-
-            // 显示加载动画
-            loading.style.display = 'block';
-            resultArea.style.display = 'none';
-            document.getElementById('success-message').style.display = 'none';
-
-            // 发送提交请求
-            fetch('proxy-submit-code-contest/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                },
-                body: JSON.stringify({
-                    source_code: code,
-                    language_id: document.querySelector('input[name="language_id"]').value,
-                    topic_id: document.querySelector('input[name="topic_id"]').value,
-                    user_name: document.querySelector('input[name="user_name"]').value,
-                    notes: document.querySelector('input[name="notes"]').value
-
-                })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    // 隐藏加载动画
-                    loading.style.display = 'none';
-
-                    if (data.task_id) {
-                        // 保存任务ID
-                        currentTaskId = data.task_id;
-
-                        // 显示提交成功消息
-                        document.getElementById('success-message').style.display = 'block';
-
-                        // 显示查看结果按钮
-                        document.getElementById('check-result-btn').style.display = 'flex';
-
-                        // 隐藏结果区域（如果有之前的结果）
-                        resultArea.style.display = 'none';
-                    } else {
-                        // 同步处理（测试运行）
-                        resultArea.style.display = 'block';
-                        if (data.success) {
+                        // 处理不同结构的数据
+                        if (data.result) {
+                            // 正式提交，数据在 result 字段中
                             displayResults(data);
                         } else {
-                            resultContent.innerHTML = `<p class="status-error">提交失败: ${data.error}</p>`;
+                            // 测试运行或其他情况，直接使用 data
+                            displayResults(data);
                         }
+                    } else {
+                        resultContent.innerHTML = `
+                            <div style="text-align: center; padding: 20px; color: #dc3545;">
+                                <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                                <h3>提交失败</h3>
+                                <p>${data.error || '未知错误'}</p>
+                            </div>
+                        `;
                     }
                 })
                 .catch(error => {
                     loading.style.display = 'none';
                     resultArea.style.display = 'block';
-                    resultContent.innerHTML = `<p class="status-error">请求失败: ${error.message}</p>`;
+                    resultContent.innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: #dc3545;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                            <h3>请求失败</h3>
+                            <p>${error.message}</p>
+                            <p style="font-size: 14px; margin-top: 10px;">请检查网络连接后重试</p>
+                        </div>
+                    `;
                     console.error('Error:', error);
                 });
         });
-
-        // 查看结果按钮点击事件
-        function checkResult() {
-            if (!currentTaskId) {
-                alert('没有可用的任务ID，请先提交代码');
-                return;
-            }
-
-            const loading = document.getElementById('loading');
-            const resultArea = document.getElementById('result-area');
-            const resultContent = document.getElementById('result-content');
-
-            // 显示加载动画
-            loading.style.display = 'block';
-            resultArea.style.display = 'none';
-            document.getElementById('success-message').style.display = 'none';
-
-            // 开始轮询任务状态
-            pollTaskStatus(currentTaskId, loading, resultArea, resultContent);
-        }
-
-        // 轮询任务状态
-        function pollTaskStatus(taskId, loading, resultArea, resultContent) {
-            const maxAttempts = 60; // 最大尝试次数（30秒）
-            let attempts = 0;
-            {#http://localhost:8000/CheckObjectionApp/task-status/4b532ce4-2c19-4da2-ba1a-d95dfa41152a/#}
-            const poll = () => {
-                fetch(`/CheckObjectionApp/task-status/${taskId}/`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Polling response:', data); // 调试信息
-
-                        if (data.status === 'SUCCESS') {
-                            loading.style.display = 'none';
-                            resultArea.style.display = 'block';
-                            if (data.result && data.result.success) {
-                                displayResults(data.result);
-                            } else {
-                                resultContent.innerHTML = `<p class="status-error">执行失败: ${data.result?.error || '未知错误'}</p>`;
-                            }
-                            // 隐藏查看结果按钮
-                            document.getElementById('check-result-btn').style.display = 'none';
-                        } else if (data.status === 'FAILURE') {
-                            loading.style.display = 'none';
-                            resultArea.style.display = 'block';
-                            resultContent.innerHTML = `<p class="status-error">任务执行失败: ${data.error || '未知错误'}</p>`;
-                            // 隐藏查看结果按钮
-                            document.getElementById('check-result-btn').style.display = 'none';
-                        } else if (attempts >= maxAttempts) {
-                            loading.style.display = 'none';
-                            resultArea.style.display = 'block';
-                            resultContent.innerHTML = `<p class="status-error">任务处理超时，请稍后查看结果</p>`;
-                            // 隐藏查看结果按钮
-                            document.getElementById('check-result-btn').style.display = 'none';
-                        } else {
-                            // 继续轮询
-                            attempts++;
-                            setTimeout(poll, 500);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Polling error:', error); // 调试信息
-                        loading.style.display = 'none';
-                        resultArea.style.display = 'block';
-                        resultContent.innerHTML = `<p class="status-error">轮询失败: ${error.message}</p>`;
-                        // 隐藏查看结果按钮
-                        document.getElementById('check-result-btn').style.display = 'none';
-                    });
-            };
-
-            poll();
-        }
 
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', function () {
