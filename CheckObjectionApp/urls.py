@@ -79,4 +79,9 @@ urlpatterns = [
     # 批量导入题目api
     path('batch-import-testcases/', views.batch_import_testcases, name='batch_import_testcases'),
 
+    # 用户列表页
+    path('users/', views.user_list, name='user_list'),
+    # 用户详情页（假设你已经有user_detail视图）
+    # path('users/<int:user_id>/', views.user_detail, name='user_detail'),
+
 ]

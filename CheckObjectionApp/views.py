@@ -650,8 +650,8 @@ def submission_list(request):
     }
     return render(request, 'CheckObjection/submission_list.html', context)
 
-
-# @login_required
+# 管理员视图
+@login_required
 def submission_detail(request, pk):
     """显示单个提交记录的详细信息"""
     submission = get_object_or_404(Submission, pk=pk)
@@ -711,7 +711,11 @@ def my_submission_list(request):
     }
     return render(request, 'CheckObjection/submission_list.html', context)
 
+from django.contrib.admin.views.decorators import staff_member_required
+
+# 管理员视图
 @login_required
+@staff_member_required
 def query_submission_list(request, user_name):
     """显示查询用户的所有提交记录"""
     cache_key = f"user_submissions_{user_name}"
@@ -2123,3 +2127,37 @@ def contest_rank_detail(request, contest_id):
     }
 
     return render(request, 'CheckObjection/contest/rank/rank_detail.html', context)
+
+# 展示用户模块，用于管理员查询提交
+from django.shortcuts import render
+from django.contrib.auth.models import User
+from django.contrib.admin.views.decorators import staff_member_required
+from .models import UserProfile
+
+# 管理员查询视图
+@staff_member_required
+def user_list(request):
+    """展示所有用户的列表视图（仅管理员可访问）"""
+    # 获取所有用户
+    users = User.objects.all().order_by('-date_joined')  # 按注册时间倒序
+
+    # 处理用户数据，关联用户附加信息
+    user_list = []
+
+    for user in users:
+        try:
+            # 获取用户的附加信息
+            profile = UserProfile.objects.get(user_id=user.id)
+            finish_count = profile.finish
+        except UserProfile.DoesNotExist:
+            # 如果用户没有附加信息，默认完成数为0
+            finish_count = 0
+
+        user_list.append({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'date_joined': user.date_joined,
+            'finish_count': finish_count
+        })
+    return render(request, 'CheckObjection/user_list.html', {'users': user_list})

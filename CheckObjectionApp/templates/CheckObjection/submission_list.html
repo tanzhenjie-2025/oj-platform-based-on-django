@@ -94,6 +94,21 @@
                 font-weight: 600;
                 padding: 1rem 0.75rem;
             }
+
+            /* 新增：个人提交按钮样式 */
+            .btn-personal-submissions {
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: white;
+                border: none;
+                text-decoration: none;
+            }
+
+            .btn-personal-submissions:hover {
+                background: linear-gradient(135deg, #059669 0%, #047857 100%);
+                color: white;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+            }
         </style>
     </head>
 {% endblock %}
@@ -101,12 +116,25 @@
 
     <body>
     <div class="container mt-4">
-        <div class="row">
-            <div class="col-12">
-                <!-- 新增返回按钮 -->
-                <button onclick="window.history.back()" class="btn btn-outline-secondary mb-4 mr-2">
-                    ← 返回上一步
-                </button>
+    <div class="row">
+        <div class="col-12">
+            <!-- 按钮组（已修改右对齐） -->
+           <!-- 按钮组（两端对齐，完全分开） -->
+<div class="d-flex justify-content-between w-100 mb-4 align-items-center">
+    <!-- 返回按钮（最左侧） -->
+    <button onclick="window.history.back()" class="btn btn-outline-secondary">
+        ← 返回上一步
+    </button>
+
+    <!-- 查询个人提交按钮（最右侧） -->
+    {% if user.is_authenticated %}
+        <a href="{% url 'CheckObjectionApp:user_list' %}" class="btn btn-personal-submissions rounded-pill px-4 d-flex align-items-center">
+            <span>🔍 查询个人提交</span>
+        </a>
+    {% endif %}
+</div>
+
+
 
                 <h1 class="mb-4 text-gradient"
                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
