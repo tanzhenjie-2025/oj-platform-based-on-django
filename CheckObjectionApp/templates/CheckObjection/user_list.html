@@ -184,7 +184,7 @@
                                     </div>
                                 </div>
                                 <div class="flex-grow-1 ms-3">
-                                    <a href="#" class="user-link d-block">
+                                    <a href="{% url 'CheckObjectionApp:query_submission_list' user_name=user.username %}" class="user-link d-block">
                                         {{ user.username }}
                                     </a>
                                     <small class="text-muted">ID: {{ user.id }}</small>
@@ -216,9 +216,9 @@
                             {% endwith %}
                         </td>
                         <td>
-                            <button class="btn btn-sm btn-view-submissions">
-                                📊 查看提交
-                            </button>
+                            <a href="{% url 'CheckObjectionApp:query_submission_list' user_name=user.username %}" class="btn btn-sm btn-view-submissions">
+                                        📊 查看提交
+                                    </a>
                         </td>
                     </tr>
                     {% empty %}

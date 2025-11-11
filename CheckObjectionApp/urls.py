@@ -28,7 +28,7 @@ urlpatterns = [
     path('submission/<uuid:pk>/', views.submission_detail, name='submission_detail'),
     # 我的所有提交
     path('my_submission', views.my_submission_list, name='my_submission_list'),
-    # 根据用户名查询提交
+    # 根据用户名查询提交（管理员函数）
     path('query_submission_list/<user_name>',views.query_submission_list,name='query_submission_list'),
 
     path('query_contest_submission_list/<contest_id>/<user_name>',views.query_contest_submission_list,name='query_contest_submission_list'),
