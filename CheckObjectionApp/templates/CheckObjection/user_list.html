@@ -64,6 +64,8 @@
             border: none;
             font-weight: 600;
             padding: 1rem 0.75rem;
+            text-align: center; /* 表头居中 */
+            vertical-align: middle; /* 垂直居中 */
         }
 
         /* 用户行样式 */
@@ -128,6 +130,32 @@
             border-radius: 12px;
         }
 
+        /* 表格单元格居中样式 */
+        .table td {
+            text-align: center; /* 水平居中 */
+            vertical-align: middle; /* 垂直居中 */
+        }
+
+        /* 用户信息列特殊处理 */
+        .user-info-cell {
+            text-align: center !important;
+        }
+
+        .user-info-cell .d-flex {
+            justify-content: center; /* 水平居中flex项目 */
+        }
+
+        .user-info-cell .flex-grow-1 {
+            text-align: center; /* 内部文本居中 */
+        }
+
+        /* 操作按钮容器居中 */
+        .action-cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         /* 响应式调整 */
         @media (max-width: 768px) {
             .table-responsive {
@@ -175,15 +203,15 @@
                 <tbody>
                     {% for user in users %}
                     <tr class="user-row align-middle" data-user-id="{{ user.id }}">
-                        <td>
-                            <div class="d-flex align-items-center">
+                        <td class="user-info-cell">
+                            <div class="d-flex align-items-center justify-content-center">
                                 <div class="flex-shrink-0">
                                     <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center"
                                          style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: 600;">
                                         {{ user.username|first|upper }}
                                     </div>
                                 </div>
-                                <div class="flex-grow-1 ms-3">
+                                <div class="flex-grow-1 ms-3 text-center">
                                     <a href="{% url 'CheckObjectionApp:query_submission_list' user_name=user.username %}" class="user-link d-block">
                                         {{ user.username }}
                                     </a>
@@ -215,10 +243,10 @@
                                 {% endif %}
                             {% endwith %}
                         </td>
-                        <td>
+                        <td class="action-cell">
                             <a href="{% url 'CheckObjectionApp:query_submission_list' user_name=user.username %}" class="btn btn-sm btn-view-submissions">
-                                        📊 查看提交
-                                    </a>
+                                📊 查看提交
+                            </a>
                         </td>
                     </tr>
                     {% empty %}
