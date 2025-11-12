@@ -2263,3 +2263,103 @@ def user_contests(request, user_name):
 def my_contests(request):
     """显示当前用户自己参加过的所有比赛"""
     return user_contests(request, request.user.username)
+
+
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
+from .models import Contest, ContestSubmission, Submission, ContestParticipant
+
+
+@login_required
+@staff_member_required
+def contest_user_submissions(request, contest_id, user_name):
+    """显示指定用户在特定比赛中的提交记录"""
+    contest = get_object_or_404(Contest, id=contest_id)
+
+    # 缓存键
+    cache_key = f"contest_{contest_id}_user_{user_name}_submissions"
+
+    # 尝试从缓存获取数据
+    submissions = cache.get(cache_key)
+
+    if submissions is None:
+        # 查询比赛提交记录，预加载相关对象
+        contest_submissions = ContestSubmission.objects.filter(
+            contest_id=contest_id,
+            submission__user_name=user_name
+        ).select_related(
+            'submission',
+            'submission__topic',
+            'participant'
+        ).order_by('-submitted_at')
+
+        # 转换为可缓存格式
+        submissions_list = list(contest_submissions)
+
+        # 设置缓存（5分钟）
+        cache.set(cache_key, submissions_list, 300)
+        submissions = submissions_list
+
+
+    context = {
+        'contest': contest,
+        'submissions': submissions,
+        'target_user_name': user_name,
+        'page_title': f'{user_name} - {contest.title} 提交记录'
+    }
+    print(context)
+    return render(request, 'CheckObjection/contest_submission_list.html', context)
+
+
+@login_required
+def contest_my_submissions(request, contest_id):
+    """显示当前用户在特定比赛中的提交记录"""
+    contest = get_object_or_404(Contest, id=contest_id)
+    user_name = request.user.username
+
+    # 检查用户是否参与比赛
+    is_participant = ContestParticipant.objects.filter(
+        contest=contest,
+        user=request.user,
+        is_disqualified=False
+    ).exists()
+
+    if not is_participant:
+        context = {
+            'contest': contest,
+            'error_message': '您未参加此比赛或已被取消资格'
+        }
+        return render(request, 'CheckObjection/contest_submission_list.html', context)
+
+    # 缓存键
+    cache_key = f"contest_{contest_id}_user_{user_name}_submissions"
+
+    # 尝试从缓存获取数据
+    submissions = cache.get(cache_key)
+
+    if submissions is None:
+        # 查询当前用户在比赛中的提交记录
+        contest_submissions = ContestSubmission.objects.filter(
+            contest_id=contest_id,
+            participant__user=request.user
+        ).select_related(
+            'submission',
+            'submission__topic'
+        ).order_by('-submitted_at')
+
+        # 转换为可缓存格式
+        submissions_list = list(contest_submissions)
+
+        # 设置缓存（5分钟）
+        cache.set(cache_key, submissions_list, 300)
+        submissions = submissions_list
+
+    context = {
+        'contest': contest,
+        'submissions': submissions,
+        'target_user_name': user_name,
+        'page_title': f'我的 {contest.title} 提交记录',
+        'is_my_submissions': True
+    }
+    return render(request, 'CheckObjection/contest_submission_list.html', context)

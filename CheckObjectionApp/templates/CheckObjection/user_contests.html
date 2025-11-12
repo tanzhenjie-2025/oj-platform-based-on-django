@@ -67,9 +67,9 @@
                                         <td>{{ data.solved_topics }}</td>
                                         <td>{{ data.participation_rate }}</td>
                                         <td>
-                                            <a href="#"
+                                            <a href="{% url 'CheckObjectionApp:contest_user_submissions' contest_id=data.contest.id user_name=target_user.username %}"
                                                class="btn btn-sm btn-outline-primary">
-                                                查看
+                                                查看详情
                                             </a>
                                             {% if target_user %}
                                             <a href="#"

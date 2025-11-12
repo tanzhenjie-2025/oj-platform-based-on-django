@@ -83,10 +83,17 @@ urlpatterns = [
     path('users/', views.user_list, name='user_list'),
     # 用户详情页（假设你已经有user_detail视图）
     # path('users/<int:user_id>/', views.user_detail, name='user_detail'),
-    # 展示用户参加过的比赛记录
+    # 展示用户参加过的比赛记录(管理员函数)
     path('user/contests/<str:user_name>/',
          views.user_contests, name='user_contests'),
+    # 显示当前用户参加过的比赛记录
     path('my_contests/',
          views.my_contests, name='my_contests'),
+    # 展示查询的比赛用户提交记录（管理员函数）
+    path('contest/submissions/<int:contest_id>/user/<str:user_name>/',
+         views.contest_user_submissions, name='contest_user_submissions'),
+    # 显示当前用户某比赛提交记录
+    path('contest/submissions/<int:contest_id>/',
+         views.contest_my_submissions, name='contest_my_submissions'),
 
 ]
