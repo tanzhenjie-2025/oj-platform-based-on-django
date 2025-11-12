@@ -31,7 +31,8 @@ from rest_framework import mixins
 from rest_framework.generics import GenericAPIView
 
 from .constants import CACHE_TIMEOUT, COLOR_CODES, JUDGE_CONFIG, CAPTCHA_CONFIG, DEFAULT_VALUES
-
+# 管理员认证
+from django.contrib.admin.views.decorators import staff_member_required
 def redirect_root(request):
     """ 重定向到主页 """
     return redirect('CheckObjectionApp:CheckObjectionApp_login')
@@ -348,36 +349,91 @@ def changePassword(request):
         return render(request, 'CheckObjection/changeName.html', context={'user': user})
 
 
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.urls import reverse_lazy, reverse
+from django.views.decorators.http import require_http_methods
+from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
+from .models import UserProfile
+
+
 @require_http_methods(['GET', 'POST'])
 @login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
 def changeName(request):
     """修改用户资料"""
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+    except ObjectDoesNotExist:
+        # 如果UserProfile不存在，创建一个
+        user_profile = UserProfile.objects.create(user=request.user)
+
     if request.method == "POST":
-        user_id = request.user.id
-        # 更新用户信息
-        User.objects.filter(id=user_id).update(
-            username=request.POST.get('username', ''),
-            # 添加其他字段的更新，根据你的用户模型
-            # email=request.POST.get('email', ''),
-            # phone=request.POST.get('phone', ''),
-            # 等等...
-        )
-        return redirect(reverse("CheckObjectionApp:CheckObjectionApp_index"))
+        # 更新用户基本信息
+        if 'username' in request.POST:
+            user_id = request.user.id
+            # 更新User模型中的字段
+            User.objects.filter(id=user_id).update(
+                username=request.POST.get('username', ''),
+                email=request.POST.get('email', ''),
+            )
+
+            # 更新UserProfile中的字段
+            user_profile.phone = request.POST.get('phone', '')
+            user_profile.bio = request.POST.get('bio', '')
+            user_profile.location = request.POST.get('location', '')
+            user_profile.website = request.POST.get('website', '')
+
+            # 处理生日字段
+            birthday = request.POST.get('birthday', '')
+            if birthday:
+                user_profile.birthday = birthday
+
+            # 处理头像上传
+            if 'avatar' in request.FILES:
+                user_profile.avatar = request.FILES['avatar']
+
+            user_profile.save()
+
+            messages.success(request, '个人信息更新成功！')
+            return redirect(reverse("CheckObjectionApp:CheckObjectionApp_index"))
 
     if request.method == "GET":
         user = request.user
-        # 准备用户信息，处理空值
+        # 准备用户信息，包含User和UserProfile的所有字段
         user_info = {
             'username': user.username or '暂无',
-            'email': getattr(user, 'email', '') or '暂无',
-            'phone': getattr(user, 'phone', '') or '暂无',
-            'birthday': getattr(user, 'birthday', '') or '暂无',
-            'bio': getattr(user, 'bio', '') or '暂无',
-            'location': getattr(user, 'location', '') or '暂无',
-            'website': getattr(user, 'website', '') or '暂无',
+            'email': user.email or '暂无',
+            'phone': user_profile.phone or '暂无',
+            'birthday': user_profile.birthday.strftime('%Y-%m-%d') if user_profile.birthday else '',
+            'bio': user_profile.bio or '暂无',
+            'location': user_profile.location or '暂无',
+            'website': user_profile.website or '暂无',
+            'finish': user_profile.finish,
+            'avatar_url': user_profile.get_avatar_url(),
+            'theme': user_profile.theme,
+            'language': user_profile.language,
         }
         return render(request, 'CheckObjection/changeName.html',
                       context={'user': user, 'user_info': user_info})
+
+
+@require_http_methods(['POST'])
+@login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
+def update_preferences(request):
+    """更新用户偏好设置"""
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+    except ObjectDoesNotExist:
+        user_profile = UserProfile.objects.create(user=request.user)
+
+    if request.method == "POST":
+        user_profile.theme = request.POST.get('theme', 'light')
+        user_profile.language = request.POST.get('language', 'zh-hans')
+        user_profile.save()
+
+        messages.success(request, '偏好设置更新成功！')
+        return redirect(reverse("CheckObjectionApp:CheckObjectionApp_changeName"))
 
 
 # 以下是搜索模块
@@ -638,7 +694,9 @@ from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 # 基于函数的视图
+# 管理员函数
 @login_required
+@staff_member_required
 def submission_list(request):
     """显示全部用户的所有提交记录"""
     submissions = Submission.objects.all()
@@ -650,6 +708,7 @@ def submission_list(request):
 
 # 管理员视图
 @login_required
+@staff_member_required
 def submission_detail(request, pk):
     """显示单个提交记录的详细信息"""
     submission = get_object_or_404(Submission, pk=pk)
@@ -709,7 +768,7 @@ def my_submission_list(request):
     }
     return render(request, 'CheckObjection/submission_list.html', context)
 
-from django.contrib.admin.views.decorators import staff_member_required
+
 
 # 管理员视图
 @login_required
@@ -1189,6 +1248,7 @@ class JudgeContestCodeView(View):
 
 # 以下为比赛代码提交记录展示
 @login_required
+@staff_member_required
 def contest_submission_list(request):
     """显示全部比赛的所有提交记录（管理员视图）"""
 
@@ -1377,6 +1437,7 @@ def query_contest_submission_list(request, user_name, contest_id):
 
 
 @login_required
+@staff_member_required
 def query_contest_topic_submission_list(request, contest_id, topic_id):
     """显示查询单个比赛题目的所有提交记录(管理员视图）"""
     try:
@@ -2128,6 +2189,7 @@ from .models import UserProfile
 
 # 管理员查询视图
 
+@login_required(login_url=reverse_lazy(settings.LOGIN_URL))
 @staff_member_required
 def user_list(request):
     """展示所有用户的列表视图（仅管理员可访问）"""

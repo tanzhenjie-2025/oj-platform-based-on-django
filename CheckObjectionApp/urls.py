@@ -41,8 +41,12 @@ urlpatterns = [
 
     path("design", views.design, name="CheckObjectionApp_design"),
     path("show", views.submission_list, name="CheckObjectionApp_show"),
+    # 修改用户名
     path("changeName", views.changeName, name="CheckObjectionApp_changeName"),
+    # 修改密码
     path('changePassword', views.changePassword, name="CheckObjectionApp_changePassword"),
+    # 更新偏好
+    # path('update_preferences/', views.update_preferences, name='CheckObjectionApp_updatePreferences'),
     # 排行
     path('ranking/', views.ranking_view, name='ranking_page'),
     # 生成验证码

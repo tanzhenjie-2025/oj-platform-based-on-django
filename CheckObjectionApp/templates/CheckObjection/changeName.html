@@ -9,135 +9,324 @@
     <link rel="stylesheet" href="{% static 'bootstrap5/css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* 您的CSS样式保持不变 */
-        /* ... 保持原有样式 ... */
+        /* 主容器样式 - 实现内容居中 */
+        .main-content-wrapper {
+            display: flex;
+            justify-content: center;
+            min-height: calc(100vh - 100px);
+            padding: 20px 0;
+        }
+
+        .centered-content {
+            width: 100%;
+            max-width: 800px; /* 控制最大宽度 */
+            margin: 0 auto;
+        }
+
+        /* 原有样式保持不变 */
+        .profile-container {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .profile-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .avatar-upload {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            object-fit: cover;
+        }
+
+        #changeAvatarBtn {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .profile-body {
+            padding: 30px;
+        }
+
+        .nav-tabs {
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 25px;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 12px 24px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #495057;
+            background: none;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .nav-tabs .nav-link:hover {
+            border: none;
+            color: #495057;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 25px;
+            font-weight: 500;
+        }
+
+        .btn-outline-secondary {
+            border-radius: 8px;
+            padding: 10px 25px;
+            font-weight: 500;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .centered-content {
+                max-width: 95%;
+                margin: 0 10px;
+            }
+
+            .profile-body {
+                padding: 20px;
+            }
+
+            .profile-header {
+                padding: 30px 20px;
+            }
+
+            .nav-tabs .nav-link {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .main-content-wrapper {
+                padding: 10px 0;
+            }
+
+            .centered-content {
+                max-width: 100%;
+                margin: 0 5px;
+            }
+
+            .profile-body {
+                padding: 15px;
+            }
+
+            .row > .col-md-6 {
+                margin-bottom: 15px;
+            }
+        }
     </style>
 </head>
 {% endblock %}
 {% block main %}
 <body>
-    <div class="profile-container">
-        <div class="profile-header">
-            <div class="avatar-upload">
-                <img src="https://via.placeholder.com/120" alt="用户头像" class="profile-avatar" id="avatarPreview">
-                <button class="btn btn-light btn-sm" id="changeAvatarBtn">
-                    <i class="fas fa-camera"></i>
-                </button>
-                <input type="file" id="avatarInput" accept="image/*" style="display: none;">
-            </div>
-            <h2 id="usernameDisplay">{{ user_info.username }}</h2>
-            <p class="mb-0">UID: #USR{{ user.id|default:"暂无" }}</p>
-        </div>
-
-        <div class="profile-body">
-            <ul class="nav nav-tabs" id="profileTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic" type="button" role="tab">基本信息</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">安全设置</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="preferences-tab" data-bs-toggle="tab" data-bs-target="#preferences" type="button" role="tab">偏好设置</button>
-                </li>
-            </ul>
-
-            <div class="tab-content" id="profileTabsContent">
-                <!-- 基本信息标签页 -->
-                <div class="tab-pane fade show active" id="basic" role="tabpanel">
-                    <form id="profileForm" method="post">
-                        {% csrf_token %}
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="username" class="form-label">用户名</label>
-                                    <input type="text" class="form-control" name="username" id="username" value="{{ user_info.username }}">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="email" class="form-label">邮箱地址</label>
-                                    <input type="email" class="form-control" id="email" name="email" value="{{ user_info.email }}">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="phone" class="form-label">手机号码</label>
-                                    <input type="tel" class="form-control" id="phone" name="phone" value="{{ user_info.phone }}">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="birthday" class="form-label">生日</label>
-                                    <input type="date" class="form-control" id="birthday" name="birthday" value="{{ user_info.birthday|date:'Y-m-d' }}">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="bio" class="form-label">个人简介</label>
-                            <textarea class="form-control" id="bio" name="bio" rows="4">{{ user_info.bio }}</textarea>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="location" class="form-label">所在地区</label>
-                                    <input type="text" class="form-control" id="location" name="location" value="{{ user_info.location }}">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="website" class="form-label">个人网站</label>
-                                    <input type="url" class="form-control" id="website" name="website" value="{{ user_info.website }}">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-between mt-4">
-                            <button type="button" class="btn btn-outline-secondary">取消</button>
-                            <button type="submit" class="btn btn-primary">保存更改</button>
-                        </div>
-                    </form>
+    <div class="main-content-wrapper">
+        <div class="centered-content">
+            <div class="profile-container">
+                <div class="profile-header">
+                    <div class="avatar-upload">
+                        <img src="https://via.placeholder.com/120" alt="用户头像" class="profile-avatar" id="avatarPreview">
+                        <button class="btn btn-light btn-sm" id="changeAvatarBtn">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                        <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+                    </div>
+                    <h2 id="usernameDisplay">{{ user_info.username }}</h2>
+                    <p class="mb-0">UID: #USR{{ user.id|default:"暂无" }}</p>
                 </div>
 
-                <!-- 安全设置标签页 -->
-                <div class="tab-pane fade" id="security" role="tabpanel">
-                    <form id="securityForm" method="post" action="{% url 'CheckObjectionApp:CheckObjectionApp_changePassword' %}">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <label for="currentPassword" class="form-label">当前密码</label>
-                            <input type="password" class="form-control" name="old_password" id="currentPassword">
+                <div class="profile-body">
+                    <ul class="nav nav-tabs" id="profileTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic" type="button" role="tab">基本信息</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">安全设置</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="preferences-tab" data-bs-toggle="tab" data-bs-target="#preferences" type="button" role="tab">偏好设置</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="profileTabsContent">
+                        <!-- 基本信息标签页 -->
+                        <div class="tab-pane fade show active" id="basic" role="tabpanel">
+                            <form id="profileForm" method="post">
+                                {% csrf_token %}
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="username" class="form-label">用户名</label>
+                                            <input type="text" class="form-control" name="username" id="username" value="{{ user_info.username }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="email" class="form-label">邮箱地址</label>
+                                            <input type="email" class="form-control" id="email" name="email" value="{{ user_info.email }}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="phone" class="form-label">手机号码</label>
+                                            <input type="tel" class="form-control" id="phone" name="phone" value="{{ user_info.phone }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="birthday" class="form-label">生日</label>
+                                            <input type="date" class="form-control" id="birthday" name="birthday" value="{{ user_info.birthday|date:'Y-m-d' }}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="bio" class="form-label">个人简介</label>
+                                    <textarea class="form-control" id="bio" name="bio" rows="4">{{ user_info.bio }}</textarea>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="location" class="form-label">所在地区</label>
+                                            <input type="text" class="form-control" id="location" name="location" value="{{ user_info.location }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="website" class="form-label">个人网站</label>
+                                            <input type="url" class="form-control" id="website" name="website" value="{{ user_info.website }}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between mt-4">
+                                    <button type="button" class="btn btn-outline-secondary">取消</button>
+                                    <button type="submit" class="btn btn-primary">保存更改</button>
+                                </div>
+                            </form>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
+                        <!-- 安全设置标签页 -->
+                        <div class="tab-pane fade" id="security" role="tabpanel">
+                            <form id="securityForm" method="post" action="{% url 'CheckObjectionApp:CheckObjectionApp_changePassword' %}">
+                                {% csrf_token %}
                                 <div class="form-group">
-                                    <label for="newPassword" class="form-label">新密码</label>
-                                    <input type="password" class="form-control" name="new_password" id="newPassword">
+                                    <label for="currentPassword" class="form-label">当前密码</label>
+                                    <input type="password" class="form-control" name="old_password" id="currentPassword">
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="newPassword" class="form-label">新密码</label>
+                                            <input type="password" class="form-control" name="new_password" id="newPassword">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="confirmPassword" class="form-label">确认新密码</label>
+                                            <input type="password" class="form-control" name="check_new_password" id="confirmPassword">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between mt-4">
+                                    <button type="button" class="btn btn-outline-secondary">取消</button>
+                                    <button type="submit" class="btn btn-primary">更新密码</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- 偏好设置标签页 -->
+                        <div class="tab-pane fade" id="preferences" role="tabpanel">
+                            <!-- 偏好设置内容 -->
+                            <div class="form-group">
+                                <label class="form-label">界面主题</label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="theme" id="lightTheme" value="light" checked>
+                                        <label class="form-check-label" for="lightTheme">浅色模式</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="theme" id="darkTheme" value="dark">
+                                        <label class="form-check-label" for="darkTheme">深色模式</label>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="confirmPassword" class="form-label">确认新密码</label>
-                                    <input type="password" class="form-control" name="check_new_password" id="confirmPassword">
-                                </div>
+
+                            <div class="form-group">
+                                <label class="form-label">语言偏好</label>
+                                <select class="form-control">
+                                    <option>简体中文</option>
+                                    <option>English</option>
+                                    <option>繁體中文</option>
+                                </select>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary">重置偏好</button>
+                                <button type="button" class="btn btn-primary">保存偏好</button>
                             </div>
                         </div>
-
-                        <div class="d-flex justify-content-between mt-4">
-                            <button type="button" class="btn btn-outline-secondary">取消</button>
-                            <button type="submit" class="btn btn-primary">更新密码</button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- 偏好设置标签页 -->
-                <div class="tab-pane fade" id="preferences" role="tabpanel">
-                    <!-- 偏好设置内容 -->
+                    </div>
                 </div>
             </div>
         </div>

@@ -127,7 +127,7 @@
     </button>
 
     <!-- 查询个人提交按钮（最右侧） -->
-    {% if user.is_authenticated %}
+    {% if user.is_staff %}
         <a href="{% url 'CheckObjectionApp:user_list' %}" class="btn btn-personal-submissions rounded-pill px-4 d-flex align-items-center">
             <span>🔍 查询个人提交</span>
         </a>

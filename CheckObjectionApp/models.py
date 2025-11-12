@@ -3,7 +3,9 @@ from django.contrib.auth.models import User
 
 from CheckObjection import settings
 
-
+from django.db import models
+from django.contrib.auth.models import User
+from django.core.validators import RegexValidator
 # Create your models here.
 class topic(models.Model):
     """内容"""
@@ -36,22 +38,76 @@ class answer(models.Model):
         verbose_name_plural = '用户回答模型'
         ordering = ['-pub_time']
 
-# todo 重构时要修改view视图中的保存逻辑
+
+
+
+
 class UserProfile(models.Model):
+    THEME_CHOICES = [
+        ('light', '浅色模式'),
+        ('dark', '深色模式'),
+    ]
+
+    LANGUAGE_CHOICES = [
+        ('zh-hans', '简体中文'),
+        ('en', 'English'),
+        ('zh-hant', '繁體中文'),
+    ]
+
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        primary_key=True,  # 设置为主键
+        primary_key=True,
         verbose_name='用户'
     )
     finish = models.BigIntegerField(default=0, verbose_name='完成数量')
 
+    # 新增字段
+    phone = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name='手机号码',
+        validators=[RegexValidator(regex=r'^\+?1?\d{9,15}$', message="手机号码格式不正确")]
+    )
+    birthday = models.DateField(blank=True, null=True, verbose_name='生日')
+    bio = models.TextField(max_length=500, blank=True, verbose_name='个人简介')
+    location = models.CharField(max_length=100, blank=True, verbose_name='所在地区')
+    website = models.URLField(blank=True, verbose_name='个人网站')
+    avatar = models.ImageField(
+        upload_to='avatars/',
+        blank=True,
+        null=True,
+        verbose_name='头像',
+        default='avatars/default.png'
+    )
+    theme = models.CharField(
+        max_length=10,
+        choices=THEME_CHOICES,
+        default='light',
+        verbose_name='界面主题'
+    )
+    language = models.CharField(
+        max_length=10,
+        choices=LANGUAGE_CHOICES,
+        default='zh-hans',
+        verbose_name='语言偏好'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+
     def __str__(self):
-        return str(self.user.username)  # 使用用户名而不是ID
+        return str(self.user.username)
 
     class Meta:
         verbose_name = '用户附加信息模型'
         verbose_name_plural = '用户附加信息模型'
+
+    def get_avatar_url(self):
+        """获取头像URL"""
+        if self.avatar and hasattr(self.avatar, 'url'):
+            return self.avatar.url
+        return '/static/images/default-avatar.png'
 
 
 class TestCase(models.Model):
