@@ -1,0 +1,92 @@
+{% extends 'CheckObjection/CheckObjectionApp_base.html' %}
+
+{% block title %}{{ page_title|default:"用户比赛记录" }}{% endblock %}
+
+{% block main %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        {{ page_title|default:"用户比赛记录" }}
+                        {% if target_user %}
+                        - {{ target_user.username }}
+                        {% endif %}
+                    </h4>
+                </div>
+
+                <div class="card-body">
+                    {% if not contests_data %}
+                        <div class="alert alert-info">
+                            {% if target_user %}
+                                用户 {{ target_user.username }} 还没有参加过任何比赛
+                            {% else %}
+                                暂无比赛记录
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>比赛标题</th>
+                                        <th>状态</th>
+                                        <th>总提交</th>
+                                        <th>通过</th>
+                                        <th>解题数</th>
+                                        <th>通过率</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for data in contests_data %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ data.contest.title }}</strong>
+                                            <br>
+                                            <small class="text-muted">
+                                                创建者: {{ data.contest.created_by.username }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            {% with status=data.contest.status %}
+                                            <span class="badge
+                                                {% if status == 'running' %}badge-success
+                                                {% elif status == 'pending' %}badge-warning
+                                                {% else %}badge-secondary{% endif %}">
+                                                {% if status == 'running' %}进行中
+                                                {% elif status == 'pending' %}未开始
+                                                {% elif status == 'ended' %}已结束
+                                                {% else %}{{ status }}{% endif %}
+                                            </span>
+                                            {% endwith %}
+                                        </td>
+                                        <td>{{ data.total_submissions }}</td>
+                                        <td>{{ data.accepted_submissions }}</td>
+                                        <td>{{ data.solved_topics }}</td>
+                                        <td>{{ data.participation_rate }}</td>
+                                        <td>
+                                            <a href="#"
+                                               class="btn btn-sm btn-outline-primary">
+                                                查看
+                                            </a>
+                                            {% if target_user %}
+                                            <a href="#"
+                                               class="btn btn-sm btn-outline-info mt-1">
+                                                提交记录
+                                            </a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

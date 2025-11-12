@@ -64,8 +64,8 @@
             border: none;
             font-weight: 600;
             padding: 1rem 0.75rem;
-            text-align: center; /* 表头居中 */
-            vertical-align: middle; /* 垂直居中 */
+            text-align: center;
+            vertical-align: middle;
         }
 
         /* 用户行样式 */
@@ -104,16 +104,30 @@
             background-clip: text;
         }
 
-        /* 操作按钮样式 */
+        /* 操作按钮容器样式 */
+        .action-buttons-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+            min-width: 140px;
+        }
+
+        /* 普通提交按钮样式 */
         .btn-view-submissions {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: white;
             border: none;
             border-radius: 20px;
             padding: 0.4rem 1rem;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             font-weight: 500;
             transition: all 0.3s ease;
+            width: 100%;
+            max-width: 130px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .btn-view-submissions:hover {
@@ -121,6 +135,30 @@
             color: white;
             transform: translateY(-1px);
             box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        /* 比赛提交按钮样式 */
+        .btn-view-contest-submissions {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 130px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-view-contest-submissions:hover {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3);
         }
 
         /* 空状态样式 */
@@ -132,8 +170,8 @@
 
         /* 表格单元格居中样式 */
         .table td {
-            text-align: center; /* 水平居中 */
-            vertical-align: middle; /* 垂直居中 */
+            text-align: center;
+            vertical-align: middle;
         }
 
         /* 用户信息列特殊处理 */
@@ -142,11 +180,11 @@
         }
 
         .user-info-cell .d-flex {
-            justify-content: center; /* 水平居中flex项目 */
+            justify-content: center;
         }
 
         .user-info-cell .flex-grow-1 {
-            text-align: center; /* 内部文本居中 */
+            text-align: center;
         }
 
         /* 操作按钮容器居中 */
@@ -165,6 +203,32 @@
 
             .user-row {
                 padding: 0.75rem 0;
+            }
+
+            .action-buttons-container {
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .btn-view-submissions,
+            .btn-view-contest-submissions {
+                font-size: 0.75rem;
+                padding: 0.3rem 0.8rem;
+                max-width: 120px;
+            }
+        }
+
+        /* 大屏幕上的横向布局 */
+        @media (min-width: 992px) {
+            .action-buttons-container {
+                flex-direction: row;
+                justify-content: center;
+                gap: 10px;
+            }
+
+            .btn-view-submissions,
+            .btn-view-contest-submissions {
+                max-width: 120px;
             }
         }
     </style>
@@ -195,9 +259,9 @@
                     <tr>
                         <th style="width: 25%">用户信息</th>
                         <th style="width: 20%">注册时间</th>
-                        <th style="width: 20%">完成题目</th>
+                        <th style="width: 15%">完成题目</th>
                         <th style="width: 15%">等级</th>
-                        <th style="width: 20%">操作</th>
+                        <th style="width: 25%">操作</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -244,9 +308,14 @@
                             {% endwith %}
                         </td>
                         <td class="action-cell">
-                            <a href="{% url 'CheckObjectionApp:query_submission_list' user_name=user.username %}" class="btn btn-sm btn-view-submissions">
-                                📊 查看提交
-                            </a>
+                            <div class="action-buttons-container">
+                                <a href="{% url 'CheckObjectionApp:query_submission_list' user_name=user.username %}" class="btn btn-sm btn-view-submissions">
+                                    📊 查看提交
+                                </a>
+                                <a href="{% url 'CheckObjectionApp:user_contests' user_name=user.username %}" class="btn btn-sm btn-view-contest-submissions">
+                                    🏆 比赛提交
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     {% empty %}
@@ -285,7 +354,7 @@
         userRows.forEach(row => {
             row.addEventListener('click', function (e) {
                 // 防止按钮点击时触发行点击
-                if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                if (e.target.tagName === 'A' || e.target.closest('a')) {
                     return;
                 }
 
@@ -293,19 +362,6 @@
                 // 这里可以添加跳转到用户详情页的逻辑
                 console.log('点击用户ID:', userId);
                 // window.location.href = `/user/${userId}/`;
-            });
-        });
-
-        // 查看提交按钮点击事件
-        const viewButtons = document.querySelectorAll('.btn-view-submissions');
-        viewButtons.forEach(button => {
-            button.addEventListener('click', function (e) {
-                e.stopPropagation();
-                const row = this.closest('.user-row');
-                const userId = row.getAttribute('data-user-id');
-                // 这里可以添加跳转到用户提交记录页面的逻辑
-                console.log('查看用户提交:', userId);
-                // window.location.href = `/submissions/user/${userId}/`;
             });
         });
 

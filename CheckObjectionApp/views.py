@@ -2161,3 +2161,105 @@ def user_list(request):
             'finish_count': finish_count
         })
     return render(request, 'CheckObjection/user_list.html', {'users': user_list})
+
+# 管理员视图
+# 查询用户参加过的所有比赛
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
+from django.db.models import Count, Case, When, IntegerField, Subquery, OuterRef
+from django.utils import timezone
+from .models import Contest, ContestParticipant, User, ContestSubmission
+
+
+@login_required
+def user_contests(request, user_name):
+    """显示指定用户参加过的所有比赛"""
+    try:
+        # 获取用户对象
+        user = get_object_or_404(User, username=user_name)
+
+        # 缓存键
+        cache_key = f"user_{user_name}_contests"
+
+        # 尝试从缓存获取数据
+        contests_data = cache.get(cache_key)
+
+        if contests_data is None:
+            # 查询用户参加的所有比赛（未被取消资格的）
+            participants = ContestParticipant.objects.filter(
+                user=user,
+                is_disqualified=False
+            ).select_related('contest', 'contest__created_by')
+
+            # 为每个比赛添加统计信息
+            contests_list = []
+            for participant in participants:
+                contest = participant.contest
+
+                # 查询该用户在此比赛中的提交统计
+                submission_stats = ContestSubmission.objects.filter(
+                    participant=participant
+                ).aggregate(
+                    total_submissions=Count('id'),
+                    accepted_submissions=Count(
+                        Case(
+                            When(submission__overall_result='Accepted', then=1),
+                            output_field=IntegerField()
+                        )
+                    )
+                )
+
+                # 查询解决的题目数量（去重）
+                solved_topics = ContestSubmission.objects.filter(
+                    participant=participant,
+                    submission__overall_result='Accepted'
+                ).values('submission__topic').distinct().count()
+
+                total_subs = submission_stats['total_submissions'] or 0
+                accepted_subs = submission_stats['accepted_submissions'] or 0
+
+                # 计算通过率，避免除零错误
+                if total_subs > 0:
+                    participation_rate = f"{(accepted_subs / total_subs) * 100:.1f}%"
+                else:
+                    participation_rate = "0%"
+
+                contests_list.append({
+                    'contest': contest,
+                    'participant': participant,
+                    'total_submissions': total_subs,
+                    'accepted_submissions': accepted_subs,
+                    'solved_topics': solved_topics,
+                    'participation_rate': participation_rate
+                })
+
+            # 按比赛开始时间倒序排列
+            contests_list.sort(key=lambda x: x['contest'].start_time, reverse=True)
+
+            # 设置缓存（10分钟）
+            cache.set(cache_key, contests_list, 600)
+            contests_data = contests_list
+
+        print("Contests data:", contests_data)  # 调试信息
+
+        context = {
+            'contests_data': contests_data,
+            'target_user': user,
+            'page_title': f'{user_name} 参加的比赛',
+            'current_time': timezone.now()
+        }
+
+        return render(request, 'CheckObjection/user_contests.html', context)
+
+    except Exception as e:
+        print(f"Error in user_contests view: {e}")
+        # 返回一个简单的错误页面或重定向
+        from django.http import HttpResponseServerError
+        return HttpResponseServerError(f"服务器错误: {e}")
+
+
+@login_required
+def my_contests(request):
+    """显示当前用户自己参加过的所有比赛"""
+    return user_contests(request, request.user.username)
