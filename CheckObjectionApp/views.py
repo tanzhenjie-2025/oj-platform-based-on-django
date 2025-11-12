@@ -114,7 +114,7 @@ def index(request):
     """算法提交平台首页"""
     topics = topic.objects.all()
     user = request.user
-    user_profile = UserProfile.objects.get(user_id=user.id)
+    user_profile = user.userprofile
     return render(request, 'CheckObjection/CheckObjection_Index.html', context={'topics': topics, 'user':user, 'user_profile':user_profile})
 
 def base(request):
@@ -128,15 +128,13 @@ def detail(request, topic_id):
     if request.method == "POST":
         # 使用 F() 表达式原子性地增加 finish 计数
         user_profile, created = UserProfile.objects.get_or_create(
-            user_id=request.user.id,
-            defaults={'finish': 1}  # 如果是新创建，直接设为1
+            user=request.user,
+            defaults={'finish': 1}
         )
 
-        if not created:
-            # 如果不是新创建的，原子性地增加计数
-            UserProfile.objects.filter(
-                user_id=request.user.id
-            ).update(finish=F('finish') + 1)
+        UserProfile.objects.filter(
+            user=request.user
+        ).update(finish=F('finish') + 1)
 
         content = request.POST.get('content')
         notes = request.POST.get('notes')
@@ -275,7 +273,7 @@ def CheckObjection_register(request):
             try:
                 # 创建用户
                 user = User.objects.create_user(username=username, password=password)
-                user_profile = UserProfile.objects.create(user_id=user.id)
+                user_profile = UserProfile.objects.create(user=user)
                 login(request, user)
 
                 # 设置session过期时间
@@ -860,10 +858,6 @@ class SubmissionDetailView(LoginRequiredMixin, DetailView):
         return context
 
 # 以下是排行榜功能
-from django.db.models import Count, Q
-from django.http import JsonResponse
-from .models import Submission, User, UserProfile
-
 
 def ranking_view(request):
     """排行榜页面，直接渲染所有数据"""
@@ -2129,12 +2123,11 @@ def contest_rank_detail(request, contest_id):
     return render(request, 'CheckObjection/contest/rank/rank_detail.html', context)
 
 # 展示用户模块，用于管理员查询提交
-from django.shortcuts import render
-from django.contrib.auth.models import User
 from django.contrib.admin.views.decorators import staff_member_required
 from .models import UserProfile
 
 # 管理员查询视图
+
 @staff_member_required
 def user_list(request):
     """展示所有用户的列表视图（仅管理员可访问）"""
@@ -2147,7 +2140,7 @@ def user_list(request):
     for user in users:
         try:
             # 获取用户的附加信息
-            profile = UserProfile.objects.get(user_id=user.id)
+            profile = UserProfile.objects.get(user=user)
             finish_count = profile.finish
         except UserProfile.DoesNotExist:
             # 如果用户没有附加信息，默认完成数为0
@@ -2241,7 +2234,6 @@ def user_contests(request, user_name):
             cache.set(cache_key, contests_list, 600)
             contests_data = contests_list
 
-        print("Contests data:", contests_data)  # 调试信息
 
         context = {
             'contests_data': contests_data,
@@ -2253,7 +2245,6 @@ def user_contests(request, user_name):
         return render(request, 'CheckObjection/user_contests.html', context)
 
     except Exception as e:
-        print(f"Error in user_contests view: {e}")
         # 返回一个简单的错误页面或重定向
         from django.http import HttpResponseServerError
         return HttpResponseServerError(f"服务器错误: {e}")

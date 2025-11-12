@@ -2,9 +2,11 @@ from django.contrib import admin
 from django.contrib.admin import ModelAdmin
 from django.utils.html import format_html
 from django.db.models import Count
+from django.urls import reverse
 
 from .forms import User
-from .models import topic, answer, UserProfile, TestCase, Submission, Contest, ContestParticipant
+from .models import topic, answer, UserProfile, TestCase, Submission, Contest, ContestParticipant, ContestTopic, \
+    ContestSubmission
 
 
 # 修改 answer 模型，添加外键关系（推荐）
@@ -18,8 +20,6 @@ class TestCaseInline(admin.TabularInline):
     fields = ('input_data', 'expected_output', 'is_sample', 'order', 'score')
     ordering = ['order']
 
-
-# 移除了 AnswerInline，因为 answer 模型没有外键到 topic
 
 # 主模型Admin配置
 @admin.register(topic)
@@ -49,7 +49,6 @@ class TopicAdmin(ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(
             testcase_count=Count('testcase_set'),
-
         )
 
     def testcase_count(self, obj):
@@ -157,22 +156,41 @@ class AnswerAdmin(ModelAdmin):
 @admin.register(UserProfile)
 class UserProfileAdmin(ModelAdmin):
     """用户信息管理"""
-    list_display = ('user_id', 'finish', 'username_display')
+    # 更新为使用 user 字段而不是 old_user_id
+    list_display = ('user_info', 'finish', 'user_email')
     list_filter = ('finish',)
-    search_fields = ('user_id',)
+    search_fields = ('user__username', 'user__email')  # 可以通过用户名和邮箱搜索
     list_per_page = 20
     list_editable = ('finish',)
 
-    def username_display(self, obj):
-        """显示用户名"""
-        try:
-            from django.contrib.auth.models import User
-            user = User.objects.get(id=obj.user_id)
-            return user.username
-        except User.DoesNotExist:
-            return "未知用户"
+    # 添加字段分组
+    fieldsets = (
+        ('用户信息', {
+            'fields': ('user', 'finish')
+        }),
+    )
 
-    username_display.short_description = '用户名'
+    def user_info(self, obj):
+        """显示用户信息"""
+        if obj.user:
+            return format_html(
+                '<a href="{}">{}</a> (ID: {})',
+                reverse('admin:auth_user_change', args=[obj.user.id]),
+                obj.user.username,
+                obj.user.id
+            )
+        return "无关联用户"
+
+    user_info.short_description = '用户信息'
+    user_info.admin_order_field = 'user__username'
+
+    def user_email(self, obj):
+        """显示用户邮箱"""
+        if obj.user:
+            return obj.user.email
+        return "无邮箱"
+
+    user_email.short_description = '邮箱'
 
 
 @admin.register(TestCase)
@@ -209,23 +227,16 @@ class TestCaseAdmin(ModelAdmin):
     topic_title.short_description = '题目'
 
 
-from django.contrib import admin
-from django.utils.html import format_html
-from .models import Submission  # 确保导入正确
-
-
 @admin.register(Submission)
 class SubmissionAdmin(admin.ModelAdmin):
     """提交记录管理"""
-    # 1. 将 list_display 中的 'topic_id' 改为 'old_topic_id'
     list_display = (
-        'id_short', 'user_name', 'old_topic_id',  # 这里修改
+        'id_short', 'user_name', 'old_topic_id',
         'language_display', 'status_badge',
         'overall_result', 'created_at'
     )
     list_filter = ('status', 'language_id', 'created_at')
-    # 2. 将 search_fields 中的 'topic_id' 改为 'old_topic_id'
-    search_fields = ('user_name', 'old_topic_id', 'source_code')  # 这里修改
+    search_fields = ('user_name', 'old_topic_id', 'source_code')
     list_per_page = 25
     readonly_fields = (
         'id', 'created_at', 'updated_at',
@@ -235,8 +246,7 @@ class SubmissionAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('基本信息', {
-            # 3. 将 fields 中的 'topic_id' 改为 'old_topic_id'
-            'fields': ('id', 'user_name', 'old_topic_id', 'created_at')  # 这里修改
+            'fields': ('id', 'user_name', 'old_topic_id', 'created_at')
         }),
         ('提交内容', {
             'fields': ('language_id', 'source_code_preview', 'notes')
@@ -246,7 +256,6 @@ class SubmissionAdmin(admin.ModelAdmin):
         }),
     )
 
-    # 以下方法保持不变
     def id_short(self, obj):
         """缩短ID显示"""
         return str(obj.id)[:8]
@@ -304,12 +313,6 @@ class SubmissionAdmin(admin.ModelAdmin):
         return format_html('<br>'.join(results_html))
 
     results_display.short_description = '详细结果'
-
-
-# admin.py
-from django.contrib import admin
-from django.utils.html import format_html
-from .models import Contest, ContestTopic, ContestParticipant, ContestSubmission, topic
 
 
 # 比赛题目内联配置
@@ -472,8 +475,6 @@ class ContestSubmissionAdmin(admin.ModelAdmin):
         # 比赛提交记录应该通过系统自动创建，不允许手动添加
         return False
 
-# 在文件顶部添加导入
-from django.urls import reverse
 
 # Admin站点标题配置
 admin.site.site_header = 'OJ平台管理系统'

@@ -38,10 +38,16 @@ class answer(models.Model):
 
 # todo 重构时要修改view视图中的保存逻辑
 class UserProfile(models.Model):
-    user_id = models.BigIntegerField(verbose_name='id号')
-    finish = models.BigIntegerField(default=0,verbose_name='完成数量')
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        primary_key=True,  # 设置为主键
+        verbose_name='用户'
+    )
+    finish = models.BigIntegerField(default=0, verbose_name='完成数量')
+
     def __str__(self):
-        return str(self.user_id)
+        return str(self.user.username)  # 使用用户名而不是ID
 
     class Meta:
         verbose_name = '用户附加信息模型'
