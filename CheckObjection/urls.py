@@ -34,7 +34,6 @@ urlpatterns = [
     re_path(r'^$', redirect_root),
     path("admin/", admin.site.urls),
     path("CheckObjectionApp/",include("CheckObjectionApp.urls")),
-    path('index/',views.socket_index,name='socket_index')
 ]
 
 
