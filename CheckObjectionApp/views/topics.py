@@ -5,6 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import F, Q
 from django.core.cache import cache
 import json
+
+from ..constants import URLNames
 from ..models import topic, UserProfile, answer
 
 @login_required
@@ -13,7 +15,7 @@ def index(request):
     topics = topic.objects.all()
     user = request.user
     user_profile = user.userprofile
-    return render(request, 'CheckObjection/CheckObjection_Index.html',
+    return render(request, 'CheckObjection/base/Index.html',
                   context={'topics': topics, 'user': user, 'user_profile': user_profile})
 
 
@@ -40,12 +42,12 @@ def detail(request, topic_id):
             user_name=user_name
         )
 
-        return redirect(reverse("CheckObjectionApp:index"))
+        return redirect(reverse(f'CheckObjectionApp:{URLNames.INDEX}'))
     else:
         # 显示题目详情
         topic_content = topic.objects.get(id=topic_id)
         user = request.user
-        return render(request, 'CheckObjection/submission/practice_submission.html',
+        return render(request, 'CheckObjection/topic/practice_topic.html',
                       context={'topic_content': topic_content, 'user': user})
 
 
@@ -64,7 +66,7 @@ def design(request):
         topic.objects.create(content=content, title=title, example=example, level=level)
         return redirect(reverse("CheckObjectionApp:index"))
     else:
-        return render(request, 'CheckObjection/CheckObjection_design.html')
+        return render(request, 'CheckObjection/topic/CheckObjection_design.html')
 
 
 @login_required
@@ -72,7 +74,7 @@ def CheckObjection_search(request):
     """搜索题目"""
     q = request.GET.get('q')
     if not q:
-        return render(request, 'CheckObjection/CheckObjection_Index.html', context={"topics": []})
+        return render(request, 'CheckObjection/base/Index.html', context={"topics": []})
 
     cache_key = f"search_results:{q.lower()}"
     cached_results = cache.get(cache_key)
@@ -87,7 +89,7 @@ def CheckObjection_search(request):
         topic_ids = list(topics.values_list('id', flat=True))
         cache.set(cache_key, json.dumps(topic_ids), timeout=300)
 
-    return render(request, 'CheckObjection/CheckObjection_Index.html', context={"topics": topics})
+    return render(request, 'CheckObjection/base/Index.html', context={"topics": topics})
 
 
 @login_required
@@ -96,10 +98,10 @@ def CheckObjection_filter(request):
     q = request.GET.get('f')
     if q == 'all':
         topics = topic.objects.all()
-        return render(request, 'CheckObjection/CheckObjection_Index.html', context={"topics": topics})
+        return render(request, 'CheckObjection/base/Index.html', context={"topics": topics})
 
     if not q:
-        return render(request, 'CheckObjection/CheckObjection_Index.html', context={"topics": []})
+        return render(request, 'CheckObjection/base/Index.html', context={"topics": []})
 
     cache_key = f"filter_results:{q.lower()}"
     cached_results = cache.get(cache_key)
@@ -112,4 +114,4 @@ def CheckObjection_filter(request):
         topic_ids = list(topics.values_list('id', flat=True))
         cache.set(cache_key, json.dumps(topic_ids), timeout=300)
 
-    return render(request, 'CheckObjection/CheckObjection_Index.html', context={"topics": topics})
+    return render(request, 'CheckObjection/base/Index.html', context={"topics": topics})

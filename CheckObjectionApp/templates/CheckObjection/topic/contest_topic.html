@@ -1,4 +1,4 @@
-{% extends 'CheckObjection/submission/base_submission.html' %}
+{% extends 'CheckObjection/topic/base_topic.html' %}
 {% block body %}
 {% endblock %}
 {% block footer %}
@@ -895,7 +895,7 @@ int main() {
             resultArea.style.display = 'none';
 
             // 发送提交请求 - 同步处理
-            fetch('proxy-submit-code-contest/', {
+            fetch('topic/proxy-submit-code-contest/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

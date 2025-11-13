@@ -1,4 +1,4 @@
-{% extends 'CheckObjection/CheckObjectionApp_base.html' %}
+{% extends 'CheckObjection/base/base.html' %}
 {% load static %}
 
 {% block head %}
@@ -1410,7 +1410,7 @@ document.getElementById('submission-form').addEventListener('submit', function (
     resultArea.style.display = 'none';
 
     // 发送提交请求 - 现在后端是同步处理
-    fetch('proxy-submit-code/', {
+    fetch('topic/proxy-submit-code/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

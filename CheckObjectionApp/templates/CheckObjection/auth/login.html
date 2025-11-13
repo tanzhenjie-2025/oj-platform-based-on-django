@@ -1,44 +1,9 @@
-{% extends 'CheckObjection/CheckObjectionApp_base.html' %}
+{% extends 'CheckObjection/base/base.html' %}
+{% load objection_tags %}
 {% block head %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* 错误相关的样式 */
-        .errorlist {
-            color: #dc3545;
-            list-style: none;
-            padding: 5px 0;
-            margin: 0;
-            font-size: 0.875rem;
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            border-radius: 4px;
-            padding: 8px 12px;
-            margin-top: 5px;
-        }
-
-        .errorlist.nonfield {
-            background-color: #f8d7da;
-            border-color: #f5c6cb;
-            color: #721c24;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-        }
-
-        .form-group.has-error .form-control {
-            border-color: #dc3545;
-            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
-        }
-
-        .field-error {
-            color: #dc3545;
-            font-size: 0.875rem;
-            margin-top: 5px;
-            display: block;
-        }
-
-        /* 原有的完整样式 */
-        .register-container {
+        .login-container {
             display: flex;
             justify-content: center;
             align-items: center;
@@ -46,32 +11,32 @@
             padding: 40px 20px;
         }
 
-        .register-card {
+        .login-card {
             background-color: var(--bg-light);
             border-radius: 12px;
             padding: 30px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 450px;
+            max-width: 400px;
         }
 
-        .register-header {
+        .login-header {
             text-align: center;
             margin-bottom: 30px;
         }
 
-        .register-title {
+        .login-title {
             font-size: 1.8rem;
             color: var(--secondary);
             margin-bottom: 10px;
         }
 
-        .register-subtitle {
+        .login-subtitle {
             color: var(--gray);
             font-size: 1rem;
         }
 
-        .register-form {
+        .login-form {
             margin-bottom: 20px;
         }
 
@@ -108,45 +73,31 @@
             transition: all 0.3s;
         }
 
+        .form-control.error {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+        }
+
         .form-control:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
         }
 
-        .password-strength {
-            margin-top: 5px;
-            height: 4px;
-            background-color: #e9ecef;
-            border-radius: 2px;
-            overflow: hidden;
+        .errorlist {
+            color: #dc3545;
+            list-style: none;
+            padding: 5px 0;
+            margin: 0;
+            font-size: 0.875rem;
         }
 
-        .password-strength-bar {
-            height: 100%;
-            width: 0%;
-            transition: all 0.3s;
-        }
-
-        .password-strength.weak .password-strength-bar {
-            width: 33%;
-            background-color: #dc3545;
-        }
-
-        .password-strength.medium .password-strength-bar {
-            width: 66%;
-            background-color: #ffc107;
-        }
-
-        .password-strength.strong .password-strength-bar {
-            width: 100%;
-            background-color: #28a745;
-        }
-
-        .password-hint {
-            font-size: 0.75rem;
-            color: var(--gray);
-            margin-top: 5px;
+        .errorlist.nonfield {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 6px;
+            padding: 10px 15px;
+            margin-bottom: 20px;
         }
 
         .captcha-container {
@@ -196,6 +147,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            font-size: 0.9rem;
         }
 
         .remember-me {
@@ -204,13 +156,16 @@
             gap: 8px;
         }
 
-        .remember-me label {
-            margin: 0;
-            font-size: 0.9rem;
-            color: var(--dark);
+        .forgot-password {
+            color: var(--primary);
+            text-decoration: none;
         }
 
-        .btn-register {
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
+        .btn-login {
             width: 100%;
             padding: 12px;
             background-color: var(--primary);
@@ -227,37 +182,37 @@
             gap: 10px;
         }
 
-        .btn-register:hover {
+        .btn-login:hover {
             background-color: var(--secondary);
         }
 
-        .btn-register:disabled {
+        .btn-login:disabled {
             background-color: var(--gray);
             cursor: not-allowed;
         }
 
-        .register-footer {
+        .login-footer {
             text-align: center;
             margin-top: 20px;
             padding-top: 20px;
             border-top: 1px solid var(--border);
         }
 
-        .login-link {
+        .register-link {
             color: var(--primary);
             text-decoration: none;
             font-weight: 500;
         }
 
-        .login-link:hover {
+        .register-link:hover {
             text-decoration: underline;
         }
 
-        .social-register {
+        .social-login {
             margin-top: 20px;
         }
 
-        .social-register-title {
+        .social-login-title {
             text-align: center;
             margin-bottom: 15px;
             position: relative;
@@ -265,8 +220,8 @@
             font-size: 0.9rem;
         }
 
-        .social-register-title::before,
-        .social-register-title::after {
+        .social-login-title::before,
+        .social-login-title::after {
             content: "";
             position: absolute;
             top: 50%;
@@ -275,11 +230,11 @@
             background-color: var(--border);
         }
 
-        .social-register-title::before {
+        .social-login-title::before {
             left: 0;
         }
 
-        .social-register-title::after {
+        .social-login-title::after {
             right: 0;
         }
 
@@ -321,12 +276,18 @@
 
         /* 响应式设计 */
         @media (max-width: 480px) {
-            .register-card {
+            .login-card {
                 padding: 20px;
             }
 
-            .register-title {
+            .login-title {
                 font-size: 1.5rem;
+            }
+
+            .remember-forgot {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
             }
 
             .captcha-container {
@@ -337,44 +298,32 @@
                 width: 100%;
             }
         }
-
-        /* 确保表单元素正确显示 */
-        input[type="checkbox"] {
-            margin: 0;
-            width: 16px;
-            height: 16px;
-        }
-
-        /* 非字段错误容器 */
-        .non-field-errors {
-            margin-bottom: 20px;
-        }
     </style>
 {% endblock head %}
 
 {% block main %}
-    <div class="register-container">
-        <div class="register-card">
-            <div class="register-header">
-                <h1 class="register-title">创建账号</h1>
-                <p class="register-subtitle">注册新账号加入算法实验室</p>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1 class="login-title">欢迎回来</h1>
+                <p class="login-subtitle">登录您的账号继续使用算法实验室</p>
             </div>
 
-            <form class="register-form" id="register-form" method="post">
+            <form class="login-form" id="login-form" method="post">
                 {% csrf_token %}
 
                 <!-- 显示非字段错误 -->
                 {% if form.non_field_errors %}
-                <div class="non-field-errors">
+                <div class="errorlist nonfield">
                     {% for error in form.non_field_errors %}
-                    <div class="errorlist nonfield">{{ error }}</div>
+                        <div><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
                     {% endfor %}
                 </div>
                 {% endif %}
 
-                <!-- 用户名字段 -->
-                <div class="form-group {% if form.username.errors %}has-error{% endif %}">
-                    <label for="{{ form.username.id_for_label }}">用户名</label>
+                <!-- 用户名/邮箱字段 -->
+                <div class="form-group">
+                    <label for="{{ form.username.id_for_label }}">用户名或邮箱</label>
                     <div class="input-with-icon">
                         <i class="fas fa-user input-icon"></i>
                         {{ form.username }}
@@ -382,14 +331,14 @@
                     {% if form.username.errors %}
                     <div class="errorlist">
                         {% for error in form.username.errors %}
-                        {{ error }}
+                            <div><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
                         {% endfor %}
                     </div>
                     {% endif %}
                 </div>
 
                 <!-- 密码字段 -->
-                <div class="form-group {% if form.password.errors %}has-error{% endif %}">
+                <div class="form-group">
                     <label for="{{ form.password.id_for_label }}">密码</label>
                     <div class="input-with-icon">
                         <i class="fas fa-lock input-icon"></i>
@@ -398,32 +347,15 @@
                     {% if form.password.errors %}
                     <div class="errorlist">
                         {% for error in form.password.errors %}
-                        {{ error }}
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                    <div class="password-hint">密码至少6位</div>
-                </div>
-
-                <!-- 确认密码字段 -->
-                <div class="form-group {% if form.confirm_password.errors %}has-error{% endif %}">
-                    <label for="{{ form.confirm_password.id_for_label }}">确认密码</label>
-                    <div class="input-with-icon">
-                        <i class="fas fa-lock input-icon"></i>
-                        {{ form.confirm_password }}
-                    </div>
-                    {% if form.confirm_password.errors %}
-                    <div class="errorlist">
-                        {% for error in form.confirm_password.errors %}
-                        {{ error }}
+                            <div><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
                         {% endfor %}
                     </div>
                     {% endif %}
                 </div>
 
                 <!-- 验证码字段 -->
-                <div class="form-group {% if form.captcha.errors %}has-error{% endif %}">
-                    <label for="{{ form.captcha.id_for_label }}">验证码(不区分大小写)</label>
+                <div class="form-group">
+                    <label for="{{ form.captcha.id_for_label }}">验证码(不论大小写)</label>
                     <div class="captcha-container">
                         <div class="input-with-icon captcha-input">
                             <i class="fas fa-shield-alt input-icon"></i>
@@ -439,7 +371,7 @@
                     {% if form.captcha.errors %}
                     <div class="errorlist">
                         {% for error in form.captcha.errors %}
-                        {{ error }}
+                            <div><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
                         {% endfor %}
                     </div>
                     {% endif %}
@@ -451,16 +383,13 @@
                         {{ form.remember }}
                         <label for="{{ form.remember.id_for_label }}">记住我</label>
                     </div>
+                    <a href="{% url_register %}" class="forgot-password">注册账号</a>
                 </div>
 
-                <button type="submit" class="btn-register" id="register-btn">
-                    <i class="fas fa-user-plus"></i> 注册账号
+                <button type="submit" class="btn-login" id="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> 登录
                 </button>
             </form>
-
-            <div class="register-footer">
-                <p>已有账号? <a href="{% url 'CheckObjectionApp:CheckObjectionApp_login' %}" class="login-link">立即登录</a></p>
-            </div>
         </div>
     </div>
 
@@ -468,9 +397,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const captchaImage = document.getElementById('captcha-image');
             const refreshCaptcha = document.getElementById('refresh-captcha');
-            const passwordInput = document.getElementById('{{ form.password.id_for_label }}');
-            const confirmPasswordInput = document.getElementById('{{ form.confirm_password.id_for_label }}');
-            const registerForm = document.getElementById('register-form');
+            const form = document.getElementById('login-form');
 
             // 刷新验证码
             function refreshCaptchaImage() {
@@ -479,48 +406,32 @@
                 captchaImage.src = currentSrc + separator + 't=' + new Date().getTime();
             }
 
-            // 实时验证密码一致性
-            function validatePasswordMatch() {
-                const password = passwordInput.value;
-                const confirmPassword = confirmPasswordInput.value;
-
-                if (password && confirmPassword && password !== confirmPassword) {
-                    confirmPasswordInput.setCustomValidity('两次输入的密码不一致');
-                } else {
-                    confirmPasswordInput.setCustomValidity('');
-                }
-            }
-
             // 点击图片刷新验证码
             captchaImage.addEventListener('click', refreshCaptchaImage);
 
             // 点击文字刷新验证码
             refreshCaptcha.addEventListener('click', refreshCaptchaImage);
 
-            // 监听密码输入
-            passwordInput.addEventListener('input', validatePasswordMatch);
-            confirmPasswordInput.addEventListener('input', validatePasswordMatch);
-
-            // 表单提交前最后验证
-            registerForm.addEventListener('submit', function(e) {
-                // 清除之前的自定义验证信息
-                confirmPasswordInput.setCustomValidity('');
-
-                const password = passwordInput.value;
-                const confirmPassword = confirmPasswordInput.value;
-
-                if (password !== confirmPassword) {
-                    e.preventDefault();
-                    // 可以在这里添加更友好的提示，但Django后端也会验证
-                    return false;
-                }
+            // 为有错误的输入框添加错误样式
+            const errorInputs = document.querySelectorAll('.errorlist + .input-with-icon input, .errorlist + .captcha-container input');
+            errorInputs.forEach(input => {
+                input.classList.add('error');
             });
 
-            // 自动聚焦到第一个错误字段
-            const firstErrorField = document.querySelector('.has-error input');
-            if (firstErrorField) {
-                firstErrorField.focus();
-            }
+            // 输入时移除错误样式
+            const allInputs = form.querySelectorAll('input');
+            allInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    if (this.classList.contains('error')) {
+                        this.classList.remove('error');
+                        // 清除对应的错误信息
+                        const errorDiv = this.closest('.form-group').querySelector('.errorlist');
+                        if (errorDiv) {
+                            errorDiv.style.display = 'none';
+                        }
+                    }
+                });
+            });
         });
     </script>
 {% endblock main %}

@@ -26,7 +26,7 @@ def submission_list(request):
         'submissions': submissions,
         'page_title': '全部提交记录'
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
 
 # 管理员视图
 @login_required
@@ -38,7 +38,7 @@ def submission_detail(request, pk):
         'submission': submission,
         'page_title': f'提交详情 - {submission.topic_id}'
     }
-    return render(request, 'CheckObjection/submission_detail.html', context)
+    return render(request, 'CheckObjection/submission/submission_detail.html', context)
 
 @login_required
 def my_submission_list(request):
@@ -78,7 +78,7 @@ def my_submission_list(request):
         'cache_status': cache_status,
         'cache_timeout': SubmissionCache.get_cache_timeout()
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
 
 # 管理员视图
 @login_required
@@ -112,7 +112,7 @@ def query_submission_list(request, user_name):
         'cache_status': cache_status,
         'cache_timeout': SubmissionCache.get_cache_timeout()
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
 
 @login_required
 def query_topic_submission_list(request, user_name):
@@ -144,7 +144,7 @@ def query_topic_submission_list(request, user_name):
         'cache_status': cache_status,
         'cache_timeout': SubmissionCache.get_cache_timeout()
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
 
 
 # 管理缓存
@@ -177,7 +177,7 @@ def update_cache_timeout(request):
 class SubmissionListView(LoginRequiredMixin, ListView):
     """使用类视图显示提交列表"""
     model = Submission
-    template_name = 'CheckObjection/submission_list.html'
+    template_name = 'CheckObjection/submission/submission_list.html'
     context_object_name = 'submissions'
     paginate_by = 10
 
@@ -195,7 +195,7 @@ class SubmissionListView(LoginRequiredMixin, ListView):
 class SubmissionDetailView(LoginRequiredMixin, DetailView):
     """使用类视图显示提交详情"""
     model = Submission
-    template_name = 'CheckObjection/submission_detail.html'
+    template_name = 'CheckObjection/submission/submission_detail.html'
     context_object_name = 'submission'
 
     def get_queryset(self):
@@ -274,7 +274,7 @@ def query_contest_submission_list(request, user_name, contest_id):
         'contest_id': contest_id,
         'user_name': user_name
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
 
 
 @login_required
@@ -341,12 +341,12 @@ def query_contest_topic_submission_list(request, contest_id, topic_id):
             'cache_status': cache_status,
             'cache_timeout': 300
         }
-        return render(request, 'CheckObjection/submission_list.html', context)
+        return render(request, 'CheckObjection/submission/submission_list.html', context)
 
     except Contest.DoesNotExist:
-        return render(request, 'CheckObjection/CheckObjection_noPower.html', {'error_message': '比赛不存在'})
+        return render(request, 'CheckObjection/base/noPower.html', {'error_message': '比赛不存在'})
     except ContestTopic.DoesNotExist:
-        return render(request, 'CheckObjection/CheckObjection_noPower.html', {'error_message': '该题目不在比赛中或不存在'})
+        return render(request, 'CheckObjection/base/noPower.html', {'error_message': '该题目不在比赛中或不存在'})
 
 @login_required
 def my_contest_submission_list(request):
@@ -403,7 +403,7 @@ def my_contest_submission_list(request):
         'cache_status': cache_status,
         'cache_timeout': 300
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
 
 @login_required
 def query_contest_submission_list(request, user_name, contest_id):
@@ -472,7 +472,7 @@ def query_contest_submission_list(request, user_name, contest_id):
         'contest_id': contest_id,
         'user_name': user_name
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
 
 
 @login_required
@@ -539,12 +539,12 @@ def query_contest_topic_submission_list(request, contest_id, topic_id):
             'cache_status': cache_status,
             'cache_timeout': 300
         }
-        return render(request, 'CheckObjection/submission_list.html', context)
+        return render(request, 'CheckObjection/submission/submission_list.html', context)
 
     except Contest.DoesNotExist:
-        return render(request, 'CheckObjection/CheckObjection_noPower.html', {'error_message': '比赛不存在'})
+        return render(request, 'CheckObjection/base/noPower.html', {'error_message': '比赛不存在'})
     except ContestTopic.DoesNotExist:
-        return render(request, 'CheckObjection/CheckObjection_noPower.html', {'error_message': '该题目不在比赛中或不存在'})
+        return render(request, 'CheckObjection/base/noPower.html', {'error_message': '该题目不在比赛中或不存在'})
 
 
 
@@ -566,7 +566,7 @@ def contest_my_submissions(request, contest_id):
             'contest': contest,
             'error_message': '您未参加此比赛或已被取消资格'
         }
-        return render(request, 'CheckObjection/contest_submission_list.html', context)
+        return render(request, 'CheckObjection/submission/contest_submission_list.html', context)
 
     # 缓存键
     cache_key = f"contest_{contest_id}_user_{user_name}_submissions"
@@ -596,4 +596,4 @@ def contest_my_submissions(request, contest_id):
         'page_title': f'我的 {contest.title} 提交记录',
         'is_my_submissions': True
     }
-    return render(request, 'CheckObjection/contest_submission_list.html', context)
+    return render(request, 'CheckObjection/submission/contest_submission_list.html', context)

@@ -41,19 +41,19 @@ urlpatterns = [
     path('query_submission_list/<user_name>',query_submission_list,name='query_submission_list'),
 
     path('query_contest_submission_list/<contest_id>/<user_name>',query_contest_submission_list,name='query_contest_submission_list'),
-    path("index", index, name="CheckObjectionApp_index"),
-    path("base", base, name="CheckObjectionApp_base"),
+    path("index", index, name="index"),
+    path("base", base, name="base"),
     # 日常答题界面
-    path("detail/<topic_id>", detail, name="CheckObjectionApp_detail"),
+    path("detail/<topic_id>", detail, name="detail"),
     # 内部算法竞赛界面
     path("contest/<contest_id>/<contest_topic_id>", contest_submit_code, name="contest_submit_code"),
 
-    path("design", design, name="CheckObjectionApp_design"),
-    path("show", submission_list, name="CheckObjectionApp_show"),
+    path("design", design, name="design"),
+    path("show", submission_list, name="show"),
     # 修改用户名
-    path("changeName", change_profile, name="CheckObjectionApp_changeName"),
+    path("changeName", change_profile, name="changeName"),
     # 修改密码
-    path('changePassword', change_password, name="CheckObjectionApp_changePassword"),
+    path('changePassword', change_password, name="changePassword"),
     # 更新偏好
     # path('update_preferences/', views.update_preferences, name='CheckObjectionApp_updatePreferences'),
     # 排行
@@ -66,13 +66,13 @@ urlpatterns = [
     path('auth/', include('CheckObjectionApp.urls.auth_urls')),
 
     # 注册
-    path("CheckObjection_register", CheckObjection_register, name="CheckObjectionApp_register"),
+    path("CheckObjection_register", CheckObjection_register, name="register"),
     # 登录
-    path("CheckObjection_login", CheckObjection_login, name="CheckObjectionApp_login"),
+    path("CheckObjection_login", CheckObjection_login, name="login"),
     # 退出登录
-    path("CheckObjection_logout", CheckObjection_logout, name="CheckObjectionApp_logout"),
+    path("CheckObjection_logout", CheckObjection_logout, name="logout"),
     # 无权限则返回
-    path("CheckObjection_noPower", CheckObjection_noPower, name="CheckObjection_noPower"),
+    path("CheckObjection_noPower", CheckObjection_noPower, name="noPower"),
     # 搜索
     path('CheckObjection_search', CheckObjection_search, name='CheckObjection_search'),
     path("CheckObjection_filter", CheckObjection_filter, name='CheckObjection_filter'),

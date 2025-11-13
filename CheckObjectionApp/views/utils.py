@@ -9,7 +9,6 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 import json
-import re
 from ..code import check_code
 from ..constants import CAPTCHA_CONFIG
 from ..models import topic, TestCase
@@ -48,7 +47,7 @@ def batch_import_testcases(request):
     """批量导入测试用例"""
     if request.method == "GET":
         topics = topic.objects.all().values('id', 'title')
-        return render(request, 'CheckObjection/batch_import_testcases.html', {'topics': topics})
+        return render(request, 'CheckObjection/utils/batch_import_testcases.html', {'topics': topics})
 
     elif request.method == "POST":
         try:

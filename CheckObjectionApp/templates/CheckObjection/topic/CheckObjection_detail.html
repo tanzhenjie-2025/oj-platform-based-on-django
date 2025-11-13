@@ -1,4 +1,4 @@
-{% extends 'CheckObjection/CheckObjectionApp_base.html' %}
+{% extends 'CheckObjection/base/base.html' %}
 {% load static %}
 
 {% block head %}
@@ -1196,7 +1196,7 @@ int main() {
             document.getElementById('success-message').style.display = 'none';
 
             // 发送测试请求
-            fetch('proxy-submit-code/', {
+            fetch('topic/proxy-submit-code/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

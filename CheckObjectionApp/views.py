@@ -35,7 +35,7 @@ from .constants import CACHE_TIMEOUT, COLOR_CODES, JUDGE_CONFIG, CAPTCHA_CONFIG,
 from django.contrib.admin.views.decorators import staff_member_required
 def redirect_root(request):
     """ 重定向到主页 """
-    return redirect('CheckObjectionApp:CheckObjectionApp_login')
+    return redirect('CheckObjectionApp:login')
 class Topic(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,  # 添加 CreateModelMixin
@@ -80,51 +80,23 @@ class topicModel_get(View):
         return JsonResponse(serializer.data,
                             json_dumps_params={'ensure_ascii': False, 'indent': 2},
                             safe=False)
-class topicAPIView(APIView):
-    def get(self, request):
-        return Response({'data':'xiaoming'})
-class topicAPIGenericAPIView(GenericAPIView):
-    serializer_class = topicSerializer
-    queryset = topic.objects.all()
 
-    def get(self, request):
-        serializer = self.get_serializer(self.get_queryset(), many=True)
-        return JsonResponse(serializer.data,
-                            json_dumps_params={'ensure_ascii': False, 'indent': 2},
-                            safe=False)
-
-def get1(request):
-    topic_one = topic.objects.first()
-    serializer = topicSerializer(topic_one)
-    return JsonResponse(serializer.data,
-                        json_dumps_params={'ensure_ascii': False, 'indent': 2},
-                        safe=False  # 如果返回的是非字典数据，需要设置 safe=False
-                        )
-
-def socket_index(request):
-    # 从 URL 参数获取 num，如果没有则使用默认值
-    qq_group_num = request.GET.get('num', 'default_group')
-    print(f"当前群组号: {qq_group_num}")  # 调试信息
-    context = {
-        'qq_group_num': qq_group_num
-    }
-    return render(request, 'CheckObjection/index.html', context)
 @require_http_methods(['GET', 'POST'])
-@login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
+@login_required(login_url=reverse_lazy('CheckObjectionApp:login'))
 def index(request):
     """算法提交平台首页"""
     topics = topic.objects.all()
     user = request.user
     user_profile = user.userprofile
-    return render(request, 'CheckObjection/CheckObjection_Index.html', context={'topics': topics, 'user':user, 'user_profile':user_profile})
+    return render(request, 'CheckObjection/base/Index.html', context={'topics': topics, 'user':user, 'user_profile':user_profile})
 
 def base(request):
-    return render(request,'CheckObjection/CheckObjectionApp_base.html')
+    return render(request, 'CheckObjection/base/base.html')
 
 
 # todo 下面这段代码的逻辑不知道在写什么，有空重构 改造成写题解好了 有助于加深思考
 @require_http_methods(['GET', 'POST'])
-@login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
+@login_required(login_url=reverse_lazy('CheckObjectionApp:login'))
 def detail(request, topic_id):
     if request.method == "POST":
         # 使用 F() 表达式原子性地增加 finish 计数
@@ -152,7 +124,7 @@ def detail(request, topic_id):
     else:
         topic_content = topic.objects.get(id=topic_id)
         user = request.user
-        return render(request, 'CheckObjection/submission/practice_submission.html',
+        return render(request, 'CheckObjection/submission/templates/CheckObjection/topic/practice_topic.html',
                       context={'topic_content': topic_content, 'user': user})
 @require_http_methods(['GET', 'POST'])
 @login_required(login_url=reverse_lazy(settings.LOGIN_URL))
@@ -167,7 +139,7 @@ def design(request):
         topic.objects.create(content=content, title=title,example=example, level=level)
         return redirect(reverse("CheckObjectionApp:CheckObjectionApp_index"))
     else:
-        return render(request,'CheckObjection/CheckObjection_design.html')
+        return render(request, 'CheckObjection/topic/CheckObjection_design.html')
 
 @require_http_methods(['GET', 'POST'])
 @login_required(login_url=reverse_lazy(settings.LOGIN_URL))
@@ -190,7 +162,7 @@ def CheckObjection_login(request):
     if request.method == 'GET':
         form = LoginForm()
         content = {'form': form}
-        return render(request, 'CheckObjection/CheckObjection_login.html', content)
+        return render(request, 'CheckObjection/base/templates/CheckObjection/auth/login.html', content)
     else:
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -201,7 +173,7 @@ def CheckObjection_login(request):
             if user_input_captcha.lower() != user_captcha.lower():
                 form.add_error('captcha', '验证码错误，请重新输入')
                 content = {'form': form}
-                return render(request, 'CheckObjection/CheckObjection_login.html', content)
+                return render(request, 'CheckObjection/base/templates/CheckObjection/auth/login.html', content)
 
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
@@ -213,7 +185,7 @@ def CheckObjection_login(request):
                 if not user.is_active:
                     form.add_error(None, '账户已被禁用，请联系管理员')
                     content = {'form': form}
-                    return render(request, 'CheckObjection/CheckObjection_login.html', content)
+                    return render(request, 'CheckObjection/base/templates/CheckObjection/auth/login.html', content)
 
                 login(request, user)
                 request.session['captcha'] = None
@@ -236,11 +208,11 @@ def CheckObjection_login(request):
                     form.add_error(None, '用户名或密码错误')
 
                 content = {'form': form}
-                return render(request, 'CheckObjection/CheckObjection_login.html', content)
+                return render(request, 'CheckObjection/base/templates/CheckObjection/auth/login.html', content)
         else:
             # 表单验证失败，错误信息已经在form中
             content = {'form': form}
-            return render(request, 'CheckObjection/CheckObjection_login.html', content)
+            return render(request, 'CheckObjection/base/templates/CheckObjection/auth/login.html', content)
 
 
 @require_http_methods(['GET', 'POST'])
@@ -248,7 +220,7 @@ def CheckObjection_register(request):
     """注册功能实现"""
     if request.method == 'GET':
         form = RegisterForm()
-        return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+        return render(request, 'CheckObjection/base/templates/CheckObjection/auth/register.html', {'form': form})
     else:
         form = RegisterForm(request.POST)
         if form.is_valid():
@@ -260,16 +232,16 @@ def CheckObjection_register(request):
             # 验证验证码
             if not user_captcha:
                 form.add_error('captcha', '验证码已过期，请刷新验证码')
-                return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+                return render(request, 'CheckObjection/base/templates/CheckObjection/auth/register.html', {'form': form})
 
             if user_input_captcha.lower() != user_captcha.lower():
                 form.add_error('captcha', '验证码错误')
-                return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+                return render(request, 'CheckObjection/base/templates/CheckObjection/auth/register.html', {'form': form})
 
             # 双重检查用户名是否存在（防止并发注册等情况）
             if User.objects.filter(username=username).exists():
                 form.add_error('username', '用户名已存在')
-                return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+                return render(request, 'CheckObjection/base/templates/CheckObjection/auth/register.html', {'form': form})
 
             try:
                 # 创建用户
@@ -292,31 +264,31 @@ def CheckObjection_register(request):
             except IntegrityError:
                 # 处理数据库唯一性约束错误（用户名重复）
                 form.add_error('username', '用户名已存在，请选择其他用户名')
-                return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+                return render(request, 'CheckObjection/base/templates/CheckObjection/auth/register.html', {'form': form})
 
             except Exception as e:
                 # 处理创建用户时的意外错误
                 form.add_error(None, f'注册失败：{str(e)}')
-                return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+                return render(request, 'CheckObjection/auth/register.html', {'form': form})
 
         else:
             # 表单验证失败，返回错误信息
-            return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+            return render(request, 'CheckObjection/auth/register.html', {'form': form})
 
 
 @require_http_methods(['GET', 'POST'])
-@login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
+@login_required(login_url=reverse_lazy('CheckObjectionApp:login'))
 def CheckObjection_logout(request):
     """退出功能实现"""
     logout(request)
     return redirect('CheckObjectionApp:CheckObjectionApp_index')
 
 def CheckObjection_noPower(request):
-    return render(request,'CheckObjection/CheckObjection_noPower.html')
+    return render(request, 'CheckObjection/base/noPower.html')
 
 
 @require_http_methods(['GET', 'POST'])
-@login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
+@login_required(login_url=reverse_lazy('CheckObjectionApp:login'))
 def changePassword(request):
     """修改密码"""
     if request.method == "POST":
@@ -448,7 +420,7 @@ def CheckObjection_search(request):
 
     # 如果搜索词为空，返回空结果
     if not q:
-        return render(request, 'CheckObjection/CheckObjection_Index.html', context={"topics": []})
+        return render(request, 'CheckObjection/base/Index.html', context={"topics": []})
 
     # 创建基于搜索词的缓存键
     cache_key = f"search_results:{q.lower()}"
@@ -475,7 +447,7 @@ def CheckObjection_search(request):
             timeout=300  # 缓存5分钟，根据需求调整
         )
 
-    return render(request, 'CheckObjection/CheckObjection_Index.html', context={"topics": topics})
+    return render(request, 'CheckObjection/base/Index.html', context={"topics": topics})
 
 @require_GET
 @login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
@@ -485,11 +457,11 @@ def CheckObjection_filter(request):
     q = request.GET.get('f')
     if q == 'all':
         topics = topic.objects.all()
-        return render(request, 'CheckObjection/CheckObjection_Index.html', context={"topics": topics})
+        return render(request, 'CheckObjection/base/Index.html', context={"topics": topics})
 
     # 如果搜索词为空，返回空结果
     if not q:
-        return render(request, 'CheckObjection/CheckObjection_Index.html', context={"topics": []})
+        return render(request, 'CheckObjection/base/Index.html', context={"topics": []})
 
     # 创建基于搜索词的缓存键
     cache_key = f"filter_results:{q.lower()}"
@@ -518,7 +490,7 @@ def CheckObjection_filter(request):
             timeout=300  # 缓存5分钟，根据需求调整
         )
 
-    return render(request, 'CheckObjection/CheckObjection_Index.html', context={"topics": topics})
+    return render(request, 'CheckObjection/base/Index.html', context={"topics": topics})
 
 # 以下为判题模块
 import uuid
@@ -597,7 +569,7 @@ def submission_list(request):
         'submissions': submissions,
         'page_title': '全部提交记录'
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
 
 # 管理员视图
 @login_required
@@ -609,7 +581,7 @@ def submission_detail(request, pk):
         'submission': submission,
         'page_title': f'提交详情 - {submission.topic_id}'
     }
-    return render(request, 'CheckObjection/submission_detail.html', context)
+    return render(request, 'CheckObjection/submission/submission_detail.html', context)
 
 
 from django.core.cache import cache
@@ -659,7 +631,7 @@ def my_submission_list(request):
         'cache_status': cache_status,
         'cache_timeout': SubmissionCache.get_cache_timeout()
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
 
 
 
@@ -695,7 +667,7 @@ def query_submission_list(request, user_name):
         'cache_status': cache_status,
         'cache_timeout': SubmissionCache.get_cache_timeout()
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
 
 
 # TODO 下面这个函数还未完成
@@ -729,7 +701,7 @@ def query_topic_submission_list(request, user_name):
         'cache_status': cache_status,
         'cache_timeout': SubmissionCache.get_cache_timeout()
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
 
 # @login_required
 # def my_submission_list(request):
@@ -780,7 +752,7 @@ def update_cache_timeout(request):
 class SubmissionListView(LoginRequiredMixin, ListView):
     """使用类视图显示提交列表"""
     model = Submission
-    template_name = 'CheckObjection/submission_list.html'
+    template_name = 'CheckObjection/submission/submission_list.html'
     context_object_name = 'submissions'
     paginate_by = 10
 
@@ -798,7 +770,7 @@ class SubmissionListView(LoginRequiredMixin, ListView):
 class SubmissionDetailView(LoginRequiredMixin, DetailView):
     """使用类视图显示提交详情"""
     model = Submission
-    template_name = 'CheckObjection/submission_detail.html'
+    template_name = 'CheckObjection/submission/submission_detail.html'
     context_object_name = 'submission'
 
     def get_queryset(self):
@@ -835,7 +807,7 @@ def ranking_view(request):
         'total_users': len(rankings)
     }
 
-    return render(request, 'CheckObjection/CheckObjection_ranking.html', context)
+    return render(request, 'CheckObjection/ranking/CheckObjection_ranking.html', context)
 
 
 from io import BytesIO
@@ -1087,7 +1059,7 @@ def contest_submit_code(request, contest_id,contest_topic_id):
             'contest_id': contest_id,
             'contest_topic_id': contest_topic_id,
         }
-        return render(request, 'CheckObjection/submission/contest_submission.html',
+        return render(request, 'CheckObjection/submission/templates/CheckObjection/topic/contest_topic.html',
                       context=context)
 
 # 比赛提交判题
@@ -1199,7 +1171,7 @@ def contest_submission_list(request):
         'page_title': '比赛提交记录',
         'from': 'contest_submission_list',
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
 
 
 @login_required
@@ -1257,7 +1229,7 @@ def my_contest_submission_list(request):
         'cache_status': cache_status,
         'cache_timeout': 300
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
 
 @login_required
 def query_contest_submission_list(request, user_name, contest_id):
@@ -1326,7 +1298,7 @@ def query_contest_submission_list(request, user_name, contest_id):
         'contest_id': contest_id,
         'user_name': user_name
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
 
 
 @login_required
@@ -1393,12 +1365,12 @@ def query_contest_topic_submission_list(request, contest_id, topic_id):
             'cache_status': cache_status,
             'cache_timeout': 300
         }
-        return render(request, 'CheckObjection/submission_list.html', context)
+        return render(request, 'CheckObjection/submission/submission_list.html', context)
 
     except Contest.DoesNotExist:
-        return render(request, 'CheckObjection/CheckObjection_noPower.html', {'error_message': '比赛不存在'})
+        return render(request, 'CheckObjection/base/noPower.html', {'error_message': '比赛不存在'})
     except ContestTopic.DoesNotExist:
-        return render(request, 'CheckObjection/CheckObjection_noPower.html', {'error_message': '该题目不在比赛中或不存在'})
+        return render(request, 'CheckObjection/base/noPower.html', {'error_message': '该题目不在比赛中或不存在'})
 
 
 # 批量导入题目
@@ -1415,7 +1387,7 @@ from .models import topic, TestCase
 def batch_import_testcases(request):
     if request.method == "GET":
         topics = topic.objects.all().values('id', 'title')
-        return render(request, 'CheckObjection/batch_import_testcases.html', {'topics': topics})
+        return render(request, 'CheckObjection/utils/batch_import_testcases.html', {'topics': topics})
 
     elif request.method == "POST":
         try:
@@ -1928,7 +1900,7 @@ def global_ranking(request):
         'total_users': len(rankings)
     }
 
-    return render(request, 'CheckObjection/CheckObjection_ranking.html', context)
+    return render(request, 'CheckObjection/ranking/CheckObjection_ranking.html', context)
 
 
 def contest_ranking(request, contest_id):
@@ -1942,7 +1914,7 @@ def contest_ranking(request, contest_id):
         'total_users': len(rankings)
     }
 
-    return render(request, 'CheckObjection/CheckObjection_ranking.html', context)
+    return render(request, 'CheckObjection/ranking/CheckObjection_ranking.html', context)
 
 # 以下是实现比赛排行的代码
 from django.shortcuts import render, get_object_or_404
@@ -2256,7 +2228,7 @@ def contest_user_submissions(request, contest_id, user_name):
         'page_title': f'{user_name} - {contest.title} 提交记录'
     }
     print(context)
-    return render(request, 'CheckObjection/contest_submission_list.html', context)
+    return render(request, 'CheckObjection/submission/contest_submission_list.html', context)
 
 
 @login_required
@@ -2277,7 +2249,7 @@ def contest_my_submissions(request, contest_id):
             'contest': contest,
             'error_message': '您未参加此比赛或已被取消资格'
         }
-        return render(request, 'CheckObjection/contest_submission_list.html', context)
+        return render(request, 'CheckObjection/submission/contest_submission_list.html', context)
 
     # 缓存键
     cache_key = f"contest_{contest_id}_user_{user_name}_submissions"
@@ -2309,4 +2281,4 @@ def contest_my_submissions(request, contest_id):
         'page_title': f'我的 {contest.title} 提交记录',
         'is_my_submissions': True
     }
-    return render(request, 'CheckObjection/contest_submission_list.html', context)
+    return render(request, 'CheckObjection/submission/contest_submission_list.html', context)

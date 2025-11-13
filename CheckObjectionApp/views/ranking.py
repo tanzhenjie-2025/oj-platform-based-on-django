@@ -28,7 +28,7 @@ def ranking_view(request):
         'total_users': len(rankings),
         'page_title': '全局排行榜'
     }
-    return render(request, 'CheckObjection/CheckObjection_ranking.html', context)
+    return render(request, 'CheckObjection/ranking/CheckObjection_ranking.html', context)
 
 
 def contest_ranking(request, contest_id):
@@ -42,7 +42,7 @@ def contest_ranking(request, contest_id):
         'total_users': len(rankings),
         'page_title': f'{contest.title} - 排行榜'
     }
-    return render(request, 'CheckObjection/CheckObjection_ranking.html', context)
+    return render(request, 'CheckObjection/ranking/CheckObjection_ranking.html', context)
 
 
 def contest_rank_list(request):

@@ -102,7 +102,7 @@ def contest_submit_code(request, contest_id, contest_topic_id):
             'contest_id': contest_id,
             'contest_topic_id': contest_topic_id,
         }
-        return render(request, 'CheckObjection/submission/contest_submission.html', context=context)
+        return render(request, 'CheckObjection/topic/contest_topic.html', context=context)
 
 
 @login_required

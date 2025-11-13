@@ -8,10 +8,11 @@ from django.utils import timezone
 from django.http import HttpResponseServerError
 from django.urls import reverse_lazy
 from CheckObjection import settings
+from ..constants import URLNames
 from ..models import User, UserProfile, Contest, ContestParticipant, ContestSubmission, Submission
 
 
-@login_required(login_url=reverse_lazy(settings.LOGIN_URL))
+@login_required(login_url=reverse_lazy(f'CheckObjectionApp:{URLNames.LOGIN}'))
 @staff_member_required
 def user_list(request):
     """展示所有用户的列表视图（仅管理员可访问）"""
@@ -154,7 +155,7 @@ def contest_user_submissions(request, contest_id, user_name):
         'page_title': f'{user_name} - {contest.title} 提交记录',
         'is_admin_view': True
     }
-    return render(request, 'CheckObjection/contest_submission_list.html', context)
+    return render(request, 'CheckObjection/submission/contest_submission_list.html', context)
 
 
 @login_required
@@ -182,7 +183,7 @@ def query_submission_list(request, user_name):
         'target_user_name': user_name,
         'is_admin_view': True
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
 
 
 @login_required
@@ -242,7 +243,7 @@ def query_contest_submission_list(request, contest_id, user_name):
         'user_name': user_name,
         'is_admin_view': True
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
 
 
 @login_required
@@ -256,7 +257,7 @@ def submission_list(request):
         'page_title': '全部提交记录',
         'is_admin_view': True
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
 
 
 @login_required
@@ -296,4 +297,4 @@ def contest_submission_list(request):
         'page_title': '比赛提交记录',
         'is_admin_view': True
     }
-    return render(request, 'CheckObjection/submission_list.html', context)
+    return render(request, 'CheckObjection/submission/submission_list.html', context)

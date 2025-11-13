@@ -1,3 +1,4 @@
+{% load objection_tags %}
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -363,28 +364,28 @@
 <header id="main-header">
     <div class="container">
         <div class="navbar">
-            <a href="{% url 'CheckObjectionApp:CheckObjectionApp_index' %}" class="logo">
+            <a href="{% url_index %}" class="logo">
                 <i class="fas fa-code"></i>
                 <span>逐梦创新实验室</span>
             </a>
 
             <ul class="nav-links">
-                <li><a href="{% url 'CheckObjectionApp:CheckObjectionApp_index' %}" class="nav-link ">首页</a></li>
+                <li><a href="{% url_index %}" class="nav-link ">首页</a></li>
 
                 {% if user.is_staff %}
-                    <li><a href="{% url 'CheckObjectionApp:CheckObjectionApp_show' %}" class="nav-link">查看全部提交</a>
+                    <li><a href="{% url_show %}" class="nav-link">查看全部提交</a>
                     </li>
                     <li><a href="{% url 'CheckObjectionApp:batch_import_testcases' %}" class="nav-link">批量导入测试案例</a></li>
                 {% endif %}
 
                 {% if user.is_authenticated %}
-                    <li><a href="{% url 'CheckObjectionApp:my_submission_list' %}" class="nav-link">我的提交</a></li>
-                    <li><a href="{% url 'CheckObjectionApp:contest_list' %}" class="nav-link ">内部算法竞赛</a></li>
-                    <li><a href="{% url 'CheckObjectionApp:ranking_page' %}" class="nav-link">排行</a></li>
-                    <li><a href="{% url 'CheckObjectionApp:CheckObjectionApp_logout' %}" class="nav-link">退出登录</a>
+                    <li><a href="{% url_my_submissions %}" class="nav-link">我的提交</a></li>
+                    <li><a href="{% url_contests %}" class="nav-link ">内部算法竞赛</a></li>
+                    <li><a href="{% url_ranking %}" class="nav-link">排行</a></li>
+                    <li><a href="{% url_logout %}" class="nav-link">退出登录</a>
                     </li>
                 {% else %}
-                    <li><a href="{% url 'CheckObjectionApp:CheckObjectionApp_login' %}" class="nav-link">登录</a></li>
+                    <li><a href="{% url_login %}" class="nav-link">登录</a></li>
                 {% endif %}
             </ul>
 
@@ -395,7 +396,7 @@
                 </div>
                 {% if user.is_authenticated %}
                     <!-- 修改头像链接部分 -->
-                    <a href="{% url 'CheckObjectionApp:CheckObjectionApp_changeName' %}" class="avatar-link">
+                    <a href="{% url_change_name %}" class="avatar-link">
                         <div class="user-avatar" title="{{ user.username }}">
                             {{ user.username|first|upper }}
                         </div>

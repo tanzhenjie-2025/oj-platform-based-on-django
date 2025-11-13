@@ -4,6 +4,8 @@ from django.shortcuts import render, redirect,reverse
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
+
+from ..constants import URLNames
 from ..forms import LoginForm, RegisterForm
 from ..models import UserProfile
 
@@ -12,14 +14,14 @@ User = get_user_model()
 
 def redirect_root(request):
     """ 重定向到主页 """
-    return redirect('CheckObjectionApp:CheckObjectionApp_login')
+    return redirect(f'CheckObjectionApp:{URLNames.LOGIN}')
 
 @require_http_methods(['GET', 'POST'])
 def CheckObjection_login(request):
     if request.method == 'GET':
         form = LoginForm()
         content = {'form': form}
-        return render(request, 'CheckObjection/CheckObjection_login.html', content)
+        return render(request, 'CheckObjection/auth/login.html', content)
     else:
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -30,7 +32,7 @@ def CheckObjection_login(request):
             if user_input_captcha.lower() != user_captcha.lower():
                 form.add_error('captcha', '验证码错误，请重新输入')
                 content = {'form': form}
-                return render(request, 'CheckObjection/CheckObjection_login.html', content)
+                return render(request, 'CheckObjection/auth/login.html', content)
 
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
@@ -42,7 +44,7 @@ def CheckObjection_login(request):
                 if not user.is_active:
                     form.add_error(None, '账户已被禁用，请联系管理员')
                     content = {'form': form}
-                    return render(request, 'CheckObjection/CheckObjection_login.html', content)
+                    return render(request, 'CheckObjection/auth/login.html', content)
 
                 login(request, user)
                 request.session['captcha'] = None
@@ -50,7 +52,7 @@ def CheckObjection_login(request):
                     request.session.set_expiry(60 * 60 * 24 * 7)
                 else:
                     request.session.set_expiry(0)
-                return redirect(reverse("CheckObjectionApp:CheckObjectionApp_index"))
+                return redirect(reverse(f"CheckObjectionApp:{URLNames.INDEX}"))
             else:
                 # 用户认证失败，检查是用户名问题还是密码问题
                 try:
@@ -65,11 +67,11 @@ def CheckObjection_login(request):
                     form.add_error(None, '用户名或密码错误')
 
                 content = {'form': form}
-                return render(request, 'CheckObjection/CheckObjection_login.html', content)
+                return render(request, 'CheckObjection/auth/login.html', content)
         else:
             # 表单验证失败，错误信息已经在form中
             content = {'form': form}
-            return render(request, 'CheckObjection/CheckObjection_login.html', content)
+            return render(request, 'CheckObjection/auth/login.html', content)
 
 
 @require_http_methods(['GET', 'POST'])
@@ -77,7 +79,7 @@ def CheckObjection_register(request):
     """注册功能实现"""
     if request.method == 'GET':
         form = RegisterForm()
-        return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+        return render(request, 'CheckObjection/auth/register.html', {'form': form})
     else:
         form = RegisterForm(request.POST)
         if form.is_valid():
@@ -89,16 +91,16 @@ def CheckObjection_register(request):
             # 验证验证码
             if not user_captcha:
                 form.add_error('captcha', '验证码已过期，请刷新验证码')
-                return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+                return render(request, 'CheckObjection/auth/register.html', {'form': form})
 
             if user_input_captcha.lower() != user_captcha.lower():
                 form.add_error('captcha', '验证码错误')
-                return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+                return render(request, 'CheckObjection/auth/register.html', {'form': form})
 
             # 双重检查用户名是否存在（防止并发注册等情况）
             if User.objects.filter(username=username).exists():
                 form.add_error('username', '用户名已存在')
-                return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+                return render(request, 'CheckObjection/auth/register.html', {'form': form})
 
             try:
                 # 创建用户
@@ -116,29 +118,29 @@ def CheckObjection_register(request):
                 if 'captcha' in request.session:
                     del request.session['captcha']
 
-                return redirect(reverse("CheckObjectionApp:CheckObjectionApp_index"))
+                return redirect(reverse(f"CheckObjectionApp:{URLNames.INDEX}"))
 
             except IntegrityError:
                 # 处理数据库唯一性约束错误（用户名重复）
                 form.add_error('username', '用户名已存在，请选择其他用户名')
-                return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+                return render(request, 'CheckObjection/auth/register.html', {'form': form})
 
             except Exception as e:
                 # 处理创建用户时的意外错误
                 form.add_error(None, f'注册失败：{str(e)}')
-                return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+                return render(request, 'CheckObjection/auth/register.html', {'form': form})
 
         else:
             # 表单验证失败，返回错误信息
-            return render(request, 'CheckObjection/CheckObjection_register.html', {'form': form})
+            return render(request, 'CheckObjection/auth/register.html', {'form': form})
 
 
 @require_http_methods(['GET', 'POST'])
-@login_required(login_url=reverse_lazy('CheckObjectionApp:CheckObjectionApp_login'))
+@login_required(login_url=reverse_lazy(f'CheckObjectionApp:{URLNames.LOGIN}'))
 def CheckObjection_logout(request):
     """退出功能实现"""
     logout(request)
-    return redirect('CheckObjectionApp:CheckObjectionApp_index')
+    return redirect('CheckObjectionApp:index')
 
 def CheckObjection_noPower(request):
-    return render(request,'CheckObjection/CheckObjection_noPower.html')
+    return render(request, 'CheckObjection/base/noPower.html')
