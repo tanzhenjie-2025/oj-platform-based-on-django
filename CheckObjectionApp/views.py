@@ -578,117 +578,10 @@ class JudgeCodeView(View):
                 "error": f"处理请求时出错: {str(e)}"
             })
 
-# 以下是增加测试用例的代码
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
+
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
-from django.db.models import Count
-from .models import topic, TestCase
 from .serializers import *
 
-
-class TopicViewSet(viewsets.ModelViewSet):
-    queryset = topic.objects.all().annotate(test_cases_count=Count('testcase_set'))
-    serializer_class = TopicSerializer
-
-    def get_serializer_class(self):
-        if self.action == 'retrieve':
-            return TopicWithTestCasesSerializer
-        return TopicSerializer
-
-    @action(detail=True, methods=['get'])
-    def test_cases(self, request, pk=None):
-        """获取特定题目的所有测试用例"""
-        topic_obj = self.get_object()
-        test_cases = topic_obj.testcase_set.all()
-
-        serializer = TestCaseSerializer(test_cases, many=True)
-        return Response(serializer.data)
-
-    @action(detail=True, methods=['post'])
-    def add_test_case(self, request, pk=None):
-        """为特定题目添加测试用例"""
-        topic_obj = self.get_object()
-        serializer = TestCaseSerializer(data=request.data)
-
-        if serializer.is_valid():
-            serializer.save(titleSlug=topic_obj)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=False, methods=['get'])
-    def with_test_cases(self, request):
-        """获取包含测试用例的题目列表"""
-        topics = topic.objects.prefetch_related('testcase_set').all()
-        serializer = TopicWithTestCasesSerializer(topics, many=True)
-        return Response(serializer.data)
-
-
-class TestCaseViewSet(viewsets.ModelViewSet):
-    queryset = TestCase.objects.all()
-    serializer_class = TestCaseSerializer
-
-    def get_queryset(self):
-        queryset = TestCase.objects.all()
-        topic_id = self.request.query_params.get('topic_id')
-        is_sample = self.request.query_params.get('is_sample')
-
-        if topic_id:
-            queryset = queryset.filter(titleSlug_id=topic_id)
-        if is_sample is not None:
-            queryset = queryset.filter(is_sample=is_sample.lower() == 'true')
-
-        return queryset
-
-    def get_serializer_class(self):
-        if self.action in ['retrieve', 'update', 'partial_update']:
-            return TestCaseDetailSerializer
-        return TestCaseSerializer
-
-    def create(self, request, *args, **kwargs):
-        """创建测试用例"""
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            # 验证外键存在
-            topic_id = request.data.get('titleSlug')
-            if not topic.objects.filter(id=topic_id).exists():
-                return Response(
-                    {'error': '指定的题目不存在'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=True, methods=['patch'])
-    def update_topic(self, request, pk=None):
-        """更新测试用例所属的题目"""
-        test_case = self.get_object()
-        new_topic_id = request.data.get('titleSlug')
-
-        if not new_topic_id:
-            return Response(
-                {'error': '必须提供题目ID'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            new_topic = topic.objects.get(id=new_topic_id)
-            test_case.titleSlug = new_topic
-            test_case.save()
-
-            serializer = self.get_serializer(test_case)
-            return Response(serializer.data)
-        except topic.DoesNotExist:
-            return Response(
-                {'error': '指定的题目不存在'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-
-from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -2225,6 +2118,7 @@ from django.core.cache import cache
 from django.db.models import Count, Case, When, IntegerField, Subquery, OuterRef
 from django.utils import timezone
 from .models import Contest, ContestParticipant, User, ContestSubmission
+
 
 
 @login_required

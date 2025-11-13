@@ -95,7 +95,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY','zt1DzMSi-oi4Xer9Xc2vhnpGkZK2XJ4vYY2jTIxUBpnlGuIOEY8ErHjz2FOHdM9gbW4')
 
 # DEBUG模式：环境变量值为'true'则开启，否则关闭
-DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
+# DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
+DEBUG = True
 
 # 允许的主机：从环境变量读取，逗号分隔转列表
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
