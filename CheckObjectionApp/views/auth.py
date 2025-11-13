@@ -9,6 +9,11 @@ from ..models import UserProfile
 
 from django.db import IntegrityError
 User = get_user_model()
+
+def redirect_root(request):
+    """ 重定向到主页 """
+    return redirect('CheckObjectionApp:CheckObjectionApp_login')
+
 @require_http_methods(['GET', 'POST'])
 def CheckObjection_login(request):
     if request.method == 'GET':
@@ -134,3 +139,6 @@ def CheckObjection_logout(request):
     """退出功能实现"""
     logout(request)
     return redirect('CheckObjectionApp:CheckObjectionApp_index')
+
+def CheckObjection_noPower(request):
+    return render(request,'CheckObjection/CheckObjection_noPower.html')
