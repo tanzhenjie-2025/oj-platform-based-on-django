@@ -130,3 +130,9 @@ def url_submission_detail(submission_id):
 def url_contest_rank_detail(contest_id):
     """比赛排行详情URL"""
     return reverse(f"CheckObjectionApp:{URLNames.CONTEST_RANK_DETAIL}", args=[contest_id])
+
+# ===== 提交api =====
+@register.simple_tag
+def url_proxy_submit_code():
+    """提交代码api"""
+    return reverse(f"CheckObjectionApp:{URLNames.PROXY_SUBMIT_CODE}")

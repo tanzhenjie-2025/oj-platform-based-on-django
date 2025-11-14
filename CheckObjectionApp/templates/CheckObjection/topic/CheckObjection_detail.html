@@ -1,3 +1,4 @@
+
 {% extends 'CheckObjection/base/base.html' %}
 {% load static %}
 
@@ -626,6 +627,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
 
     <script>
+    const URLS = {
+    PROXY_SUBMIT_CODE: "{% url 'CheckObjectionApp:proxy_submit_code' %}"
+};
         // Monaco Editor 实例和全局变量
         let editor = null;
         let currentLanguageId = 71; // Python

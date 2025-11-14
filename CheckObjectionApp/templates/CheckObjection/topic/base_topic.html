@@ -1,6 +1,6 @@
 {% extends 'CheckObjection/base/base.html' %}
 {% load static %}
-
+{% load objection_tags %}
 {% block head %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css">
@@ -642,6 +642,10 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
 
         <script>
+        const URLS = {
+    PROXY_SUBMIT_CODE: "{% url_proxy_submit_code %}"
+
+};
             // Monaco Editor 实例和全局变量
             let editor = null;
             let currentLanguageId = 71; // Python
@@ -1410,7 +1414,7 @@ document.getElementById('submission-form').addEventListener('submit', function (
     resultArea.style.display = 'none';
 
     // 发送提交请求 - 现在后端是同步处理
-    fetch('topic/proxy-submit-code/', {
+    fetch(URLS.PROXY_SUBMIT_CODE, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
