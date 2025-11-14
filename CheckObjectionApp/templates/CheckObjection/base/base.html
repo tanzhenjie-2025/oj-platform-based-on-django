@@ -379,8 +379,8 @@
                 {% endif %}
 
                 {% if user.is_authenticated %}
-                    <li><a href="{% url_my_submissions %}" class="nav-link">我的提交</a></li>
-                    <li><a href="{% url_contests %}" class="nav-link ">内部算法竞赛</a></li>
+                    <li><a href="{% url_my_submissions_list %}" class="nav-link">我的提交</a></li>
+                    <li><a href="{% url_contest_list %}" class="nav-link ">内部算法竞赛</a></li>
                     <li><a href="{% url_ranking %}" class="nav-link">排行</a></li>
                     <li><a href="{% url_logout %}" class="nav-link">退出登录</a>
                     </li>

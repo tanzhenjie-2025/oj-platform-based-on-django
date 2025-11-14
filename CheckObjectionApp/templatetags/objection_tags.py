@@ -76,25 +76,26 @@ def url_topic_design():
 
 
 
-# ===== 提交记录 =====
+# ===== 提交记录相关 =====
 @register.simple_tag
 def url_show():
     """查看全部提交URL"""
     return reverse(f"CheckObjectionApp:{URLNames.SUBMISSION_LIST}")
 
 @register.simple_tag
-def url_my_submissions():
+def url_my_submissions_list():
     """我的提交URL"""
     return reverse(f"CheckObjectionApp:{URLNames.MY_SUBMISSION_LIST}")
 
 @register.simple_tag
-def url_my_contest_submissions():
+def url_my_contest_submissions_list(user_name,contest_id):
     """我的比赛提交URL"""
-    return reverse(f"CheckObjectionApp:{URLNames.MY_CONTEST_SUBMISSION_LIST}")
+    return reverse(f"CheckObjectionApp:{URLNames.QUERY_CONTEST_SUBMISSION_LIST}",
+                   kwargs={'contest_id': contest_id, 'user_name': user_name})
 
 # ===== 比赛相关 =====
 @register.simple_tag
-def url_contests():
+def url_contest_list():
     """内部算法竞赛URL"""
     return reverse(f"CheckObjectionApp:{URLNames.CONTEST_LIST}")
 
@@ -111,7 +112,7 @@ def url_contest_register(contest_id):
 @register.simple_tag
 def url_contest_submit_code(contest_id, contest_topic_id):
     """比赛提交代码URL"""
-    return reverse(f"CheckObjectionApp:{URLNames.CONTEST_SUBMIT_CODE}", args=[contest_id, contest_topic_id])
+    return reverse(f"CheckObjectionApp:{URLNames.CONTEST_SUBMIT_CODE}",  kwargs={'contest_id': contest_id, 'contest_topic_id': contest_topic_id})
 
 # ===== 排行榜 =====
 @register.simple_tag
@@ -170,4 +171,11 @@ def url_proxy_submit_code():
 def url_proxy_submit_code_contest(contest_id):
     """提交内部算法比赛代码api"""
     return reverse(f"CheckObjectionApp:{URLNames.PROXY_SUBMIT_CODE_CONTEST}", args=[contest_id])
+
+# ==== 比赛相关url  ====
+@register.simple_tag
+def url_contest_user_submissions(contest_id):
+    """比赛用户提交列表URL"""
+    return reverse(f"CheckObjectionApp:{URLNames.CONTEST_USER_SUBMISSIONS}", args=[contest_id])
+
 

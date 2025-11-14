@@ -7,8 +7,8 @@ from ..views.ranking import contest_rank_list, contest_rank_detail
 from ..views.submissions import my_contest_submission_list
 
 urlpatterns = [
-
-path("contest/<contest_id>/<contest_topic_id>", contest_submit_code, name=URLNames.CONTEST_SUBMIT_CODE),
+    # 比赛提交代码
+    path("contest/<contest_id>/<contest_topic_id>", contest_submit_code, name=URLNames.CONTEST_SUBMIT_CODE),
     # 显示 比赛的列表 所有比赛均在此处显示
     path('contest_list/', ContestListView.as_view(), name=URLNames.CONTEST_LIST),
     # 比赛报名界面
@@ -22,5 +22,6 @@ path("contest/<contest_id>/<contest_topic_id>", contest_submit_code, name=URLNam
 
     # 比赛排行路由及视图
     path('contest_rank_list/', contest_rank_list, name=URLNames.CONTEST_RANK_LIST),
+    # 具体比赛排名
     path('contest_rank_detail/<int:contest_id>/', contest_rank_detail, name=URLNames.CONTEST_RANK_DETAIL),
 ]

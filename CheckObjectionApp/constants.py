@@ -43,6 +43,7 @@ class URLNames:
     CONTEST_REGISTER = "contest_register"
     CONTEST_SUBMIT_CODE = "contest_submit_code"
 
+
     # 排行榜
     RANKING_PAGE = "ranking_page"
     CONTEST_RANK_LIST = "contest_rank_list"
