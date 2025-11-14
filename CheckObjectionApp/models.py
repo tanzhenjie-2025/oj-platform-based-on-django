@@ -260,3 +260,4 @@ class ContestSubmission(models.Model):
         verbose_name_plural = '比赛提交记录'
         ordering = ['submitted_at']
 
+

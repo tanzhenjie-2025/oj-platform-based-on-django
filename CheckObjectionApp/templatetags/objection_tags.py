@@ -136,3 +136,8 @@ def url_contest_rank_detail(contest_id):
 def url_proxy_submit_code():
     """提交代码api"""
     return reverse(f"CheckObjectionApp:{URLNames.PROXY_SUBMIT_CODE}")
+
+@register.simple_tag
+def url_proxy_submit_code_contest(contest_id):
+    """提交内部算法比赛代码api"""
+    return reverse(f"CheckObjectionApp:{URLNames.PROXY_SUBMIT_CODE_CONTEST}", args=[contest_id])

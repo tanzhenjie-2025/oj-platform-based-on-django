@@ -10,6 +10,8 @@ from django.contrib import messages
 from django.utils import timezone
 
 from CheckObjection import settings
+from CheckObjectionApp import models
+
 from CheckObjectionApp.models import Contest, ContestParticipant, topic, ContestSubmission
 from CheckObjectionApp.utils.contest_service import ContestService
 
@@ -50,6 +52,14 @@ class ContestDetailView(LoginRequiredMixin, DetailView):
         contest_topics = contest.contest_topics.select_related('topic').all()
         context['contest_topics'] = contest_topics
 
+        # 初始化统计数据
+        problem_scores = []
+        problem_submissions_stats = []
+        total_score = 0
+        total_ac_count = 0
+        total_submission_count = 0
+        solved_problems = set()
+
         # 获取当前用户的提交统计
         if hasattr(self.request.user, 'id'):
             participant = ContestParticipant.objects.filter(
@@ -57,36 +67,159 @@ class ContestDetailView(LoginRequiredMixin, DetailView):
             ).first()
 
             if participant:
-                # 简化的统计逻辑，详细的排行榜逻辑移到ranking.py
                 submissions = ContestSubmission.objects.filter(
                     participant=participant
                 ).select_related('submission')
 
-                # 基础统计信息
-                total_submissions = submissions.count()
-                accepted_submissions = submissions.filter(
-                    submission__overall_result='Accepted'
-                ).count()
+                # 按题目分组统计
+                problem_status = {}
+                for submission in submissions:
+                    topic_id = submission.submission.topic_id
+                    if topic_id not in problem_status:
+                        problem_status[topic_id] = {
+                            'solved': False,
+                            'submissions': [],
+                            'ac_count': 0,
+                            'total_count': 0
+                        }
 
-                context['user_stats'] = {
-                    'total_submissions': total_submissions,
-                    'accepted_submissions': accepted_submissions,
-                    'participation_rate': (
-                                accepted_submissions / total_submissions * 100) if total_submissions > 0 else 0
-                }
+                    problem_status[topic_id]['submissions'].append(submission)
+                    problem_status[topic_id]['total_count'] += 1
 
+                    if submission.submission.overall_result == 'Accepted':
+                        problem_status[topic_id]['solved'] = True
+                        problem_status[topic_id]['ac_count'] += 1
+
+                context['problem_status'] = problem_status
+
+                # 构建得分情况和提交统计
+                for contest_topic in contest_topics:
+                    topic_id = contest_topic.topic.id
+                    status = problem_status.get(topic_id, {})
+
+                    # 得分情况
+                    if status.get('solved', False):
+                        score = contest_topic.score
+                        total_score += score
+                        solved_problems.add(topic_id)
+                        score_status = f"{score}分（已得）"
+                        score_color = "#4caf50"
+                    else:
+                        score = 0
+                        score_status = f"{contest_topic.score}分（未得）"
+                        score_color = "#f44336"
+
+                    problem_scores.append({
+                        'order': contest_topic.order,
+                        'title': f"题目{contest_topic.order}",
+                        'score_status': score_status,
+                        'color': score_color,
+                        'score': score,
+                        'full_score': contest_topic.score
+                    })
+
+                    # 提交情况
+                    total_count = status.get('total_count', 0)
+                    ac_count = status.get('ac_count', 0)
+                    total_submission_count += total_count
+
+                    if ac_count > 0:
+                        submission_status = f"{total_count}次（AC）"
+                        submission_color = "#4caf50"
+                        total_ac_count += 1
+                    elif total_count > 0:
+                        submission_status = f"{total_count}次（WA）"
+                        submission_color = "#f44336"
+                    else:
+                        submission_status = "0次"
+                        submission_color = "#9e9e9e"
+
+                    problem_submissions_stats.append({
+                        'order': contest_topic.order,
+                        'title': f"题目{contest_topic.order}",
+                        'submission_status': submission_status,
+                        'color': submission_color,
+                        'total_count': total_count,
+                        'ac_count': ac_count
+                    })
+
+        # 计算AC率
+        ac_rate = 0
+        if contest_topics:
+            ac_rate = round((total_ac_count / len(contest_topics)) * 100, 1)
+
+        # 新增：获取前三名的答对题目数目
+        top_three_ac_counts = self.get_top_three_ac_counts(contest)
+        context['top_three_ac_counts'] = top_three_ac_counts
+
+        # 添加到context
+        context['problem_scores'] = problem_scores
+        context['problem_submissions_stats'] = problem_submissions_stats
+        context['total_score'] = total_score
+        context['contest_total_score'] = sum(topic.score for topic in contest_topics)
+        context['ac_rate'] = ac_rate
+        context['total_ac_count'] = total_ac_count
+        context['total_problems'] = len(contest_topics)
+        context['solved_problems'] = solved_problems
+        print(context)
         return context
+
+    def get_top_three_ac_counts(self, contest):
+        """
+        获取前三名用户的答对题目数目
+        """
+        # 获取所有参与者
+        participants = ContestParticipant.objects.filter(
+            contest=contest,
+            is_disqualified=False
+        ).select_related('user')
+
+        top_three_data = []
+
+        for participant in participants:
+            # 获取该参与者的所有AC提交
+            ac_submissions = ContestSubmission.objects.filter(
+                participant=participant,
+                submission__overall_result='Accepted'
+            ).select_related('submission')
+
+            # 统计不同题目的AC数量（去重，同一题目多次AC只算一次）
+            solved_problems = set()
+            for submission in ac_submissions:
+                solved_problems.add(submission.submission.topic_id)
+
+            ac_count = len(solved_problems)
+
+            top_three_data.append({
+                'user': participant.user,
+                'ac_count': ac_count,
+                'username': participant.user.username
+            })
+
+        # 按AC数量降序排序，取前三名
+        top_three_data.sort(key=lambda x: x['ac_count'], reverse=True)
+        return top_three_data[:3]
 
 
 class ContestRankView(LoginRequiredMixin, DetailView):
-    """比赛排名页面 - 重定向到专门的排行榜视图"""
     model = Contest
     template_name = 'CheckObjection/contest/rank/rank_list.html'
 
-    def get(self, request, *args, **kwargs):
-        """重定向到专门的比赛排行榜视图"""
-        contest = self.get_object()
-        return redirect('CheckObjectionApp:contest_rank_detail', contest_id=contest.id)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        contest = self.object
+
+        # 检查封榜逻辑
+        if contest.ranking_frozen and contest.frozen_time:
+            show_real_time = self.request.user == contest.created_by
+        else:
+            show_real_time = True
+
+        rank_data = ContestService.get_contest_ranklist(contest.id)
+        context['rank_data'] = rank_data
+        context['show_real_time'] = show_real_time
+
+        return context
 
 
 @require_http_methods(['GET', 'POST'])

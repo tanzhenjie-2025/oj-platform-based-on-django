@@ -986,7 +986,7 @@ class ContestDetailView(LoginRequiredMixin, DetailView):
         context['total_ac_count'] = total_ac_count
         context['total_problems'] = len(contest_topics)
         context['solved_problems'] = solved_problems
-
+        print(context)
         return context
 
     def get_top_three_ac_counts(self, contest):
