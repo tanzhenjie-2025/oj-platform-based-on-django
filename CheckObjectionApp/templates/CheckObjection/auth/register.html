@@ -1,4 +1,5 @@
 {% extends 'CheckObjection/base/base.html' %}
+{% load objection_tags %}
 {% block head %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -459,7 +460,7 @@
             </form>
 
             <div class="register-footer">
-                <p>已有账号? <a href="{% url 'CheckObjectionApp:CheckObjectionApp_login' %}" class="login-link">立即登录</a></p>
+                <p>已有账号? <a href="{% url_login %}" class="login-link">立即登录</a></p>
             </div>
         </div>
     </div>

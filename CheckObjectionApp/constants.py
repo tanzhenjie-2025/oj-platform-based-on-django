@@ -18,10 +18,10 @@ class URLNames:
     CHANGE_PASSWORD = "change_password"
 
     # 题目相关
-    DETAIL = "detail"
-    DESIGN = "design"
-    SEARCH = "search"
-    FILTER = "filter"
+    TOPIC_DETAIL = "topic_detail"
+    TOPIC_DESIGN = "topic_design"
+    TOPIC_SEARCH = "topic_search"
+    TOPIC_FILTER = "topic_filter"
 
     # 提交记录
     SUBMISSION_LIST = "submission_list"

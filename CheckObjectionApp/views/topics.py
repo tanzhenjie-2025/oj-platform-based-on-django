@@ -21,7 +21,7 @@ def index(request):
 
 @require_http_methods(['GET', 'POST'])
 @login_required
-def detail(request, topic_id):
+def topic_detail(request, topic_id):
     """题目详情页 - 显示题目内容和处理提交"""
     if request.method == "POST":
         # 处理提交的逻辑
@@ -53,7 +53,7 @@ def detail(request, topic_id):
 
 @require_http_methods(['GET', 'POST'])
 @login_required
-def design(request):
+def topic_design(request):
     """题目设计（管理员功能）"""
     if not request.user.is_staff:
         return redirect("CheckObjectionApp:no_power")
@@ -70,7 +70,7 @@ def design(request):
 
 
 @login_required
-def CheckObjection_search(request):
+def topic_search(request):
     """搜索题目"""
     q = request.GET.get('q')
     if not q:
@@ -93,7 +93,7 @@ def CheckObjection_search(request):
 
 
 @login_required
-def CheckObjection_filter(request):
+def topic_filter(request):
     """按难度过滤题目"""
     q = request.GET.get('f')
     if q == 'all':

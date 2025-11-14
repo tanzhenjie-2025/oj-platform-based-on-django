@@ -375,7 +375,7 @@
                 {% if user.is_staff %}
                     <li><a href="{% url_show %}" class="nav-link">查看全部提交</a>
                     </li>
-                    <li><a href="{% url 'CheckObjectionApp:batch_import_testcases' %}" class="nav-link">批量导入测试案例</a></li>
+                    <li><a href="{% url_batch_import_testcases %}" class="nav-link">批量导入测试案例</a></li>
                 {% endif %}
 
                 {% if user.is_authenticated %}

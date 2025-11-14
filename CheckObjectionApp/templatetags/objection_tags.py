@@ -28,6 +28,10 @@ def url_login():
     """登录页面URL"""
     return reverse(f"CheckObjectionApp:{URLNames.LOGIN}")
 
+# @register.simple_tag
+# def url_image_code():
+#     """验证码生成url"""
+
 @register.simple_tag
 def url_logout():
     """退出登录URL"""
@@ -51,14 +55,26 @@ def url_change_password():
 
 # ===== 题目相关 =====
 @register.simple_tag
-def url_detail(topic_id):
+def url_topic_detail(topic_id):
     """题目详情URL"""
-    return reverse(f"CheckObjectionApp:{URLNames.DETAIL}", args=[topic_id])
+    return reverse(f"CheckObjectionApp:{URLNames.TOPIC_DETAIL}", args=[topic_id])
 
 @register.simple_tag
-def url_design():
+def url_topic_filter():
+    """题目过滤URL"""
+    return reverse(f"CheckObjectionApp:{URLNames.TOPIC_FILTER}")
+
+@register.simple_tag
+def url_topic_search():
+    """题目搜索URL"""
+    return reverse(f"CheckObjectionApp:{URLNames.TOPIC_SEARCH}")
+
+@register.simple_tag
+def url_topic_design():
     """题目设计URL"""
-    return reverse(f"CheckObjectionApp:{URLNames.DESIGN}")
+    return reverse(f"CheckObjectionApp:{URLNames.TOPIC_DESIGN}")
+
+
 
 # ===== 提交记录 =====
 @register.simple_tag
@@ -110,9 +126,22 @@ def url_contest_rank_list():
 
 # ===== 工具功能 =====
 @register.simple_tag
-def url_batch_import():
+def url_batch_import_testcases():
     """批量导入测试案例URL"""
     return reverse(f"CheckObjectionApp:{URLNames.BATCH_IMPORT_TESTCASES}")
+
+@register.simple_tag
+def url_clear_my_submission_cache():
+    """清除我的提交缓存URL"""
+    return reverse(f"CheckObjectionApp:{URLNames.CLEAR_MY_SUBMISSION_CACHE}")
+
+@register.simple_tag
+def url_image_code():
+    """图片验证码URL"""
+    return reverse(f"CheckObjectionApp:{URLNames.IMAGE_CODE}")
+
+
+
 
 # ===== 管理功能 =====
 @register.simple_tag
@@ -141,3 +170,4 @@ def url_proxy_submit_code():
 def url_proxy_submit_code_contest(contest_id):
     """提交内部算法比赛代码api"""
     return reverse(f"CheckObjectionApp:{URLNames.PROXY_SUBMIT_CODE_CONTEST}", args=[contest_id])
+
