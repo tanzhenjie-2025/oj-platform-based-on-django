@@ -66,7 +66,7 @@ def topic_design(request):
         topic.objects.create(content=content, title=title, example=example, level=level)
         return redirect(reverse("CheckObjectionApp:index"))
     else:
-        return render(request, 'CheckObjection/topic/CheckObjection_design.html')
+        return render(request, 'CheckObjection/topic/topic_design.html')
 
 
 @login_required

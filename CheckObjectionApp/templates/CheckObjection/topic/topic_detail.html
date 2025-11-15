@@ -1,5 +1,6 @@
 
 {% extends 'CheckObjection/base/base.html' %}
+{% load objection_tags %}
 {% load static %}
 
 {% block head %}
@@ -628,7 +629,7 @@
 
     <script>
     const URLS = {
-    PROXY_SUBMIT_CODE: "{% url 'CheckObjectionApp:proxy_submit_code' %}"
+    PROXY_SUBMIT_CODE: "{% url_proxy_submit_code %}"
 };
         // Monaco Editor 实例和全局变量
         let editor = null;
