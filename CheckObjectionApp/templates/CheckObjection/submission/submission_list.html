@@ -1,4 +1,5 @@
 {% extends 'CheckObjection/base/base.html' %}
+{% load objection_tags %}
 {% block title %}算法实验室 - 提交情况{% endblock %}
 {% block head %}
     {% load static %}
@@ -128,7 +129,7 @@
 
     <!-- 查询个人提交按钮（最右侧） -->
     {% if user.is_staff %}
-        <a href="{% url 'CheckObjectionApp:user_list' %}" class="btn btn-personal-submissions rounded-pill px-4 d-flex align-items-center">
+        <a href="{% url_all_user_list  %}" class="btn btn-personal-submissions rounded-pill px-4 d-flex align-items-center">
             <span>🔍 查询个人提交</span>
         </a>
     {% endif %}
@@ -296,13 +297,13 @@
                                     <td>
                                         {% if submission.submission %}
                                             {# 这是 ContestSubmission 对象 #}
-                                            <a href="{% url 'CheckObjectionApp:submission_detail' pk=submission.submission.id %}"
+                                            <a href="{% url_contest_submission_detail submission.submission.id %}"
                                                class="btn btn-sm btn-outline-primary rounded-pill px-3">
                                                 查看详情
                                             </a>
                                         {% else %}
                                             {# 这是 Submission 对象 #}
-                                            <a href="{% url 'CheckObjectionApp:submission_detail' pk=submission.id %}"
+                                            <a href="{% url_submission_detail submission.id %}"
                                                class="btn btn-sm btn-outline-primary rounded-pill px-3">
                                                 查看详情
                                             </a>

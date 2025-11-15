@@ -9,7 +9,7 @@ urlpatterns = [
     # 展示所有人的比赛提交（管理员函数）
     path('contest_submission', my_submission_list, name='contest_submission_list'),
     # 显示单个提交详情
-    path('submission/<uuid:pk>/', submission_detail, name=URLNames.SUBMISSION_DETAIL),
+    path('submission/<uuid:submission_id>/', submission_detail, name=URLNames.SUBMISSION_DETAIL),
     # 我的所有提交
     path('my_submission', my_submission_list, name=URLNames.MY_SUBMISSION_LIST),
     # 根据用户名查询提交（管理员函数）

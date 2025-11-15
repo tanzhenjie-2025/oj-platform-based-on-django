@@ -30,10 +30,9 @@ def submission_list(request):
 
 # 管理员视图
 @login_required
-@staff_member_required
-def submission_detail(request, pk):
+def submission_detail(request, submission_id):
     """显示单个提交记录的详细信息"""
-    submission = get_object_or_404(Submission, pk=pk)
+    submission = get_object_or_404(Submission, pk=submission_id)
     context = {
         'submission': submission,
         'page_title': f'提交详情 - {submission.topic_id}'
@@ -402,6 +401,68 @@ def my_contest_submission_list(request):
         'page_title': '比赛提交记录',
         'cache_status': cache_status,
         'cache_timeout': 300
+    }
+    return render(request, 'CheckObjection/submission/submission_list.html', context)
+
+# 以下为比赛代码提交记录展示
+@login_required
+@staff_member_required
+def all_contest_submission_list(request):
+    """显示全部比赛的所有提交记录（管理员视图）"""
+
+    # 检查用户权限，如果是管理员则显示所有提交
+    if request.user.is_staff:
+        contest_submissions = ContestSubmission.objects.all().select_related(
+            'contest',
+            'submission',  # 关联到Submission模型
+            'submission__topic',
+            'participant__user'
+        ).order_by('-submitted_at')
+    else:
+        # 普通用户只能看到自己的提交
+        contest_submissions = ContestSubmission.objects.filter(
+            participant__user=request.user
+        ).select_related(
+            'contest',
+            'submission',  # 关联到Submission模型
+            'submission__topic',
+            'participant__user'  # 修正：应该是participant__user而不是participant
+        ).order_by('-submitted_at')
+
+    # 准备前端需要的数据
+    submission_data = []
+    for contest_sub in contest_submissions:
+        # 获取关联的Submission对象
+        submission = contest_sub.submission
+
+        # 构建前端需要的数据结构
+        submission_info = {
+            # ContestSubmission信息
+            'contest_submission_id': contest_sub.id,
+            'submitted_at': contest_sub.submitted_at,
+
+            # Submission信息
+            'id': submission.id,
+            'user_name': submission.user_name,
+            'topic_id': submission.topic.id if submission.topic else None,
+            'topic': submission.topic,  # 直接传递topic对象
+            'language_id': submission.language_id,
+            'status': submission.status,
+            'overall_result': submission.overall_result,
+            'created_at': submission.created_at,
+            'updated_at': submission.updated_at,
+
+            # 其他相关信息
+            'contest': contest_sub.contest,
+            'participant': contest_sub.participant,
+        }
+        submission_data.append(submission_info)
+
+
+    context = {
+        'submissions': submission_data,  # 传递处理后的数据
+        'page_title': '比赛提交记录',
+        'from': 'contest_submission_list',
     }
     return render(request, 'CheckObjection/submission/submission_list.html', context)
 

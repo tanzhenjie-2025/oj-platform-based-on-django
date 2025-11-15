@@ -39,9 +39,9 @@ oj-platform-based-on-django/
 │   ├── templates/                   # 模板文件目录
 │   │   ├── CheckObjection/
 │   │   │   ├── try.html             # 演示页面
-│   │   │   ├── CheckObjection_detail.html  # 题目详情页
-│   │   │   ├── CheckObjection_design.html  # 题目设计页
-│   │   │   ├── CheckOjection_test.html     # 题目测试页
+│   │   │   ├── topic_detail.html  # 题目详情页
+│   │   │   ├── topic_design.html  # 题目设计页
+│   │   │   ├── topic_test.html     # 题目测试页
 │   │   │   ├── contest/
 │   │   │   │   └── contest_detail.html     # 比赛详情页
 │   │   │   └── submission/
