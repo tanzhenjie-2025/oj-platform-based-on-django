@@ -1,4 +1,5 @@
 {% extends 'CheckObjection/base/base.html' %}
+{% load objection_tags %}
 {% load static %}
 {% block head %}
 <head>
@@ -316,8 +317,9 @@
                     </thead>
                     <tbody>
                         {% for item in rankings %}
+
                         <tr
-    onclick="window.location.href='{% url 'CheckObjectionApp:query_submission_list' user_name=item.user_name %}'"
+    onclick="window.location.href='{% url_query_submission_list user_name=item.user_name %}'"
     class="rank-item {% if item.rank <= 3 %}rank-{{ item.rank }}{% endif %}"
     style="cursor: pointer;"  >
                             <td class="fw-bold">
