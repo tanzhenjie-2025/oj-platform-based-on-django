@@ -88,11 +88,24 @@ def url_my_submissions_list():
     return reverse(f"CheckObjectionApp:{URLNames.MY_SUBMISSION_LIST}")
 
 @register.simple_tag
-def url_my_contest_submissions_list(user_name,contest_id):
-    """我的比赛提交URL"""
+def url_query_contest_submission_list(user_name,contest_id):
+    """查询比赛提交URL"""
     return reverse(f"CheckObjectionApp:{URLNames.QUERY_CONTEST_SUBMISSION_LIST}",
                    kwargs={'contest_id': contest_id, 'user_name': user_name})
 
+@register.simple_tag
+def url_my_contest_submission_list():
+    """我的全部比赛提交URL"""
+    return reverse(f"CheckObjectionApp:{URLNames.MY_CONTEST_SUBMISSION_LIST}")
+
+@register.simple_tag
+def url_query_submission_list(user_name):
+    """查询提交URL"""
+    return reverse(f"CheckObjectionApp:{URLNames.QUERY_SUBMISSION_LIST}", args=[user_name])
+
+@register.simple_tag
+def url_all_contest_submission_list():
+    return reverse(f"CheckObjectionApp:{URLNames.ALL_CONTEST_SUBMISSION_LIST}")
 # ===== 比赛相关 =====
 @register.simple_tag
 def url_contest_list():
@@ -112,7 +125,7 @@ def url_contest_register(contest_id):
 @register.simple_tag
 def url_contest_submit_code(contest_id, contest_topic_id):
     """比赛提交代码URL"""
-    return reverse(f"CheckObjectionApp:{URLNames.CONTEST_SUBMIT_CODE}",  kwargs={'contest_id': contest_id, 'contest_topic_id': contest_topic_id})
+    return reverse(f"CheckObjectionApp:{URLNames.CONTEST_SUBMIT_CODE}", kwargs={'contest_id': contest_id, 'contest_topic_id': contest_topic_id})
 
 # ===== 排行榜 =====
 @register.simple_tag
@@ -121,9 +134,9 @@ def url_ranking():
     return reverse(f"CheckObjectionApp:{URLNames.RANKING_PAGE}")
 
 @register.simple_tag
-def url_contest_rank_list():
+def url_all_contest_rank_list():
     """比赛排行列表URL"""
-    return reverse(f"CheckObjectionApp:{URLNames.CONTEST_RANK_LIST}")
+    return reverse(f"CheckObjectionApp:{URLNames.ALL_CONTEST_RANK_LIST}")
 
 # ===== 工具功能 =====
 @register.simple_tag
@@ -150,11 +163,21 @@ def url_my_contests():
     """我的比赛记录URL"""
     return reverse(f"CheckObjectionApp:{URLNames.MY_CONTESTS}")
 
+@register.simple_tag
+def url_all_user_list():
+    """所有比赛记录URL"""
+    return reverse(f"CheckObjectionApp:{URLNames.ALL_USER_LIST}")
+
 # ===== 带参数的通用标签 =====
 @register.simple_tag
 def url_submission_detail(submission_id):
     """提交详情URL"""
     return reverse(f"CheckObjectionApp:{URLNames.SUBMISSION_DETAIL}", args=[submission_id])
+
+@register.simple_tag
+def url_contest_submission_detail(submission_id):
+    """比赛提交详情URL"""
+    return reverse(f"CheckObjectionApp:{URLNames.SUBMISSION_DETAIL}", kwargs={'submission_id': submission_id})
 
 @register.simple_tag
 def url_contest_rank_detail(contest_id):
