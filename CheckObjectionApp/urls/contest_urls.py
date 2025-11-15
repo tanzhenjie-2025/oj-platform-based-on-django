@@ -3,8 +3,8 @@ from django.urls import path
 
 from ..constants import URLNames
 from ..views.contests import contest_submit_code,ContestListView,ContestDetailView,contest_register,ContestRankView
-from ..views.ranking import contest_rank_list, contest_rank_detail
-from ..views.submissions import my_contest_submission_list
+from ..views.ranking import all_contest_rank_list, contest_rank_detail
+from ..views.submissions import my_contest_submission_list,all_contest_submission_list
 
 urlpatterns = [
     # 比赛提交代码
@@ -19,9 +19,11 @@ urlpatterns = [
     path('contest/<int:pk>/rank/', ContestRankView.as_view(), name=URLNames.CONTEST_RANK),
     # 显示我的全部比赛提交记录
     path('my_contest_submission', my_contest_submission_list, name=URLNames.MY_CONTEST_SUBMISSION_LIST),
+    # 显示全部比赛提交记录
+    path('all_contest_submission',all_contest_submission_list,name=URLNames.ALL_CONTEST_SUBMISSION_LIST),
 
     # 比赛排行路由及视图
-    path('contest_rank_list/', contest_rank_list, name=URLNames.CONTEST_RANK_LIST),
+    path('all_contest_rank_list/', all_contest_rank_list, name=URLNames.ALL_CONTEST_RANK_LIST),
     # 具体比赛排名
     path('contest_rank_detail/<int:contest_id>/', contest_rank_detail, name=URLNames.CONTEST_RANK_DETAIL),
 ]

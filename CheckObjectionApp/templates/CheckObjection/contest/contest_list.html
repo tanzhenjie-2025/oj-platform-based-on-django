@@ -1,4 +1,5 @@
 {% extends 'CheckObjection/base/base.html' %}
+{% load objection_tags %}
 
 {% block head %}
 <style>
@@ -343,7 +344,7 @@
     <!-- 左侧比赛列表 -->
     <div class="contests-container">
         {% for contest in object_list %}
-        <a href="{% url 'CheckObjectionApp:contest_register' contest.id %}" class="contest-item">
+        <a href="{% url_contest_register contest.id %}" class="contest-item">
             <h3>{{ contest.title }}</h3>
             <p>比赛id: {{ contest.id }}</p>
             <p>时间: {{ contest.start_time }} - {{ contest.end_time }}</p>
@@ -377,11 +378,11 @@
         <div class="sidebar-card">
             <h3>我的竞赛提交</h3>
             {% if user.is_staff %}
-                <a href="{% url 'CheckObjectionApp:contest_submission_list' %}" class="submission-link">
-                <i>📋</i> 查看所有提交记录
+                <a href="{% url_all_contest_submission_list %}" class="submission-link">
+                <i>📋</i> 查看所有比赛提交记录
             </a>
             {% endif %}
-            <a href="{% url 'CheckObjectionApp:my_contest_submission_list' %}" class="submission-link">
+            <a href="{% url_my_contest_submission_list %}" class="submission-link">
                 <i>🏆</i> 比赛提交记录
             </a>
         </div>
@@ -390,7 +391,7 @@
             <h3>快速操作</h3>
             <ul class="quick-actions">
                 <li>
-                    <span><a href="{% url 'CheckObjectionApp:contest_rank_list' %}"><span class="icon">🏅</span>排行榜</a></span>
+                    <span><a href="{% url_all_contest_rank_list %}"><span class="icon">🏅</span>排行榜</a></span>
                 </li>
             </ul>
         </div>

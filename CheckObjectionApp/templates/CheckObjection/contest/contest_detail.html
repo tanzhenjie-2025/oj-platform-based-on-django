@@ -298,13 +298,13 @@
             <!-- 右侧提交区域：修改为a标签包裹，实现整个区域点击 -->
             <div class="submission-section">
                 <h3 class="sidebar-title">
-                    <a href="{% url_my_contest_submissions_list user_name=user.username contest_id=contest.id %}">
+                    <a href="{% url_query_contest_submission_list user_name=user.username contest_id=contest.id %}">
                         提交情况
                     </a>
                 </h3>
                 {% for item in problem_submissions_stats %}
                     <!-- 关键修改：将div改为a标签，href指向该题目的提交列表 -->
-                    <a href="{% url_my_contest_submissions_list user_name=user.username contest_id=contest.id%}"
+                    <a href="{% url_query_contest_submission_list user_name=user.username contest_id=contest.id%}"
                        class="sidebar-item">
                         <span>{{ item.title }}</span>
                         <span style="color: {{ item.color }};">

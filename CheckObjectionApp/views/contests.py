@@ -203,7 +203,7 @@ class ContestDetailView(LoginRequiredMixin, DetailView):
 
 class ContestRankView(LoginRequiredMixin, DetailView):
     model = Contest
-    template_name = 'CheckObjection/contest/rank/rank_list.html'
+    template_name = 'CheckObjection/contest/rank/all_rank_list.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
