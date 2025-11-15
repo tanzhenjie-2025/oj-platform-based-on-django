@@ -1,4 +1,5 @@
 {% extends 'CheckObjection/base/base.html' %}
+{% load objection_tags %}
 
 {% block main %}
 <div class="container mt-5">
@@ -236,7 +237,7 @@ document.getElementById('importForm').addEventListener('submit', async function(
             testcases_text: document.getElementById('testcasesText').value
         };
 
-        const response = await fetch('{% url "CheckObjectionApp:batch_import_testcases" %}', {
+        const response = await fetch('{% url_batch_import_testcases %}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
