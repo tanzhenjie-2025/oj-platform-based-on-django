@@ -45,7 +45,7 @@ def contest_ranking(request, contest_id):
     return render(request, 'CheckObjection/ranking/CheckObjection_ranking.html', context)
 
 
-def contest_rank_list(request):
+def all_contest_rank_list(request):
     """展示所有比赛列表"""
     contests = Contest.objects.all().order_by('-start_time')
 
@@ -58,7 +58,7 @@ def contest_rank_list(request):
         'contests': contests,
         'page_title': '比赛排行榜'
     }
-    return render(request, 'CheckObjection/contest/rank/rank_list.html', context)
+    return render(request, 'CheckObjection/contest/rank/all_rank_list.html', context)
 
 
 def contest_rank_detail(request, contest_id):

@@ -1,4 +1,5 @@
 {% extends "CheckObjection/base/base.html" %}
+{% load objection_tags %}
 {% block head %}
 <head>
     <meta charset="UTF-8">
@@ -163,7 +164,7 @@
                 {% for contest in contests %}
                 <div class="contest-card">
                     <div class="contest-header">
-                        <a href="{% url 'CheckObjectionApp:contest_rank_detail' contest.id %}" class="contest-title">
+                        <a href="{% url_contest_rank_detail contest.id %}" class="contest-title">
                             {{ contest.title }}
                         </a>
                         <span class="contest-status status-{{ contest.status }}">
@@ -192,7 +193,7 @@
                             <span class="stat">👥 {{ contest.participant_count }} 人参赛</span>
                             <span class="stat">📝 {{ contest.topic_count }} 道题目</span>
                         </div>
-                        <a href="{% url 'CheckObjectionApp:contest_rank_detail' contest.id %}" class="btn btn-primary">
+                        <a href="{% url_contest_rank_detail contest.id %}" class="btn btn-primary">
                             查看排名 →
                         </a>
                     </div>

@@ -1,4 +1,5 @@
 {% extends "CheckObjection/base/base.html" %}
+{% load objection_tags %}
 {% load custom_filters %}  {# 加载自定义过滤器 #}
 
 {% block head %}
@@ -289,7 +290,7 @@
             if (document.referrer) {
                 window.history.back();
             } else {
-                window.location.href = "{% url 'CheckObjectionApp:contest_rank_list' %}";
+                window.location.href = "{% url_all_contest_rank_list %}";
             }
         }
     </script>
