@@ -1,14 +1,14 @@
 from django.urls import path
 
 from ..constants import URLNames
-from ..views.admin_views import user_list, user_contests, contest_user_submissions
+from ..views.admin_views import all_user_list, user_contests, contest_user_submissions
 from ..views.submissions import contest_my_submissions
 from ..views.user_management import my_contests
 
 urlpatterns = [
     # 注册
     # 用户列表页
-    path('users/', user_list, name=URLNames.USER_LIST),
+    path('all_users/', all_user_list, name=URLNames.ALL_USER_LIST),
     # 展示用户参加过的比赛记录(管理员函数)
     path('user/contests/<str:user_name>/', user_contests, name=URLNames.USER_CONTESTS),
     # 显示当前用户参加过的比赛记录

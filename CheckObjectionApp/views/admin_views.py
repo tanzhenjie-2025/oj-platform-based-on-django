@@ -14,7 +14,7 @@ from ..models import User, UserProfile, Contest, ContestParticipant, ContestSubm
 
 @login_required(login_url=reverse_lazy(f'CheckObjectionApp:{URLNames.LOGIN}'))
 @staff_member_required
-def user_list(request):
+def all_user_list(request):
     """展示所有用户的列表视图（仅管理员可访问）"""
     users = User.objects.all().order_by('-date_joined')
 
@@ -42,7 +42,7 @@ def user_list(request):
         'page_title': '用户管理',
         'total_users': len(user_data)
     }
-    return render(request, 'CheckObjection/user_list.html', context)
+    return render(request, 'CheckObjection/admin/all_user_list.html', context)
 
 
 @login_required
@@ -116,7 +116,7 @@ def user_contests(request, user_name):
             'page_title': f'{user_name} 参加的比赛',
             'current_time': timezone.now()
         }
-        return render(request, 'CheckObjection/user_contests.html', context)
+        return render(request, 'CheckObjection/admin/query_user_contests.html', context)
 
     except Exception as e:
         return HttpResponseServerError(f"服务器错误: {e}")
