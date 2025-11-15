@@ -26,10 +26,12 @@ class URLNames:
     # 提交记录
     SUBMISSION_LIST = "submission_list"
     SUBMISSION_DETAIL = "submission_detail"
+    CONTEST_SUBMISSION_DETAIL = "contest_submission_detail"
     MY_SUBMISSION_LIST = "my_submission_list"
     QUERY_SUBMISSION_LIST = "query_submission_list"
     QUERY_CONTEST_SUBMISSION_LIST = "query_contest_submission_list"
     MY_CONTEST_SUBMISSION_LIST = "my_contest_submission_list"
+    ALL_CONTEST_SUBMISSION_LIST = "all_contest_submission_list"
     CONTEST_MY_SUBMISSIONS = "contest_my_submissions"
 
     # 判题API
@@ -46,7 +48,7 @@ class URLNames:
 
     # 排行榜
     RANKING_PAGE = "ranking_page"
-    CONTEST_RANK_LIST = "contest_rank_list"
+    ALL_CONTEST_RANK_LIST = "all_contest_rank_list"
     CONTEST_RANK_DETAIL = "contest_rank_detail"
 
     # 工具功能
@@ -55,7 +57,7 @@ class URLNames:
     CLEAR_MY_SUBMISSION_CACHE = "clear_my_submission_cache"
 
     # 管理功能
-    USER_LIST = "user_list"
+    ALL_USER_LIST = "all_user_list"
     USER_CONTESTS = "user_contests"
     MY_CONTESTS = "my_contests"
     CONTEST_USER_SUBMISSIONS = "contest_user_submissions"
