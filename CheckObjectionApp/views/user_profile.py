@@ -46,7 +46,7 @@ def change_password(request):
 
     if request.method == "GET":
         user = request.user
-        return render(request, 'CheckObjection/changeName.html', context={'user': user})
+        return render(request, 'CheckObjection/user_profile/changeName.html', context={'user': user})
 
 
 @require_http_methods(['GET', 'POST'])
@@ -105,7 +105,7 @@ def change_profile(request):
             'theme': user_profile.theme,
             'language': user_profile.language,
         }
-        return render(request, 'CheckObjection/changeName.html',
+        return render(request, 'CheckObjection/user_profile/changeName.html',
                       context={'user': user, 'user_info': user_info})
 
 
